@@ -4,30 +4,30 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>mechanism - model a real object exactly, take it apart, film it</title>
-<meta name="description" content="A skill for coding agents. Every number says where it came from, and a spec that does not add up is not rendered. Films, a viewer and a 3D model of real objects, from the Enigma to a key switch.">
+<meta name="description" content="A skill for coding agents. Every number says where it came from, and a spec that does not add up is not rendered. Films, a viewer and a 3D model of real objects: an Enigma, a Rubik's cube, a Honda engine.">
 <link rel="canonical" href="https://diegolopez0208.github.io/mechanism/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="mechanism - model a real object exactly, take it apart, film it">
-<meta property="og:description" content="The Enigma model has to reproduce the published test: AAAAA becomes BDZGO. A skill for agents that refuses to render numbers that do not add up.">
-<meta property="og:image" content="https://diegolopez0208.github.io/mechanism/docs/media/poster-enigma.jpg">
+<meta property="og:description" content="The Enigma model reproduces the published test, the Rubik model flips 12 edges in the published 20 moves. A skill for agents that refuses to render numbers that do not add up.">
+<meta property="og:image" content="https://diegolopez0208.github.io/mechanism/docs/media/poster-rubik.jpg">
 <meta property="og:url" content="https://diegolopez0208.github.io/mechanism/">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%99%EF%B8%8F%3C/text%3E%3C/svg%3E">
 <style>
 @font-face { font-family:'Inter'; src:url('kit/fonts/inter.woff2') format('woff2'); font-weight:100 900; font-display:swap; }
 @font-face { font-family:'Cormorant Garamond'; src:url('kit/fonts/cormorant.woff2') format('woff2'); font-weight:300 700; font-display:swap; }
-:root { --bg:#f6f5f0; --bg2:#efeee7; --ink:#23221f; --mute:#85827a; --line:rgba(35,34,31,.14); --teal:#0b7285; --ember:#c8542a; --card:#fbfaf6; --shadow:0 30px 60px -30px rgba(40,36,24,.35); }
-:root[data-theme="night"] { --bg:#0e1015; --bg2:#13151c; --ink:#ecebe6; --mute:#9094a0; --line:rgba(236,235,230,.14); --teal:#5ad1d8; --ember:#ff9a62; --card:#161922; --shadow:0 30px 70px -30px rgba(0,0,0,.8); }
+:root { --bg:#f6f5f0; --bg2:#efeee7; --ink:#23221f; --mute:#85827a; --line:rgba(35,34,31,.14); --teal:#0b7285; --ember:#c8542a; --card:#fbfaf6; --shadow:0 30px 60px -30px rgba(40,36,24,.35); --grid:rgba(35,34,31,.06); --term:#16181d; --termink:#d7d9de; }
+:root[data-theme="night"] { --bg:#0b0d12; --bg2:#10131a; --ink:#ecebe6; --mute:#9094a0; --line:rgba(236,235,230,.14); --teal:#5ad1d8; --ember:#ff9a62; --card:#141720; --shadow:0 30px 70px -30px rgba(0,0,0,.85); --grid:rgba(236,235,230,.05); --term:#0a0b0f; --termink:#d7d9de; }
 * { box-sizing:border-box; }
 html { scroll-behavior:smooth; scroll-padding-top:76px; }
-body { margin:0; background:var(--bg); color:var(--ink); font:400 17px/1.6 'Inter', system-ui, sans-serif; -webkit-font-smoothing:antialiased; transition:background .4s, color .4s; }
+body { margin:0; background:var(--bg); color:var(--ink); font:400 17px/1.6 'Inter', system-ui, sans-serif; -webkit-font-smoothing:antialiased; transition:background .4s, color .4s; overflow-x:hidden; }
 a { color:inherit; text-decoration:none; }
 a:focus-visible, button:focus-visible { outline:2px solid var(--teal); outline-offset:3px; border-radius:4px; }
-.wrap { max-width:1160px; margin:0 auto; padding:0 28px; }
+.wrap { max-width:1180px; margin:0 auto; padding:0 28px; }
 h1,h2,h3 { font-family:'Cormorant Garamond', Georgia, serif; font-weight:500; margin:0; letter-spacing:-.005em; }
 .eyebrow { font:600 12px 'Inter'; letter-spacing:.26em; text-transform:uppercase; color:var(--teal); }
 
-nav { position:sticky; top:0; z-index:20; backdrop-filter:blur(14px); background:color-mix(in srgb, var(--bg) 84%, transparent); border-bottom:1px solid var(--line); }
+nav { position:sticky; top:0; z-index:30; backdrop-filter:blur(16px) saturate(1.2); background:color-mix(in srgb, var(--bg) 78%, transparent); border-bottom:1px solid var(--line); }
 nav .wrap { display:flex; align-items:center; gap:28px; height:64px; }
 .mark { font:500 28px/1 'Cormorant Garamond', Georgia, serif; letter-spacing:.02em; margin-right:auto; }
 .mark i { color:var(--teal); font-style:normal; }
@@ -36,17 +36,36 @@ nav ul a:hover { color:var(--ink); }
 .pill { border:1px solid var(--line); background:transparent; color:var(--ink); border-radius:999px; padding:7px 15px; font:500 12px 'Inter'; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; transition:.2s; }
 .pill:hover { border-color:var(--teal); color:var(--teal); }
 
-.hero { padding:96px 0 84px; background:radial-gradient(900px 480px at 78% 12%, color-mix(in srgb, var(--teal) 10%, transparent), transparent 70%); }
-.hero-grid { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr); gap:56px; align-items:center; }
-.hero h1 { font-size:clamp(44px, 6vw, 90px); line-height:.98; margin:20px 0 26px; }
+/* ---- hero: text on the left, the live 3D scene on the right ---- */
+.hero { position:relative; padding:56px 0 72px; overflow:hidden; }
+.hero::before { content:''; position:absolute; inset:0; background-image:linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size:44px 44px; -webkit-mask-image:radial-gradient(70% 80% at 72% 40%, #000, transparent 75%); mask-image:radial-gradient(70% 80% at 72% 40%, #000, transparent 75%); pointer-events:none; }
+.hero::after { content:''; position:absolute; width:900px; height:900px; right:-260px; top:-300px; background:radial-gradient(closest-side, color-mix(in srgb, var(--teal) 16%, transparent), transparent); pointer-events:none; }
+.hero-grid { position:relative; z-index:1; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.02fr); gap:24px; align-items:center; }
+.hero h1 { font-size:clamp(46px, 6.2vw, 96px); line-height:.96; margin:22px 0 26px; }
 .hero h1 em { font-style:italic; color:var(--teal); }
-.hero p { max-width:600px; color:var(--mute); font-size:19px; margin:0 0 34px; }
-.hero-media img { width:100%; display:block; border-radius:8px; box-shadow:var(--shadow); border:1px solid var(--line); }
+.hero p.lead { max-width:560px; color:var(--mute); font-size:19px; margin:0 0 32px; }
 .btns { display:flex; gap:12px; flex-wrap:wrap; }
 .btn { display:inline-block; padding:14px 24px; border-radius:999px; font:500 13px 'Inter'; letter-spacing:.14em; text-transform:uppercase; border:1px solid var(--ink); transition:.25s; }
 .btn.fill { background:var(--ink); color:var(--bg); }
 .btn:hover { transform:translateY(-2px); border-color:var(--teal); }
 .btn.fill:hover { background:var(--teal); color:var(--bg); }
+.facts { display:flex; gap:34px; margin-top:44px; flex-wrap:wrap; }
+.facts div b { display:block; font:500 40px/1 'Cormorant Garamond', serif; color:var(--ink); }
+.facts div span { font-size:12.5px; color:var(--mute); letter-spacing:.06em; }
+.stage3d { position:relative; aspect-ratio:1/1.08; min-height:440px; cursor:grab; touch-action:pan-y; }
+.stage3d canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
+.stage3d .ring { position:absolute; inset:7% 6%; border:1px dashed color-mix(in srgb, var(--ink) 18%, transparent); border-radius:50%; pointer-events:none; }
+.stage3d .ring.b { inset:18% 17%; border-style:solid; border-color:color-mix(in srgb, var(--ink) 8%, transparent); }
+.stage3d .hint { position:absolute; left:50%; bottom:2%; transform:translateX(-50%); font:600 10.5px 'Inter'; letter-spacing:.2em; text-transform:uppercase; color:var(--mute); white-space:nowrap; pointer-events:none; opacity:0; transition:opacity .8s 1.8s; }
+.stage3d.live .hint { opacity:1; }
+.stage3d .fallback { display:none; position:absolute; inset:8%; width:84%; height:84%; object-fit:cover; border-radius:10px; box-shadow:var(--shadow); }
+.stage3d.nogl .fallback { display:block; } .stage3d.nogl canvas { display:none; }
+.tags { position:absolute; inset:0; pointer-events:none; }
+.tags span { position:absolute; font:600 10.5px 'Inter'; letter-spacing:.16em; text-transform:uppercase; padding:4px 10px; border-radius:999px; border:1px solid; background:color-mix(in srgb, var(--bg) 70%, transparent); backdrop-filter:blur(6px); animation:float 6s ease-in-out infinite; }
+.tags .a { left:2%; top:10%; color:var(--teal); border-color:color-mix(in srgb, var(--teal) 55%, transparent); }
+.tags .b { right:2%; top:44%; color:var(--ember); border-color:color-mix(in srgb, var(--ember) 55%, transparent); animation-delay:-2s; }
+.tags .c { left:8%; bottom:12%; color:var(--ink); border-color:color-mix(in srgb, var(--ink) 35%, transparent); animation-delay:-4s; }
+@keyframes float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-8px); } }
 
 .proof { border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:var(--bg2); }
 .proof .wrap { display:grid; grid-template-columns:repeat(3,1fr); }
@@ -55,16 +74,38 @@ nav ul a:hover { color:var(--ink); }
 .proof b { display:block; font:500 26px 'Cormorant Garamond', serif; margin-bottom:4px; }
 .proof span { color:var(--mute); font-size:15px; }
 
-section { padding:96px 0; }
+section { padding:100px 0; }
 section + section { border-top:1px solid var(--line); }
-.head { display:flex; justify-content:space-between; align-items:end; gap:30px; flex-wrap:wrap; margin-bottom:46px; }
-.head h2 { font-size:clamp(36px, 4.6vw, 58px); line-height:1.03; max-width:680px; }
+.head { display:flex; justify-content:space-between; align-items:end; gap:30px; flex-wrap:wrap; margin-bottom:48px; }
+.head h2 { font-size:clamp(36px, 4.6vw, 60px); line-height:1.02; max-width:700px; }
 .head p { max-width:420px; color:var(--mute); margin:0; }
 
-.grid { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:48px 36px; }
-.card .stage { position:relative; aspect-ratio:4/5; background:var(--card); border-radius:6px; overflow:hidden; box-shadow:var(--shadow); border:1px solid var(--line); }
+/* ---- the gate: a terminal that types ---- */
+.gate { display:grid; grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr); gap:56px; align-items:center; }
+.gate h2 { font-size:clamp(36px, 4.4vw, 56px); line-height:1.03; margin-bottom:18px; }
+.gate p { color:var(--mute); margin:0 0 14px; }
+.term { background:var(--term); color:var(--termink); border-radius:12px; box-shadow:0 40px 80px -40px rgba(0,0,0,.6); border:1px solid color-mix(in srgb, var(--ink) 14%, transparent); overflow:hidden; transform:perspective(1400px) rotateY(-4deg) rotateX(2deg); transition:transform .5s; }
+.term:hover { transform:perspective(1400px) rotateY(0) rotateX(0); }
+.term .bar { display:flex; gap:7px; align-items:center; padding:12px 16px; border-bottom:1px solid rgba(255,255,255,.08); }
+.term .bar i { width:11px; height:11px; border-radius:50%; background:#3a3d46; display:block; } .term .bar i:nth-child(1){ background:#ff6159; } .term .bar i:nth-child(2){ background:#ffbd2e; } .term .bar i:nth-child(3){ background:#28c941; }
+.term .bar span { margin-left:auto; font:500 11px ui-monospace, Consolas, monospace; color:#7d8190; }
+.term .tabs { display:flex; gap:6px; padding:10px 14px 0; flex-wrap:wrap; }
+.term .tabs button { font:600 11px ui-monospace, Consolas, monospace; color:#8d91a0; background:transparent; border:1px solid rgba(255,255,255,.1); border-radius:6px 6px 0 0; padding:6px 12px; cursor:pointer; }
+.term .tabs button.on { color:#fff; background:rgba(255,255,255,.07); border-bottom-color:transparent; }
+.term pre { margin:0; padding:18px 20px 22px; font:500 13px/1.7 ui-monospace, 'Cascadia Mono', Consolas, monospace; min-height:330px; white-space:pre-wrap; word-break:break-word; }
+.term pre .ok { color:#5ad1a0; } .term pre .bad { color:#ff7a6b; } .term pre .dim { color:#7d8190; } .term pre .cmd { color:#fff; }
+.term pre .cur { display:inline-block; width:8px; height:15px; background:#d7d9de; vertical-align:-2px; animation:blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity:0; } }
+
+/* ---- examples ---- */
+.grid { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:54px 36px; perspective:1600px; }
+.card { transition:opacity .7s, translate .7s; }
+.card .stage { position:relative; aspect-ratio:4/5; background:var(--card); border-radius:8px; overflow:hidden; box-shadow:var(--shadow); border:1px solid var(--line); transition:transform .25s ease-out, box-shadow .25s; will-change:transform; }
+.card .stage:hover { box-shadow:0 50px 80px -34px rgba(20,20,30,.5); }
 .card .stage video, .card .stage img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; background:#0d0e11; }
-.card h3 { font-size:32px; margin:20px 0 8px; line-height:1.05; }
+.card .stage .shine { position:absolute; inset:0; pointer-events:none; background:radial-gradient(420px circle at var(--mx,50%) var(--my,0%), rgba(255,255,255,.16), transparent 55%); opacity:0; transition:opacity .25s; }
+.card .stage:hover .shine { opacity:1; }
+.card h3 { font-size:32px; margin:22px 0 8px; line-height:1.05; }
 .chip { display:inline-block; font:600 11px 'Inter'; letter-spacing:.14em; text-transform:uppercase; padding:4px 11px; border-radius:999px; border:1px solid; margin-bottom:10px; }
 .chip.ok { color:var(--teal); border-color:color-mix(in srgb, var(--teal) 55%, transparent); background:color-mix(in srgb, var(--teal) 11%, transparent); }
 .chip.warn { color:var(--ember); border-color:color-mix(in srgb, var(--ember) 55%, transparent); background:color-mix(in srgb, var(--ember) 11%, transparent); }
@@ -73,13 +114,27 @@ section + section { border-top:1px solid var(--line); }
 .dl { display:flex; gap:18px; flex-wrap:wrap; }
 .dl a { font:500 12px 'Inter'; letter-spacing:.16em; text-transform:uppercase; color:var(--teal); border-bottom:1px solid currentColor; padding-bottom:2px; }
 
+/* ---- touch it: live viewers in an iframe ---- */
+.live3d { display:grid; grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr); gap:56px; align-items:center; }
+.live3d h2 { font-size:clamp(36px, 4.4vw, 56px); line-height:1.03; margin-bottom:18px; }
+.live3d p { color:var(--mute); margin:0 0 22px; }
+.pick { display:flex; flex-wrap:wrap; gap:10px; }
+.pick button { font:600 12px 'Inter'; letter-spacing:.14em; text-transform:uppercase; border:1px solid var(--line); background:transparent; color:var(--ink); border-radius:999px; padding:10px 18px; cursor:pointer; transition:.2s; }
+.pick button.on, .pick button:hover { border-color:var(--teal); color:var(--teal); background:color-mix(in srgb, var(--teal) 10%, transparent); }
+.viewer { position:relative; max-width:560px; margin-left:auto; width:100%; aspect-ratio:4/5; border-radius:10px; overflow:hidden; border:1px solid var(--line); box-shadow:var(--shadow); background:var(--card); }
+.viewer iframe { position:absolute; inset:0; width:100%; height:100%; border:0; background:var(--card); }
+.viewer .poster { position:absolute; inset:0; cursor:pointer; }
+.viewer .poster img { width:100%; height:100%; object-fit:cover; display:block; }
+.viewer .poster b { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font:600 12px 'Inter'; letter-spacing:.2em; text-transform:uppercase; color:#fff; background:rgba(12,14,18,.72); padding:14px 24px; border-radius:999px; backdrop-filter:blur(8px); transition:.2s; white-space:nowrap; }
+.viewer .poster:hover b { background:var(--teal); }
+
 .steps { display:grid; grid-template-columns:repeat(4,1fr); counter-reset:s; margin-bottom:56px; }
 .step { padding:26px 24px 8px 0; border-top:1px solid var(--line); counter-increment:s; }
 .step::before { content:'0' counter(s); font:500 50px/1 'Cormorant Garamond', serif; color:var(--teal); display:block; margin-bottom:12px; }
 .step h3 { font:600 15px 'Inter'; margin-bottom:6px; }
 .step p { margin:0; color:var(--mute); font-size:15px; line-height:1.55; }
 .two { display:grid; grid-template-columns:1fr 1fr; gap:28px; }
-.code { position:relative; font:500 13.5px/1.7 ui-monospace, 'Cascadia Mono', Consolas, monospace; background:var(--bg2); border:1px solid var(--line); border-radius:6px; padding:20px 24px; overflow:auto; color:var(--ink); white-space:pre; }
+.code { position:relative; font:500 13.5px/1.7 ui-monospace, 'Cascadia Mono', Consolas, monospace; background:var(--bg2); border:1px solid var(--line); border-radius:8px; padding:20px 24px; overflow:auto; color:var(--ink); white-space:pre; }
 .code .c { color:var(--mute); } .code b { color:var(--teal); font-weight:600; } .code i { color:var(--ember); font-style:normal; }
 .copy { position:absolute; top:10px; right:10px; font:600 10.5px 'Inter'; letter-spacing:.14em; text-transform:uppercase; padding:5px 10px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--mute); cursor:pointer; }
 .copy:hover { color:var(--teal); border-color:var(--teal); }
@@ -92,84 +147,120 @@ section + section { border-top:1px solid var(--line); }
 .legend p { color:var(--mute); font-size:14.5px; margin:10px 0 0; }
 .road { display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; }
 .road span { border:1px solid var(--line); border-radius:999px; padding:8px 16px; font-size:14px; color:var(--mute); }
+.road span.done { color:var(--teal); border-color:color-mix(in srgb, var(--teal) 50%, transparent); }
+.road span.done::before { content:'\2713  '; }
 footer { padding:48px 0 70px; border-top:1px solid var(--line); color:var(--mute); font-size:14px; }
 footer .wrap { display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap; }
 footer a { border-bottom:1px solid var(--line); }
-@media (max-width: 960px) { .grid { grid-template-columns:repeat(2, minmax(0,1fr)); } .steps { grid-template-columns:repeat(2,1fr); } .legend { grid-template-columns:repeat(2,1fr); } .two { grid-template-columns:1fr; } }
-@media (max-width: 760px) { .hero-grid { grid-template-columns:1fr; gap:36px; } nav ul { display:none; } .grid { grid-template-columns:1fr; } .proof .wrap { grid-template-columns:1fr; } .proof div.item + div.item { padding-left:0; border-left:0; border-top:1px solid var(--line); } section { padding:72px 0; } .steps { grid-template-columns:1fr; } }
+
+.rv { opacity:0; translate:0 28px; } .rv.in { opacity:1; translate:0 0; }
+@media (prefers-reduced-motion: reduce) { .rv { opacity:1; translate:none; } .tags span { animation:none; } .term { transform:none; } html { scroll-behavior:auto; } }
+@media (max-width: 960px) { .grid { grid-template-columns:repeat(2, minmax(0,1fr)); } .steps { grid-template-columns:repeat(2,1fr); } .legend { grid-template-columns:repeat(2,1fr); } .two, .gate, .live3d { grid-template-columns:1fr; } .viewer { margin:0 auto; } .term { transform:none; } }
+@media (max-width: 760px) { .hero-grid { grid-template-columns:1fr; gap:8px; } nav ul { display:none; } .grid { grid-template-columns:1fr; } .proof .wrap { grid-template-columns:1fr; } .proof div.item + div.item { padding-left:0; border-left:0; border-top:1px solid var(--line); } section { padding:72px 0; } .steps { grid-template-columns:1fr; } .stage3d { min-height:360px; } .facts { gap:22px; } }
 </style>
 </head>
 <body>
 <nav><div class="wrap">
   <a class="mark" href="#top">mechanism<i>.</i></a>
-  <ul><li><a href="#examples">Examples</a></li><li><a href="#how">How it works</a></li><li><a href="#install">Install</a></li></ul>
+  <ul><li><a href="#gate">The gate</a></li><li><a href="#examples">Films</a></li><li><a href="#touch">Touch it</a></li><li><a href="#how">How it works</a></li><li><a href="#install">Install</a></li></ul>
   <a class="pill" href="https://github.com/DiegoLopez0208/mechanism" target="_blank" rel="noopener">GitHub</a>
   <button class="pill" id="theme" aria-label="Switch theme">Night</button>
 </div></nav>
 
 <header class="hero" id="top"><div class="wrap hero-grid">
   <div>
-    <div class="eyebrow">A skill for agents</div>
+    <div class="eyebrow">A skill for coding agents</div>
     <h1>Model it <em>exactly.</em><br>Take it apart.<br>Film it.</h1>
-    <p>Give it a real object. It looks the numbers up, writes a spec where every number says where it came from, and renders a film, a viewer and a 3D model. If the numbers do not add up, it does not render. The Enigma model has to reproduce the published test: AAAAA becomes BDZGO.</p>
-    <div class="btns"><a class="btn fill" href="examples/enigma/index.html?explore" target="_blank">Type on the Enigma</a><a class="btn" href="#examples">Watch the films</a><a class="btn" href="#install">Install</a></div>
+    <p class="lead">Give it a real object. It looks the numbers up, writes a spec where every number says where it came from, and renders a film, a viewer and a 3D model. If the numbers do not add up, it does not render.</p>
+    <div class="btns"><a class="btn fill" href="#examples">Watch the films</a><a class="btn" href="examples/enigma/index.html?explore" target="_blank">Type on the Enigma</a><a class="btn" href="#install">Install</a></div>
+    <div class="facts"><div><b>9</b><span>real objects</span></div><div><b>4</b><span>kinds of mechanism</span></div><div><b>1</b><span>gate that says no</span></div></div>
   </div>
-  <div class="hero-media"><a href="examples/enigma/index.html?explore" target="_blank"><img src="docs/media/enigma.gif" alt="Enigma I: the signal travelling through the rotors, checked against the published test"></a></div>
+  <div class="stage3d" id="stage3d">
+    <div class="ring"></div><div class="ring b"></div>
+    <canvas id="hero3d" aria-label="A planetary gear set and a Rubik's cube, live in 3D. Move the mouse to orbit, scroll to take it apart, click to turn a layer."></canvas>
+    <img class="fallback" src="docs/media/enigma.gif" alt="Enigma I: the signal travelling through the rotors">
+    <div class="tags"><span class="a">spec</span><span class="b">estimated</span><span class="c">derived</span></div>
+    <div class="hint">Move to orbit &middot; scroll to take it apart &middot; click to turn</div>
+  </div>
 </div></header>
 
 <div class="proof"><div class="wrap">
   <div class="item"><b>Sourced</b><span>Every number is SPEC, MEASURED, DERIVED or ESTIMATED, with its source or its reason.</span></div>
   <div class="item"><b>Gated</b><span>A spec whose gears, ratios or test vectors do not check out is not rendered.</span></div>
-  <div class="item"><b>Three outputs</b><span>A film with designed sound, an interactive viewer, and an STL / GLB of the model.</span></div>
+  <div class="item"><b>Three outputs</b><span>A film with real recorded sound, an interactive viewer, and an STL / GLB of the model.</span></div>
 </div></div>
 
+<section id="gate"><div class="wrap gate">
+  <div class="rv">
+    <div class="eyebrow">The gate</div>
+    <h2 style="margin-top:14px">A spec that does not add up is not rendered.</h2>
+    <p>The model is run against what is published. The Rubik cube is 26 pieces that really turn, with no tables: the 20-move superflip has to flip all 12 edges, the longest sequence has to come back after 1,260 repeats.</p>
+    <p>Change a tooth, a firing order, a claim: it says exactly what broke.</p>
+  </div>
+  <div class="term rv" id="term">
+    <div class="bar"><i></i><i></i><i></i><span>mechanism</span></div>
+    <div class="tabs"><button class="on" data-t="rubik">rubik</button><button data-t="k20a">k20a</button><button data-t="hub">hub</button><button data-t="bad">k20a, 1-2-3-4</button></div>
+    <pre id="termout"></pre>
+  </div>
+</div></section>
+
 <section id="examples"><div class="wrap">
-  <div class="head"><h2>The check is on the card.</h2><p>Each one carries what its model had to reproduce, and says plainly what it could not source.</p></div>
+  <div class="head rv"><h2>The check is on the card.</h2><p>Each one carries what its model had to reproduce, and says plainly what it could not source.</p></div>
   <div class="grid">
-    <article class="card"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-enigma.jpg" data-paper="out/enigma.mp4" data-night="out/enigma-night.mp4"></video></div>
+    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-enigma.jpg" data-paper="out/enigma.mp4" data-night="out/enigma-night.mp4"></video><div class="shine"></div></div>
       <h3>Enigma I</h3><span class="chip ok">AAAAA to BDZGO, reproduced</span>
       <p>Wiring, notches and stepping are simulated and must match the published tests, including the middle rotor's double step. In the viewer you type on your keyboard.</p>
       <div class="dl"><a href="examples/enigma/index.html?explore" target="_blank">Viewer (type!)</a><a href="https://github.com/DiegoLopez0208/mechanism/releases/download/v0.1.0/enigma.glb">GLB</a><a href="examples/enigma/spec.js" target="_blank">spec.js</a></div></article>
-    <article class="card"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-rubik.jpg" data-paper="out/rubik.mp4" data-night="out/rubik-night.mp4"></video></div>
+    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-rubik.jpg" data-paper="out/rubik.mp4" data-night="out/rubik-night.mp4"></video><div class="shine"></div></div>
       <h3>Rubik's Cube</h3><span class="chip ok">20-move superflip, reproduced</span>
-      <p>26 pieces that really turn, no tables. The model has to flip all 12 edges in the published 20 moves, come back after 1,260 repeats of the longest sequence, and count 43,252,003,274,489,856,000 positions.</p>
+      <p>26 pieces that really turn, no tables. The model flips all 12 edges in the published 20 moves, comes back after 1,260 repeats of the longest sequence, and counts 43,252,003,274,489,856,000 positions.</p>
       <div class="dl"><a href="examples/rubik/index.html?explore" target="_blank">Viewer</a><a href="https://github.com/DiegoLopez0208/mechanism/releases/download/v0.1.0/rubik.glb">GLB</a><a href="examples/rubik/spec.js" target="_blank">spec.js</a></div></article>
-    <article class="card"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-k20a.jpg" data-paper="out/k20a.mp4" data-night="out/k20a-night.mp4"></video></div>
+    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-k20a.jpg" data-paper="out/k20a.mp4" data-night="out/k20a-night.mp4"></video><div class="shine"></div></div>
       <h3>Honda K20A</h3><span class="chip warn">1,998 cc and 1-3-4-2, checked; rod is a guess</span>
       <p>A real crank-slider: 16 valves, cams placed from the valve windows. Displacement is computed from bore and stroke, and the published firing order must be possible with the crank. Honda does not publish the rod, so it is dashed.</p>
       <div class="dl"><a href="examples/k20a/index.html?explore" target="_blank">Viewer</a><a href="https://github.com/DiegoLopez0208/mechanism/releases/download/v0.1.0/k20a.glb">GLB</a><a href="examples/k20a/spec.js" target="_blank">spec.js</a></div></article>
-    <article class="card"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-hub.jpg" data-paper="out/hub.mp4" data-night="out/hub-night.mp4"></video></div>
+    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-hub.jpg" data-paper="out/hub.mp4" data-night="out/hub-night.mp4"></video><div class="shine"></div></div>
       <h3>Three-speed hub</h3><span class="chip ok">0.75 / 1.00 / 1.333, matches</span>
       <p>A planetary stage with the sun fixed. The running model gives the ratios the maker publishes as 75, 100 and 133 %. Tooth counts are derived; sizes are estimated and dashed.</p>
       <div class="dl"><a href="examples/hub/index.html?explore" target="_blank">Viewer</a><a href="https://github.com/DiegoLopez0208/mechanism/releases/download/v0.1.0/hub.glb">GLB</a><a href="examples/hub/spec.js" target="_blank">spec.js</a></div></article>
-    <article class="card"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-switch.jpg" data-paper="out/switch.mp4" data-night="out/switch-night.mp4"></video></div>
+    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-switch.jpg" data-paper="out/switch.mp4" data-night="out/switch-night.mp4"></video><div class="shine"></div></div>
       <h3>Cherry MX2A Red</h3><span class="chip warn">30, 45, 100 cN do not add up</span>
       <p>A press, not gears. The datasheet's three force points cannot come from one linear spring, and the film plots that instead of hiding it.</p>
       <div class="dl"><a href="examples/switch/index.html?explore" target="_blank">Viewer</a><a href="https://github.com/DiegoLopez0208/mechanism/releases/download/v0.1.0/switch.glb">GLB</a><a href="examples/switch/spec.js" target="_blank">spec.js</a></div></article>
-    <article class="card"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-s25-vs-s26.jpg" data-paper="out/s25-vs-s26.mp4" data-night="out/s25-vs-s26-night.mp4"></video></div>
+    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-s25-vs-s26.jpg" data-paper="out/s25-vs-s26.mp4" data-night="out/s25-vs-s26-night.mp4"></video><div class="shine"></div></div>
       <h3>Galaxy S25 Ultra vs S26 Ultra</h3><span class="chip ok">Measured on official renders</span>
       <p>Five separate lens rings against one pill, titanium against aluminum, corners of 5.6 against 7 mm. Interiors are not drawn: no readable photo, and the film says so.</p>
       <div class="dl"><a href="examples/s25-vs-s26/index.html?explore" target="_blank">Viewer</a></div></article>
-    <article class="card"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-phones.jpg" data-paper="out/phones.mp4" data-night="out/phones-night.mp4"></video></div>
+    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-phones.jpg" data-paper="out/phones.mp4" data-night="out/phones-night.mp4"></video><div class="shine"></div></div>
       <h3>POCO X8 Pro Max vs S26 Ultra</h3><span class="chip ok">Interior measured</span>
       <p>Lenses, island and corners measured on official photos, and the POCO's interior measured on the maker's own spare-parts photos.</p>
       <div class="dl"><a href="examples/phones/index.html?explore" target="_blank">Viewer</a></div></article>
-    <article class="card"><div class="stage"><img alt="Raspberry Pi 4 Model B" loading="lazy" src="docs/media/poster-rpi4.jpg"></div>
+    <article class="card rv"><div class="stage"><img alt="Raspberry Pi 4 Model B" loading="lazy" src="docs/media/poster-rpi4.jpg"><div class="shine"></div></div>
       <h3>Raspberry Pi 4 Model B</h3><span class="chip plain">Viewer</span>
       <p>Every outline traced from the official datasheet drawing, the pinout from its figure 3.</p>
       <div class="dl"><a href="examples/rpi4/index.html?explore" target="_blank">Open the viewer</a></div></article>
   </div>
 </div></section>
 
+<section id="touch"><div class="wrap live3d">
+  <div class="rv">
+    <div class="eyebrow">Touch it</div>
+    <h2 style="margin-top:14px">Do not watch it. Take it apart.</h2>
+    <p>Every example is also a live three.js viewer: orbit, explode, measure, run the mechanism. Type on the Enigma and it enciphers with the published rules.</p>
+    <div class="pick" id="pick"><button class="on" data-v="enigma">Enigma</button><button data-v="rubik">Rubik</button><button data-v="k20a">K20A</button><button data-v="hub">Hub</button></div>
+  </div>
+  <div class="viewer rv" id="viewer"><div class="poster" id="vposter"><img id="vimg" src="docs/media/poster-enigma.jpg" alt=""><b>Load the live viewer</b></div></div>
+</div></section>
+
 <section id="how"><div class="wrap">
-  <div class="head"><h2>It looks things up before it draws anything.</h2><p>The skill's job is evidence. The engine and the sound are built to serve it.</p></div>
-  <div class="steps">
+  <div class="head rv"><h2>It looks things up before it draws anything.</h2><p>The skill's job is evidence. The engine and the sound are built to serve it.</p></div>
+  <div class="steps rv">
     <div class="step"><h3>Research</h3><p>Spec sheets, teardowns, official photos, published test vectors. It opens the pages and the pictures.</p></div>
     <div class="step"><h3>Spec</h3><p>Parts with real dimensions, the evidence behind each number, and how it moves.</p></div>
     <div class="step"><h3>Gate</h3><p>Sources, cross-checks, centre distances, published ratios and test vectors. Wrong specs stop here.</p></div>
     <div class="step"><h3>Render</h3><p>Camera, sound and panels are directed from the spec: a film, a viewer and a 3D model.</p></div>
   </div>
-  <div class="two">
+  <div class="two rv">
     <div class="code"><span class="c">// a part, with the evidence it stands on</span>
 { id: <b>'ring'</b>, kind: 'ring', p: { m: 0.8, z: 60, ro: 27.4, width: 8 },
   conf: <b>'derived'</b>, claims: ['teeth', 'formula'] }
@@ -182,12 +273,11 @@ footer a { border-bottom:1px solid var(--line); }
 mode Gear 3: 1.3333, published 1.3333 ok
 PASSES
 
-<span class="c"># change one planet to 21 teeth, the claim to 150 %</span>
-<i>ERROR</i> centre distance ring-p1: 16.400 mm, needs 15.600 mm
-<i>ERROR</i> mode Gear 3: the model gives 1.3333, published 1.5
+<span class="c"># change one planet to 21 teeth</span>
+<i>ERROR</i> centre distance ring-p1: 16.400 mm, the geometry needs 15.600 mm (and the same module)
 <i>DOES NOT PASS</i></div>
   </div>
-  <div class="legend">
+  <div class="legend rv">
     <div><span class="tag t-spec">spec</span><p>Published by the maker or a datasheet.</p></div>
     <div><span class="tag t-measured">measured</span><p>Measured on an official photo, scale from a published size, error stated.</p></div>
     <div><span class="tag t-derived">derived</span><p>A formula plus a cross-check against another published number.</p></div>
@@ -196,8 +286,8 @@ PASSES
 </div></section>
 
 <section id="install"><div class="wrap">
-  <div class="head"><h2>Use it as a Claude Code skill.</h2><p>Clone it into your skills folder and ask for an exploded view of something real. Needs Node 22+, Edge or Chrome, and ffmpeg.</p></div>
-  <div class="two">
+  <div class="head rv"><h2>Use it as a Claude Code skill.</h2><p>Clone it into your skills folder and ask for an exploded view of something real. Needs Node 22+, Edge or Chrome, and ffmpeg.</p></div>
+  <div class="two rv">
     <div class="code"><button class="copy" data-copy="git clone https://github.com/DiegoLopez0208/mechanism ~/.claude/skills/mechanism">Copy</button><span class="c"># macOS / Linux</span>
 git clone https://github.com/DiegoLopez0208/mechanism \
   ~/.claude/skills/mechanism
@@ -217,20 +307,58 @@ node scripts/render.mjs examples/my-object/index.html</div>
 </div></section>
 
 <section id="next"><div class="wrap">
-  <div class="head"><h2>Next on the bench.</h2><p>Objects whose numbers can be computed and checked against what is published.</p></div>
-  <div class="road"><span>4-cylinder engine, firing order and sound</span><span>Rubik's cube, 20-move superflip</span><span>MOS 6502, cycle-exact</span><span>RTX 4090, cores x clock = TFLOPS</span><span>Pin-tumbler lock, 6^5 keys</span><span>Bicycle drivetrain</span></div>
+  <div class="head rv"><h2>On the bench.</h2><p>Objects whose numbers can be computed and checked against what is published.</p></div>
+  <div class="road rv"><span class="done">Enigma I</span><span class="done">Rubik's cube, 20-move superflip</span><span class="done">4-cylinder engine, firing order and sound</span><span class="done">Three-speed hub</span><span class="done">Key switch</span><span>MOS 6502, cycle-exact</span><span>RTX 4090, cores x clock = TFLOPS</span><span>Pin-tumbler lock, 6^5 keys</span><span>Bicycle drivetrain</span></div>
 </div></section>
 
-<footer><div class="wrap"><span>mechanism, MIT. three.js, no samples: all sound is synthesised.</span><span><a href="https://github.com/DiegoLopez0208/mechanism" target="_blank" rel="noopener">github.com/DiegoLopez0208/mechanism</a></span></div></footer>
+<footer><div class="wrap"><span>mechanism, MIT. three.js. Sound from CC0 recordings (see THIRD_PARTY.md).</span><span><a href="https://github.com/DiegoLopez0208/mechanism" target="_blank" rel="noopener">github.com/DiegoLopez0208/mechanism</a></span></div></footer>
 
+<script src="kit/vendor/three.bundle.js"></script>
+<script src="kit/gl.js"></script>
+<script src="kit/parts.js"></script>
+<script src="kit/kin.js"></script>
+<script src="kit/cube.js"></script>
+<script src="kit/spec-core.js"></script>
+<script src="examples/hub/spec.js"></script>
+<script src="docs/hero.js" defer></script>
 <script>
 (function () {
-  const root = document.documentElement, btn = document.getElementById('theme');
-  const vurl = (p) => (location.protocol === 'file:' ? p : 'docs/media/video/' + p.split('/').pop());      // desde el disco: los renders completos de out/; en la web: copias de 720p
+  const root = document.documentElement, btn = document.getElementById('theme'), file = location.protocol === 'file:';
+  const vurl = (p) => (file ? p : 'docs/media/video/' + p.split('/').pop());      // from disk: the full renders in out/; on the web: 720p copies
   const setVideo = (v) => { const src = vurl(v.dataset[root.dataset.theme] || v.dataset.paper), was = v.currentTime, playing = !v.paused; if (!v.src.endsWith(src)) { v.src = src; v.addEventListener('loadedmetadata', function f() { v.currentTime = was || 0; if (playing) v.play().catch(() => {}); v.removeEventListener('loadedmetadata', f); }); } };
-  const apply = (t) => { root.dataset.theme = t; btn.textContent = t === 'night' ? 'Paper' : 'Night'; try { localStorage.setItem('mx-theme', t); } catch (e) {} document.querySelectorAll('video[data-paper]').forEach(setVideo); };
+  const apply = (t) => { root.dataset.theme = t; btn.textContent = t === 'night' ? 'Paper' : 'Night'; try { localStorage.setItem('mx-theme', t); } catch (e) {} document.querySelectorAll('video[data-paper]').forEach(setVideo); if (window.heroTheme) window.heroTheme(t); loadViewer(false); };
   btn.addEventListener('click', () => apply(root.dataset.theme === 'night' ? 'paper' : 'night'));
   document.querySelectorAll('.copy').forEach((b) => b.addEventListener('click', () => { navigator.clipboard.writeText(b.dataset.copy).then(() => { b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy'; }, 1400); }).catch(() => {}); }));
+
+  // reveal on scroll
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: 0.12 });
+  document.querySelectorAll('.rv').forEach((el, i) => { el.style.transitionDelay = (i % 3) * 90 + 'ms'; io.observe(el); });
+
+  // 3D tilt on the film cards
+  document.querySelectorAll('.card .stage').forEach((s) => {
+    s.addEventListener('pointermove', (e) => { const r = s.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height; s.style.transform = 'rotateY(' + ((x - 0.5) * 7).toFixed(2) + 'deg) rotateX(' + ((0.5 - y) * 6).toFixed(2) + 'deg) translateZ(0)'; s.style.setProperty('--mx', x * 100 + '%'); s.style.setProperty('--my', y * 100 + '%'); });
+    s.addEventListener('pointerleave', () => { s.style.transform = ''; });
+  });
+
+  // the gate, typed. The lines are real output of node scripts/check-spec.mjs
+  const RUNS = {
+    rubik: ['<span class="cmd">$ node scripts/check-spec.mjs examples/rubik/spec.js</span>', "Rubik's Cube  (rubik)", 'parts: 26   claims: 9   sources: 2', 'cube: 26 cubies', "  phase R U R' U' x 6: 6 (24 turns)", '  phase Longest period: 1260 (10 turns)  published 1,260  <span class=ok>ok</span>', '  phase Superflip: 20 moves (20 turns)  published 20 moves  <span class=ok>ok</span>', '  phase Positions: 43,252,003,274,489,856,000 (0 turns)  published 43,252,003,274,489,856,000  <span class=ok>ok</span>', '', '<span class="ok">PASSES</span>'],
+    k20a: ['<span class="cmd">$ node scripts/check-spec.mjs examples/k20a/spec.js</span>', 'Honda K20A  (k20a)', 'parts: 35   claims: 9   sources: 4', 'engine: 4 cylinders, displacement 1998.2 cc, rod / crank radius 3.23, implied compression height 30.02 mm, order 1-3-4-2', '  phase Displacement: 1998.2  published 1,998 cc  <span class=ok>ok</span>', '  phase Firing order: 1-3-4-2  published 1-3-4-2  <span class=ok>ok</span>', '', '<span class="ok">PASSES</span>'],
+    hub: ['<span class="cmd">$ node scripts/check-spec.mjs examples/hub/spec.js</span>', 'Three-speed hub  (hub)', '  centres ring-p1: 16.000 mm (required 16.000)  <span class=ok>ok</span>', '  mode Gear 1: 0.7500  published 0.75  <span class=ok>ok</span>', '  mode Gear 2: 1.0000  published 1.0  <span class=ok>ok</span>', '  mode Gear 3: 1.3333  published 1.3333  <span class=ok>ok</span>', '', '<span class="ok">PASSES</span>'],
+    bad: ['<span class="cmd">$ node scripts/check-spec.mjs examples/k20a/spec.js</span>   <span class="dim"># firing order changed to 1-2-3-4</span>', 'Honda K20A  (k20a)', '<span class="bad">ERROR</span>  firing order 1-2-3-4: cylinder 3 would have to fire at 360 degrees and its crank throw is at 180 (not possible with that crankshaft)', '<span class="bad">ERROR</span>  firing order 1-2-3-4: cylinder 4 would have to fire at 540 degrees and its crank throw is at 0 (not possible with that crankshaft)', '<span class="bad">ERROR</span>  phase Firing order: the model gives 1-2-3-4 and the published one is 1-3-4-2', '', '<span class="bad">DOES NOT PASS: 3 error(s)</span>']
+  };
+  const out = document.getElementById('termout'); let timer = null;
+  const play = (k) => { clearTimeout(timer); out.innerHTML = ''; const lines = RUNS[k]; let i = 0; const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const step = () => { const old = out.querySelector('.cur'); if (old) old.remove(); if (i >= lines.length) { out.insertAdjacentHTML('beforeend', '<span class="cur"></span>'); return; } out.insertAdjacentHTML('beforeend', lines[i] + '\n'); i++; out.insertAdjacentHTML('beforeend', '<span class="cur"></span>'); timer = setTimeout(step, reduced ? 0 : i === 1 ? 520 : 170); }; step(); };
+  document.querySelectorAll('#term .tabs button').forEach((b) => b.addEventListener('click', () => { document.querySelectorAll('#term .tabs button').forEach((x) => x.classList.toggle('on', x === b)); play(b.dataset.t); }));
+  let started = false; new IntersectionObserver((es) => { if (es[0].isIntersecting && !started) { started = true; play('rubik'); } }, { threshold: 0.35 }).observe(document.getElementById('term'));
+
+  // live viewers: an iframe on demand
+  let which = 'enigma', loaded = false; const viewer = document.getElementById('viewer'), poster = document.getElementById('vposter'), vimg = document.getElementById('vimg');
+  function loadViewer(force) { if (!loaded && !force) return; loaded = true; let f = viewer.querySelector('iframe'); if (!f) { f = document.createElement('iframe'); f.title = 'Live 3D viewer'; f.allow = 'fullscreen'; viewer.appendChild(f); } if (poster) poster.style.display = 'none'; f.src = 'examples/' + which + '/index.html?explore&theme=' + root.dataset.theme; }
+  poster.addEventListener('click', () => loadViewer(true));
+  document.querySelectorAll('#pick button').forEach((b) => b.addEventListener('click', () => { which = b.dataset.v; document.querySelectorAll('#pick button').forEach((x) => x.classList.toggle('on', x === b)); vimg.src = 'docs/media/poster-' + which + '.jpg'; if (loaded) loadViewer(true); }));
+
   let saved = null; try { saved = localStorage.getItem('mx-theme'); } catch (e) {}
   apply(saved || (matchMedia('(prefers-color-scheme: dark)').matches ? 'night' : 'paper'));
 })();
