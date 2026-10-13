@@ -6,7 +6,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/gate.test.mjs",
+    "test": "node --test tests/gate.test.mjs tests/kit.test.mjs",
     "check": "node scripts/check-spec.mjs"
   },
   "engines": { "node": ">=20" }

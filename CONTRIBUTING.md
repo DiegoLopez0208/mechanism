@@ -7,7 +7,7 @@ The one rule: **a number that is not traceable does not ship.** A change is good
 Node 22+ and a Chromium browser (Edge or Chrome) are enough to check and preview. ffmpeg is needed only to render videos. No install step: the kit is plain files.
 
 ```
-npm test                                          # regression tests for the gate
+npm test                                          # gate regression tests + the DEFLATE and RAR5 models against zlib
 node scripts/check-spec.mjs examples/hub/spec.js  # one example's gate
 node scripts/stranger.mjs rubik                   # label-free still for the stranger test
 ```
