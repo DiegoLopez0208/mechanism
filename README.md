@@ -180,6 +180,10 @@ Real recordings, not synthesis: keys, metal, glass, plastic and rubber impacts (
 
 pin-tumbler lock (6^5 keys), bicycle drivetrain. The rule is the same for all: numbers that can be computed and checked against what is published.
 
+## Inspiration
+
+[Anatomy](https://github.com/wheresryan22/anatomy) showed that an agent skill can explain something by building it as an interactive physical object, and its "Fig N" card is where ours started. `mechanism` goes the other way: not ideas explained with a metaphor but real objects, with every number traced to a source, a gate that refuses to render when the model contradicts what is published, and films with sound and 3D files as outputs.
+
 ## License
 
 MIT. three.js, Inter and Cormorant Garamond are bundled under their own licenses, and the sound samples are CC0: see [THIRD_PARTY.md](THIRD_PARTY.md). Product names identify the objects modelled and belong to their owners; their photos and datasheets are not redistributed.
