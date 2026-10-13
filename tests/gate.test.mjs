@@ -166,3 +166,29 @@ test('lock: changing one published key pin height breaks the stack check', () =>
     assert.ok(r.errors.some((e) => /Pin plus cut|The right key|Key pin step/.test(e)), r.errors.join('; '));
   } finally { fs.rmSync(tmp, { force: true }); }
 });
+
+test('a check that only converts units is reported, and is not evidence by itself', () => {
+  const conv = (spec) => { spec.mechanism.calc.vars.x = { v: 10.05, claim: 'c1' }; spec.mechanism.drive.modes = [{ id: 'm', label: 'depth in mm', expr: 'x * 25.4', digits: 2, publish: { value: 255.27, tol: 0.05, claim: 'c1' } }]; };
+  const r = mutate(conv);
+  assert.equal(r.errors.length, 0, r.errors.join('; '));
+  assert.equal(r.verdict.state, 'ONLY CONVERSIONS');
+  assert.equal(r.verdict.conversions, 1);
+  assert.equal(r.verdict.checked, 0);
+  assert.ok(r.warnings.some((w) => /unit conversion/.test(w)));
+  // declared by hand
+  const r2 = mutate((s) => { s.mechanism.drive.modes[0].kind = 'convert'; });
+  assert.equal(r2.verdict.state, 'ONLY CONVERSIONS');
+  // one real check next to a conversion: VERIFIED, with the conversion not counted
+  const r3 = mutate((s) => { conv(s); s.mechanism.drive.modes.push({ id: 'k', label: 'three', expr: 'x - x + 3', publish: { value: 3, claim: 'c1' } }); });
+  assert.equal(r3.verdict.state, 'VERIFIED');
+  assert.equal(r3.verdict.checked, 1);
+  assert.equal(r3.verdict.conversions, 1);
+});
+
+test('calc expressions can use sqrt, abs, min, max and PI without the Math prefix', () => {
+  const r = mutate((s) => { s.mechanism.drive.modes[0].expr = 'sqrt(x * 3) + abs(-2) + max(1, 2) + min(5, 4) - 2 - 2 - 4 + PI - PI'; s.mechanism.drive.modes[0].publish = { value: 3, tol: 0.001, claim: 'c1' }; });
+  assert.equal(r.errors.length, 0, r.errors.join('; '));
+  assert.equal(r.verdict.state, 'VERIFIED');
+  const keep = mutate((s) => { s.mechanism.calc.vars.max = { v: 3, claim: 'c1' }; s.mechanism.drive.modes[0].expr = 'max'; });
+  assert.equal(keep.errors.length, 0, 'a variable named like a Math function keeps its own meaning: ' + keep.errors.join('; '));
+});

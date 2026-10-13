@@ -168,9 +168,9 @@
     const VROWS = (() => {
       const r = [];
       (an.enigmaTests || []).forEach((t, i) => { const T0 = (M && M.enigma && M.enigma.tests[i]) || {}; r.push({ label: t.id, pub: t.expect || (T0.windows || []).join(' '), got: t.expect ? t.got : (T0.windows || []).join(' '), ok: t.ok }); });
-      if (!r.length) an.modes.forEach((m) => { if (m.publish) r.push({ label: m.label, pub: String(m.publish.text != null ? m.publish.text : m.publish.value != null ? m.publish.value : m.publish.length + ' moves'), got: m.text != null && m.text !== '' ? String(m.text) : m.ratio != null ? String(Math.round(m.ratio * 10000) / 10000) : '', ok: m.ok }); });
+      if (!r.length) an.modes.forEach((m) => { if (m.publish) r.push({ conv: !!m.conv, label: m.label, pub: String(m.publish.text != null ? m.publish.text : m.publish.value != null ? m.publish.value : m.publish.length + ' moves'), got: m.text != null && m.text !== '' ? String(m.text) : m.ratio != null ? String(Math.round(m.ratio * 10000) / 10000) : '', ok: m.ok }); });
       return r;
-    })(), VOK = VROWS.every((r) => r.ok !== false), VPEND = VROWS.filter((r) => r.ok == null).length, VSTAMP = !VOK ? 'DOES NOT PASS' : !VROWS.length ? 'NOTHING CHECKED' : VPEND ? 'INCOMPLETE' : 'VERIFIED';
+    })(), VOK = VROWS.every((r) => r.ok !== false), VPEND = VROWS.filter((r) => r.ok == null).length, VSTAMP = !VOK ? 'DOES NOT PASS' : !VROWS.length ? 'NOTHING CHECKED' : VPEND ? 'INCOMPLETE' : VROWS.every((q) => q.conv) ? 'ONLY CONVERSIONS' : 'VERIFIED';
     const MQ = ((CUBE && M.cube.quarter) || 0.34) * (SHORT ? 0.5 : 1), MH = ((CUBE && M.cube.half) || 0.5) * (SHORT ? 0.5 : 1), MG = SHORT ? 0.03 : 0.05, cubeDur = (r) => r.moves.reduce((s2, mv) => s2 + (mv.q === 2 ? MH : MQ) + MG, 0);
     const SR = STEPS ? M.steps.rate * (SHORT ? 2.6 : 1) : 1, keepSet = (() => {
       if (!SHORT || modes.length <= 3 || CUBE || ENIG) return null; const pick = dir.short && dir.short.modes, set = new Set();
@@ -380,7 +380,7 @@
         MX.A = a * ramp(t, pn.t0 + 0.3, pn.t0 + 0.7); MX.text('PUBLISHED', W - 380, 470, { size: 13, font: MX.MONO, color: T.mute, align: 'right', spacing: 2.4 }); MX.text('MODEL', W - 130, 470, { size: 13, font: MX.MONO, color: T.mute, align: 'right', spacing: 2.4 }); MX.A = a;
         const sy = 520 + rows.length * 70 + 60, as = a * ramp(t, pn.t0 + 0.8 + rows.length * 0.28, pn.t0 + 1.4 + rows.length * 0.28), sc = 1 + 0.35 * (1 - ramp(t, pn.t0 + 0.8 + rows.length * 0.28, pn.t0 + 1.3 + rows.length * 0.28)), stamp = VSTAMP, scol = stamp === 'VERIFIED' ? T.teal : stamp === 'DOES NOT PASS' ? T.ember : T.gold || T.mute;
         c.save(); c.globalAlpha = as; c.translate(W / 2, sy + 30); c.rotate(-0.07); c.scale(sc, sc); c.strokeStyle = scol; c.lineWidth = 5; c.strokeRect(-250, -52, 500, 104); c.lineWidth = 1.5; c.strokeRect(-258, -60, 516, 120); c.restore();
-        MX.A = as; c.save(); c.translate(W / 2, sy + 30); c.rotate(-0.07); c.scale(sc, sc); MX.text(stamp, 0, 20, { size: 64, font: MX.MONO, w: 800, color: scol, align: 'center', spacing: 4 }); c.restore();
+        MX.A = as; c.save(); c.translate(W / 2, sy + 30); c.rotate(-0.07); c.scale(sc, sc); MX.text(stamp, 0, 20, { size: stamp.length > 12 ? 42 : 64, font: MX.MONO, w: 800, color: scol, align: 'center', spacing: 4 }); c.restore();
         MX.A = a * ramp(t, pn.t0 + 2.4, pn.t0 + 3.2); MX.text(rows.filter((r) => r.ok === true).length + ' of ' + rows.length + ' published figures reproduced' + (VPEND ? ', ' + VPEND + ' unchecked' : '') + '   -   ' + nSpec + ' published claims', 86, sy + 140, { size: 18, font: MX.MONO, color: T.mute }); MX.text(nEst + ' estimated, drawn dashed   -   ' + sources.length + ' sources opened', 86, sy + 174, { size: 18, font: MX.MONO, color: T.mute }); MX.A = a;
         H2.endPanel(); return;
       }

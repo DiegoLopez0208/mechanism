@@ -103,17 +103,20 @@
 
   // Cuentas: cada fase evalua una expresion sobre variables declaradas (cada una con su afirmacion) y la compara con el numero publicado.
   // Sirve para cualquier producto cuya ficha publique una cifra que sale de otras (TFLOPS = nucleos x 2 x reloj, ancho de banda = bus x velocidad / 8).
+  // the Math functions an expression may use without the Math. prefix, and the unit factors that mark a check as a mere conversion
+  const MATHFN = ['sqrt', 'abs', 'min', 'max', 'pow', 'round', 'floor', 'ceil', 'log', 'log10', 'exp', 'sin', 'cos', 'tan', 'atan', 'atan2', 'hypot', 'PI'], UNIT_RE = /(^|[^0-9.])(25[.]4|2[.]54|0[.]0254|0[.]3048|0[.]4535|2[.]2046|1[.]6093|0[.]6213|3[.]2808|39[.]37)([^0-9]|$)/;
+  const isConversion = (m) => m.kind === 'convert' || (m.kind == null && UNIT_RE.test(String(m.expr || '')));
   function analyzeCalc(M, out) {
     const cc = M.calc, V = cc.vars || {}, names = Object.keys(V), vals = names.map((k) => (V[k] !== null && typeof V[k] === 'object' ? V[k].v : V[k]));
     out.calc = { vars: V };
     ((M.drive && M.drive.modes) || []).forEach((m) => {
-      let val = null; try { val = new Function(...names, 'return (' + m.expr + ');')(...vals); } catch (e) { out.problems.push('phase ' + m.label + ': cannot evaluate ' + m.expr + ' (' + e.message + ')'); }
+      let val = null; try { const hn = MATHFN.filter((k) => !names.includes(k)); val = new Function(...hn, ...names, 'return (' + m.expr + ');')(...hn.map((k) => Math[k]), ...vals); } catch (e) { out.problems.push('phase ' + m.label + ': cannot evaluate ' + m.expr + ' (' + e.message + ')'); }
       if (val == null || (typeof val === 'number' && !isFinite(val))) out.problems.push('phase ' + m.label + ': the expression gives ' + String(val) + ', not a finite number or text');
       if (m.publish && !(m.publish.text != null || (typeof m.publish.value === 'number' && isFinite(m.publish.value)))) out.problems.push('phase ' + m.label + ': the published figure has neither a text nor a finite value');
       if (m.publish && m.publish.tol != null && !(typeof m.publish.tol === 'number' && isFinite(m.publish.tol) && m.publish.tol >= 0)) out.problems.push('phase ' + m.label + ': invalid tolerance (' + m.publish.tol + ')');
       const d = m.digits == null ? 2 : m.digits, pub = m.publish, isS = typeof val === 'string', text = val == null ? '' : isS ? val : val.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
       const ok = !pub || val == null ? null : isS ? val === pub.text : Math.abs(val - pub.value) <= (pub.tol == null ? Math.abs(pub.value) * 0.005 : pub.tol);
-      out.modes.push({ id: m.id, label: m.label, ratio: val, text, publish: pub || null, ok, used: (m.expr.match(/[A-Za-z_][A-Za-z0-9_]*/g) || []).filter((k, i, a) => k in V && a.indexOf(k) === i) });
+      out.modes.push({ id: m.id, label: m.label, ratio: val, text, publish: pub || null, ok, conv: isConversion(m), used: (m.expr.match(/[A-Za-z_][A-Za-z0-9_]*/g) || []).filter((k, i, a) => k in V && a.indexOf(k) === i) });
       if (ok === false) out.problems.push('phase ' + m.label + ': the model gives ' + text + ' and the published one is ' + (pub.text != null ? pub.text : pub.value));
     });
   }
@@ -234,12 +237,13 @@
     if (an.calc) { lines.push('calc: ' + Object.keys(an.calc.vars).length + ' variables'); an.modes.forEach((m) => lines.push('  phase ' + m.label + ': ' + m.text + (m.publish ? '  published ' + (m.publish.text != null ? m.publish.text : m.publish.value) + (m.ok ? '  ok' : '  MISMATCH') : ''))); }
     if (an.press) { lines.push('press: travel ' + an.press.travel + ' mm, actuation ' + an.press.actuation + ' mm' + (an.press.predictedFinal ? '; a linear spring would give ' + an.press.predictedFinal.toFixed(1) + ' at the end, published ' + an.press.publishedFinal + (an.press.consistent ? '  ok' : '  NOT LINEAR (the spec states its own reading of why; it is not a claim by the maker)') : '')); an.modes.forEach((m) => lines.push('  phase ' + m.label + ': ' + m.ratio + (m.publish ? '  published ' + m.publish.value + (m.ok ? '  ok' : '  MISMATCH') : ''))); }
     if (an.K) { lines.push('mechanism: residual ' + an.K.residual.toExponential(1)); an.centers.forEach((c) => lines.push('  centres ' + c.a + '-' + c.b + ': ' + c.dist.toFixed(3) + ' mm (required ' + c.need.toFixed(3) + ')  ' + (c.ok ? 'ok' : 'MISMATCH'))); an.modes.forEach((m) => lines.push('  mode ' + m.label + ': ' + m.ratio.toFixed(4) + (m.publish ? '  published ' + m.publish.value + (m.ok ? '  ok' : '  MISMATCH') : ''))); }
-    const rowsV = (an.enigmaTests || []).length ? an.enigmaTests.map((t) => t.ok) : an.modes.filter((m) => m.publish).map((m) => m.ok), checked = rowsV.filter((o) => o === true).length + paramRows.length, failed = rowsV.filter((o) => o === false).length, pending = rowsV.filter((o) => o !== true && o !== false).length;
-    const estimated = (R.claims || []).filter((c) => c.conf === 'estimated').length, verdict = { state: errors.length ? 'DOES NOT PASS' : !checked ? 'NOTHING CHECKED' : pending ? 'INCOMPLETE' : 'VERIFIED', checked, failed, pending, estimated, dimensions: paramRows.length, mixed: mixed.length, recognition: recog, claims: (R.claims || []).length, sources: (R.sources || []).length, parts: spec.parts.length };
-    if (!errors.length && !checked) warnings.push('no published figure is compared with the model: this is a description, not a verification');
+    const modesV = (an.enigmaTests || []).length ? an.enigmaTests.map((t) => ({ ok: t.ok })) : an.modes.filter((m) => m.publish), rowsV = modesV.map((m) => m.ok), conversions = modesV.filter((m) => m.ok === true && m.conv).length, checked = modesV.filter((m) => m.ok === true && !m.conv).length + paramRows.length, failed = rowsV.filter((o) => o === false).length, pending = rowsV.filter((o) => o !== true && o !== false).length;
+    const estimated = (R.claims || []).filter((c) => c.conf === 'estimated').length, verdict = { state: errors.length ? 'DOES NOT PASS' : !checked ? (conversions ? 'ONLY CONVERSIONS' : 'NOTHING CHECKED') : pending ? 'INCOMPLETE' : 'VERIFIED', checked, conversions, failed, pending, estimated, dimensions: paramRows.length, mixed: mixed.length, recognition: recog, claims: (R.claims || []).length, sources: (R.sources || []).length, parts: spec.parts.length };
+    if (!errors.length && !checked) warnings.push(conversions ? 'every check is a unit conversion (inch to mm, pound to kg): it cannot fail, so it is not evidence. Compare the drawn model with a figure the sheet gives in another way, or cross two sources (mark a real conversion with kind: "convert")' : 'no published figure is compared with the model: this is a description, not a verification');
+    if (!errors.length && checked && conversions) warnings.push(conversions + ' of the checks are unit conversions and do not count as evidence');
     if (paramRows.length || mixed.length) lines.push('dimensions: ' + paramRows.length + ' compared with their source, ' + mixed.length + ' part(s) mix sourced and estimated dimensions');
     lines.push('recognisable: ' + (recog.declared ? recog.features + ' iconic features built, blind test ' + recog.blind : 'not declared'));
-    lines.push('verdict: ' + verdict.state + '   ' + checked + ' reproduced, ' + estimated + ' estimated, ' + pending + ' unchecked');
+    lines.push('verdict: ' + verdict.state + '   ' + checked + ' reproduced' + (conversions ? ' (+' + conversions + ' unit conversions, not counted)' : '') + ', ' + estimated + ' estimated, ' + pending + ' unchecked');
     return { errors, warnings, lines, analysis: an, verdict };
   };
 })(typeof window !== 'undefined' ? window : globalThis);
