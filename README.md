@@ -3,6 +3,7 @@
 **Model a real object exactly, take it apart, film it.** A skill for coding agents that researches a real product or machine, writes a spec where every number says where it came from, and renders a narrated film with designed sound, an interactive viewer and a 3D model.
 
 <p align="center"><img src="docs/media/enigma.gif" width="520" alt="Enigma I: the signal travelling through the rotors, checked against the published test vector"></p>
+<p align="center"><img src="docs/media/k20a.gif" width="260" alt="Honda K20A engine, firing order 1-3-4-2"> <img src="docs/media/rubik.gif" width="260" alt="Rubik cube, 20-move superflip"></p>
 <p align="center"><img src="docs/media/hub.gif" width="260" alt="Three-speed hub"> <img src="docs/media/switch.gif" width="260" alt="Cherry MX2A Red key switch"> <img src="docs/media/s25-vs-s26.gif" width="260" alt="Galaxy S25 Ultra vs S26 Ultra"></p>
 
 It does not draw what it can look up wrong. It searches, downloads the pictures and looks at them, measures them, cross-checks every derived number against a second published one, and labels the result:
@@ -46,6 +47,8 @@ It fails (exit 1) when a number has no source, a DERIVED claim has no cross-chec
 | | What it shows |
 |---|---|
 | `examples/enigma` | The Enigma I rotor stack. The wiring, notches and stepping are simulated and must reproduce the published tests: `AAAAA` becomes `BDZGO`, with rings BBB `EWTYX`, and the middle rotor double-steps `ADU > ADV > AEW > BFX`. The signal lights its path through the contacts; in the viewer you type on your keyboard. |
+| `examples/rubik` | The cube as 26 pieces that really turn. The 20-move superflip must flip all 12 edges and leave the corners alone, the longest period must come out at 1,260 and the positions at 43,252,003,274,489,856,000, all read off the model. |
+| `examples/k20a` | Honda K20A: an inline four with 16 valves. A crank-slider with exact kinematics; the displacement is computed from the bore and stroke (1,998 cc published), and the published firing order 1-3-4-2 must be possible with the crank (1-2-3-4 is rejected). The connecting rod and the valve timing are not published and are drawn dashed. |
 | `examples/hub` | Three-speed planetary hub (Sturmey-Archer AW type). The running model gives 0.75, 1.00 and 1.333 against the published 75, 100 and 133 %. Tooth counts are derived from a forum post and cross-checked, sizes are estimated. |
 | `examples/switch` | Cherry MX2A Red key switch: a press, not gears. The datasheet's three force points (30, 45, 100 cN) cannot come from one linear spring, and the film plots that instead of hiding it. |
 | `examples/s25-vs-s26` | Galaxy S25 Ultra against S26 Ultra at the same scale, measured on the official renders (five separate lens rings against one pill, titanium against aluminum, corners 5.6 against 7 mm). Interiors are not drawn: no readable photo, so the film says so. |
@@ -91,11 +94,12 @@ To make a new one, copy `examples/hub`, write the research into `spec.js`, and r
 | `kit/kin.js` | Gear-train kinematics (Willis relations), tooth phase so the teeth really interleave, centre-distance and assembly checks. Pure: runs in Node. |
 | `kit/spec-core.js`, `kit/spec.js` | Validate a spec; compile it to scene, director, panels and sound. |
 | `kit/gl.js`, `kit/figure.js` | three.js stage (physical materials, glass, depth of field, ambient occlusion, bloom) and the figure engine. |
-| `kit/sound.js` | Sound synthesised per material and size, stereo, no samples. Tooth ticks are the real tooth passes of the running gears. |
+| `kit/sound.js`, `kit/samples.js` | Sound per material and size, stereo, built from CC0 recordings (keys, metal, glass, plastic impacts). Tooth ticks are the real tooth passes of the running gears; the engine fires in its real order. |
+| `kit/cube.js` | The Rubik cube as 26 cubies, pure: runs in Node and is checked against the published facts. |
 
 ## Limits, stated plainly
 
-- Mechanisms: gear trains (one degree of freedom), presses and slides, and rotor ciphers (Enigma). No cams or linkages yet.
+- Mechanisms: gear trains (one degree of freedom), presses and slides, rotor ciphers (Enigma), crank-slider engines and the Rubik cube. No general linkages or cam followers beyond the engine yet.
 - The hub's power path per mode is simplified: pawls and clutch are not modelled, and the film says so.
 - Interiors need photos or drawings. Without them they are estimated and dashed.
 - A single photo gives no millimetres: it needs a published size, a ruler or a datasheet.

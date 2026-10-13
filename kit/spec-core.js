@@ -17,7 +17,7 @@
 (function (g) {
   'use strict';
   const MX = (g.MX = g.MX || {}), S = (MX.spec = MX.spec || {});
-  const KINDS = ['gear', 'ring', 'sprocket', 'shaft', 'pin', 'disc', 'flange', 'tube', 'plate', 'bearing', 'spring', 'nut', 'bolt', 'box', 'block', 'cross', 'rotor', 'crankshaft', 'conrod', 'piston', 'engblock', 'camshaft', 'valve'];
+  const KINDS = ['gear', 'ring', 'sprocket', 'shaft', 'pin', 'disc', 'flange', 'tube', 'plate', 'bearing', 'spring', 'nut', 'bolt', 'box', 'block', 'cross', 'rotor', 'crankshaft', 'conrod', 'piston', 'engblock', 'camshaft', 'valve', 'cubie'];
   const CONFS = ['spec', 'measured', 'derived', 'estimated'];
   S.KINDS = KINDS; S.CONFS = CONFS;
   const teethOf = (d) => (d.kind === 'gear' || d.kind === 'ring' ? d.p.z : d.kind === 'sprocket' ? d.p.teeth : null);
@@ -83,6 +83,24 @@
     });
   }
 
+  // Cubo de Rubik: cada fase corre su secuencia sobre kit/cube.js (la geometria de 26 cubitos, sin tablas) y se compara con lo publicado:
+  // el periodo de una secuencia, el superflip (20 giros que dejan las 12 aristas dadas vuelta y las 8 esquinas en su sitio) y el numero de posiciones.
+  function analyzeCube(M, out) {
+    const cb = M.cube, C = MX.cube; if (!C) { out.problems.push('falta kit/cube.js'); return; }
+    const st = C.create(); out.cubeRuns = []; out.cube = { pieces: st.length };
+    if (cb.pieces != null && cb.pieces !== st.length) out.problems.push('el modelo tiene ' + st.length + ' cubitos y lo publicado es ' + cb.pieces);
+    ((M.drive && M.drive.modes) || []).forEach((m) => {
+      let moves = [], one = m.alg ? C.parse(m.alg) : []; for (let i = 0; i < (m.repeat || 1); i++) moves = moves.concat(one); if (m.back) moves = moves.concat(C.invert(moves));
+      C.run(st, moves); const cl = C.classify(st), pub = m.publish; let text = '', val = null, ok = null;
+      if (m.metric === 'order') { val = C.order(one, 5000); text = String(val); if (pub) ok = val === pub.value; }
+      else if (m.metric === 'superflip') { text = moves.length + ' moves'; if (pub) ok = cl.edgesInPlace === 12 && cl.edgesFlipped === 12 && cl.cornersInPlace === 8 && cl.cornersTwisted === 0 && moves.length === pub.length; }
+      else if (m.metric === 'positions') { text = C.positions().toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); if (pub) ok = text === pub.text; }
+      if (m.ends === 'solved' && !cl.solved) out.problems.push('fase ' + m.label + ': la secuencia tenia que dejar el cubo resuelto y no lo deja');
+      out.cubeRuns.push({ moves, state: cl }); out.modes.push({ id: m.id, label: m.label, ratio: val, text, publish: pub || null, ok });
+      if (ok === false) out.problems.push('fase ' + m.label + ': el modelo da ' + text + (m.metric === 'superflip' ? ' (' + cl.edgesFlipped + ' aristas dadas vuelta, ' + cl.cornersTwisted + ' esquinas torcidas)' : '') + ' y lo publicado es ' + (pub.text || pub.value || pub.length + ' moves'));
+    });
+  }
+
   // analisis del mecanismo: cinematica, fases de dientes, distancias entre centros, relaciones por modo
   S.analyze = (spec) => {
     const out = { problems: [], K: null, modes: [], phi: {}, meshes: [], centers: [] }, M = spec.mechanism;
@@ -90,6 +108,7 @@
     if (M.press) analyzePress(M, out);
     if (M.enigma) { analyzeEnigma(M, out); return out; }
     if (M.engine) { analyzeEngine(M, out); return out; }
+    if (M.cube) { analyzeCube(M, out); return out; }
     if (!M.links || !M.links.length) return out;
     const byBody = {}; spec.parts.forEach((d) => { const b = d.body || d.id; (byBody[b] = byBody[b] || []).push(d); });
     const gearOf = (b) => (byBody[b] || []).find((d) => teethOf(d)) || (byBody[b] || [])[0];
@@ -145,6 +164,7 @@
     CONFS.forEach((k) => lines.push('  ' + k.toUpperCase().padEnd(10) + ' piezas ' + spec.parts.filter((d) => d.conf === k).length + '   afirmaciones ' + (R.claims || []).filter((c) => c.conf === k).length));
     if (an.enigmaTests) { lines.push('enigma: pruebas publicadas'); an.enigmaTests.forEach((t) => lines.push('  ' + t.id + ': ' + t.got + (t.expect ? ' (publicado ' + t.expect + ')' : '') + (t.win ? ' ventanas ' + t.win : '') + (t.ok ? '  ok' : '  MAL'))); an.modes.forEach((m) => lines.push('  fase ' + m.label + ': ' + m.text + (m.publish ? '  publicado ' + m.publish.text + (m.ok ? '  ok' : '  MAL') : ''))); }
     if (an.engine) { const e = an.engine; lines.push('motor: ' + e.n + ' cilindros, cilindrada ' + e.displacement.toFixed(1) + ' cc, relacion biela/radio ' + e.rodRatio.toFixed(2) + (e.ch != null ? ', altura de compresion implicada ' + e.ch.toFixed(2) + ' mm' : '') + ', orden ' + e.firing); an.modes.forEach((m) => lines.push('  fase ' + m.label + ': ' + m.text + (m.publish ? '  publicado ' + (m.publish.text || m.publish.value) + (m.ok ? '  ok' : '  MAL') : ''))); }
+    if (an.cube) { lines.push('cubo: ' + an.cube.pieces + ' cubitos'); an.modes.forEach((m, i) => lines.push('  fase ' + m.label + ': ' + m.text + ' (' + an.cubeRuns[i].moves.length + ' giros)' + (m.publish ? '  publicado ' + (m.publish.text || m.publish.value || m.publish.length + ' moves') + (m.ok ? '  ok' : '  MAL') : ''))); }
     if (an.press) { lines.push('presion: recorrido ' + an.press.travel + ' mm, actuacion ' + an.press.actuation + ' mm' + (an.press.predictedFinal ? '; resorte lineal daria ' + an.press.predictedFinal.toFixed(1) + ' al final, publicado ' + an.press.publishedFinal + (an.press.consistent ? '  ok' : '  NO CIERRA (explicado)') : '')); an.modes.forEach((m) => lines.push('  fase ' + m.label + ': ' + m.ratio + (m.publish ? '  publicado ' + m.publish.value + (m.ok ? '  ok' : '  MAL') : ''))); }
     if (an.K) { lines.push('mecanismo: residuo ' + an.K.residual.toExponential(1)); an.centers.forEach((c) => lines.push('  centros ' + c.a + '-' + c.b + ': ' + c.dist.toFixed(3) + ' mm (exigido ' + c.need.toFixed(3) + ')  ' + (c.ok ? 'ok' : 'MAL'))); an.modes.forEach((m) => lines.push('  modo ' + m.label + ': ' + m.ratio.toFixed(4) + (m.publish ? '  publicado ' + m.publish.value + (m.ok ? '  ok' : '  MAL') : ''))); }
     return { errors, warnings, lines, analysis: an };

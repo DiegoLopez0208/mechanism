@@ -242,4 +242,17 @@
     const pts = [[0, -0.5], [o.headR * 0.9, 0], [o.headR, 1], [o.stemR * 1.7, 3.2], [o.stemR, 6], [o.stemR, o.len], [0, o.len]];
     return grp(new TH.Mesh(new TH.LatheGeometry(pts.map((p) => new TH.Vector2(p[0], p[1])), 28), dbl(o.mat || 'steel')), { kind: 'valve', headR: o.headR, len: o.len });
   };
+  /* ------------------------------------------------------------ cubito del cubo de Rubik: cuerpo de plastico negro con pegatinas */
+  // o: { s (lado), stickers: { '+x': '#hex', '-y': ... } }; pegatinas solo en las caras que dan al exterior
+  const stickerMats = {};
+  P.cubie = (o) => {
+    const gr = new TH.Group(), s = o.s, bv = s * 0.1, bs = s - 1.4 * bv, body = new TH.Mesh(extrude(rrect(bs, bs, s * 0.08), s, bv), P.mat('pom-black'));      // el bisel agranda el contorno 0.7 bv por lado: se descuenta para que el cubito mida s
+    gr.add(body);
+    const faces = { '+x': [0, Math.PI / 2, 0], '-x': [0, -Math.PI / 2, 0], '+y': [-Math.PI / 2, 0, 0], '-y': [Math.PI / 2, 0, 0], '+z': [0, 0, 0], '-z': [0, Math.PI, 0] };
+    Object.keys(o.stickers || {}).forEach((f) => {
+      const c = o.stickers[f], m = stickerMats[c] || (stickerMats[c] = G.mat(c, { metalness: 0, roughness: 0.38 })), st = new TH.Mesh(extrude(rrect(s * 0.84, s * 0.84, s * 0.12), 0.7, 0.15), m);
+      st.rotation.set(faces[f][0], faces[f][1], faces[f][2]); const n = f[0] === '+' ? 1 : -1, ax = f[1]; st.position[ax] = n * (s / 2 + 0.05); gr.add(st);
+    });
+    gr.userData = { kind: 'cubie', s }; return gr;
+  };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -13,7 +13,7 @@ const file = process.argv[2];
 if (!file) { console.error('uso: node scripts/check-spec.mjs <spec.js>'); process.exit(1); }
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ctx = vm.createContext({ console }); ctx.window = ctx;
-for (const f of ['kit/kin.js', 'kit/enigma.js', 'kit/spec-core.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
+for (const f of ['kit/kin.js', 'kit/enigma.js', 'kit/cube.js', 'kit/spec-core.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
 vm.runInContext(fs.readFileSync(path.resolve(file), 'utf8'), ctx, { filename: file });
 if (!ctx.SPEC) { console.error('el archivo no define window.SPEC'); process.exit(1); }
 const r = ctx.MX.spec.validate(ctx.SPEC);

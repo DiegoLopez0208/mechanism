@@ -55,7 +55,7 @@
     const V = S.validate(spec), an = V.analysis, explore = q.has('explore');
     V.errors.forEach((e) => console.error('SPEC: ' + e)); V.warnings.forEach((w) => console.warn('SPEC: ' + w));
     if (V.errors.length && !explore) { document.title = 'SPEC ERROR'; throw new Error('el spec no pasa la validacion:\n' + V.errors.join('\n')); }
-    const M = spec.mechanism || null, drive = (M && M.drive) || { modes: [], rpm: 30 }, modes = drive.modes || [], dir = spec.director || {}, PRESS = !!(M && M.press), ENIG = !!(M && M.enigma), ENGN = !!(M && M.engine), RAD = Math.PI / 180, UP = spec.up === 'z', ORI = spec.orient || (UP ? [-90, 0, 0] : null);
+    const M = spec.mechanism || null, drive = (M && M.drive) || { modes: [], rpm: 30 }, modes = drive.modes || [], dir = spec.director || {}, PRESS = !!(M && M.press), ENIG = !!(M && M.enigma), ENGN = !!(M && M.engine), CUBE = !!(M && M.cube), RAD = Math.PI / 180, UP = spec.up === 'z', ORI = spec.orient || (UP ? [-90, 0, 0] : null);
     const claims = (spec.research && spec.research.claims) || [], sources = (spec.research && spec.research.sources) || [], claimBy = Object.fromEntries(claims.map((c) => [c.id, c]));
 
     /* ---------------------------------------------------------- figura y piezas */
@@ -86,6 +86,13 @@
       else if (g.role === 'rod') { const y1 = EGE.pinY(r, l, a), y0 = EGE.pinY(r, l, a0); p.group.position.x += r * (Math.sin(a) - Math.sin(a0)) / 2; p.group.position.y += (r * Math.cos(a) + y1 - r * Math.cos(a0) - y0) / 2; p.group.rotation.z += EGE.rodAng(r, l, a) - EGE.rodAng(r, l, a0); }
       else if (g.role === 'valve') { const v = EGN.valves[g.valve]; p.group.position.y -= EGE.lift(EGE.phase(e.theta / RAD, AE.ign[k]), v.open, v.close, v.lift); }
     }
+    // Cubo de Rubik: cada cubito toma su posicion y su giro de kit/cube.js; durante un giro, la capa gira de verdad un angulo parcial
+    const CB = CUBE ? MX.cube : null, CPITCH = CUBE ? (M.cube.pitch || 18.67) : 0, CIDX = {}, cubeQ = new TH.Quaternion(), cubeM = new TH.Matrix4();
+    if (CUBE) CB.create().forEach((c, i) => { CIDX[c.home.join()] = i; });
+    function cubePose(d, p, frame) {
+      const c = frame[CIDX[d.cubie.join()]], h = d.cubie, R = c.R; p.group.position.x += (c.pos[0] - h[0]) * CPITCH; p.group.position.y += (c.pos[1] - h[1]) * CPITCH; p.group.position.z += (c.pos[2] - h[2]) * CPITCH;
+      cubeM.set(R[0], R[1], R[2], 0, R[3], R[4], R[5], 0, R[6], R[7], R[8], 0, 0, 0, 0, 1); cubeQ.setFromRotationMatrix(cubeM); p.group.quaternion.premultiply(cubeQ);
+    }
     const root = new TH.Group(); if (ORI) root.rotation.set(ORI[0] * Math.PI / 180, ORI[1] * Math.PI / 180, ORI[2] * Math.PI / 180); st.scene.add(root);          // up: 'z' -> el eje z del spec queda vertical
     spec.parts.forEach((d, i) => {
       const grp = P[d.kind](Object.assign({}, d.p, { mat: d.mat }, roleCfg(d.role), camCfg(d))), base = v3(S.startPos(d)); grp.userData.spec = d;
@@ -96,6 +103,7 @@
       part.pose = (s, p) => {
         const m = s.mech, pr = m && m.press ? m.press : 0;
         if (d.engine && m && m.eng) { engPose(d, p, m.eng); return; }
+        if (d.cubie && m && m.cube) { cubePose(d, p, m.cube); return; }
         if (d.slide) p.group.position[d.slide.axis || 'z'] += d.slide.k * pr;
         if (d.compress) p.group.scale.z = Math.max(0.12, 1 - pr / d.compress.free);
         if (!m) { p.group.rotation.z += phi; return; }
@@ -124,7 +132,20 @@
     const order = parts.slice().sort((a, b) => (a.spec.late ? 1 : 0) - (b.spec.late ? 1 : 0) || a.base.z - b.base.z || parts.indexOf(a) - parts.indexOf(b)), N = order.length, step = Math.min(0.3, 6.2 / N), arrive = {};
     order.forEach((p, i) => { arrive[p.id] = 0.9 + i * step; });
     const ASM_END = 0.9 + (N - 1) * step + 1.1, MD = dir.modeDur || 4.6, TD = dir.tourDur || 3.3, tM0 = ASM_END + 0.3, KD = dir.keyDur || 1.35, runs = an.enigmaRuns || [];
-    const mD = modes.map((m, k) => (ENIG ? 1.1 + (runs[k] ? runs[k].events.length : 1) * KD + 0.6 : MD)), mS = []; { let acc = tM0; mD.forEach((d) => { mS.push(acc); acc += d; }); }
+    const MQ = (CUBE && M.cube.quarter) || 0.34, MH = (CUBE && M.cube.half) || 0.5, MG = 0.05, cubeDur = (r) => r.moves.reduce((s2, mv) => s2 + (mv.q === 2 ? MH : MQ) + MG, 0);
+    const mD = modes.map((m, k) => (CUBE ? Math.max(4.5, 1.0 + cubeDur(an.cubeRuns[k]) + 1.5) : ENIG ? 1.1 + (runs[k] ? runs[k].events.length : 1) * KD + 0.6 : MD)), mS = []; { let acc = tM0; mD.forEach((d) => { mS.push(acc); acc += d; }); }
+    // cubo: la lista de giros con su tiempo, y el estado entero del cubo antes de cada uno
+    const CEV = [], CST = [];
+    if (CUBE) { const cur = CB.create(); an.cubeRuns.forEach((run, k) => { let t = mS[k] + 1.0; run.moves.forEach((mv) => { const d = mv.q === 2 ? MH : MQ; CST.push(CB.clone(cur)); CEV.push({ t0: t, t1: t + d, mv, k }); CB.turn(cur, mv); t += d + MG; }); }); CST.push(CB.clone(cur)); }
+    const cubeDone = (t) => { let i = 0; while (i < CEV.length && CEV[i].t1 <= t) i++; return i; };
+    const cubeFrame = (t) => {
+      let i = -1; for (let j = 0; j < CEV.length && CEV[j].t0 <= t; j++) i = j;
+      if (i < 0) return CST.length ? CST[0] : CB.create(); const ev = CEV[i]; if (t >= ev.t1) return CST[i + 1];
+      const u = E.sm((t - ev.t0) / (ev.t1 - ev.t0)), a = -ev.mv.q * Math.PI / 2 * u, cs = Math.cos(a), sn = Math.sin(a), nn = CB.FACES[ev.mv.face], x = nn[0], y = nn[1], z = nn[2];
+      const Rm = [cs + (1 - cs) * x * x, (1 - cs) * x * y - sn * z, (1 - cs) * x * z + sn * y, (1 - cs) * y * x + sn * z, cs + (1 - cs) * y * y, (1 - cs) * y * z - sn * x, (1 - cs) * z * x - sn * y, (1 - cs) * z * y + sn * x, cs + (1 - cs) * z * z];
+      const mulv = (m, v) => [0, 1, 2].map((r) => m[r * 3] * v[0] + m[r * 3 + 1] * v[1] + m[r * 3 + 2] * v[2]);
+      return CST[i].map((c) => (CB.inLayer(c, ev.mv.face) ? { pos: mulv(Rm, c.pos), R: [0, 1, 2].flatMap((r) => [0, 1, 2].map((q) => Rm[r * 3] * c.R[q] + Rm[r * 3 + 1] * c.R[3 + q] + Rm[r * 3 + 2] * c.R[6 + q])) } : c));
+    };
     const tMend = tM0 + mD.reduce((s2, d) => s2 + d, 0), tE0 = tMend + (modes.length ? 0.2 : 0.4), ED = 2.8, tT0 = tE0 + ED + 0.4;
     const tourIds = (dir.tour || parts.filter((p) => p.spec.tour !== false && p.info && !p.spec.decor).sort((a, b) => (a.base.z + a.explode.z) - (b.base.z + b.explode.z)).map((p) => p.id));
     const tR0 = tT0 + tourIds.length * TD, RD = 2.6, tP0 = tR0 + RD + 0.3, PD = 5.4;
@@ -155,7 +176,7 @@
     const thetaAt = (t) => { const x = clamp(t * 60, 0, EGT.length - 2), i = Math.floor(x); return lerp(EGT[i], EGT[i + 1], x - i); };
     const crankDeg = (th) => ((th / RAD) % 720 + 720) % 720;
     const enig = ENIG ? makeEnigma() : null;
-    const mechAt = (t) => (ENIG ? enig.mech(t) : ENGN ? { ang: () => 0, press: 0, eng: { theta: thetaAt(t) } } : TL ? Object.assign(TL.view(t), { press: pressAt(t) }) : { ang: () => 0, press: pressAt(t) });
+    const mechAt = (t) => (ENIG ? enig.mech(t) : CUBE ? { ang: () => 0, press: 0, cube: cubeFrame(t) } : ENGN ? { ang: () => 0, press: 0, eng: { theta: thetaAt(t) } } : TL ? Object.assign(TL.view(t), { press: pressAt(t) }) : { ang: () => 0, press: pressAt(t) });
 
     // camara por claves
     const keys = [[0, Object.assign({}, VW.iso, { zoom: VW.iso.zoom * 0.5, yaw: -62, pitch: 30 })], [ASM_END, VW.iso, [0.3, 0, 0.2, 1]]];
@@ -176,8 +197,8 @@
       const s = { t, e: eg, explodeK: (id) => { const dl = stag[id] * 0.35, a = E.sm(ramp(ex, dl, dl + 0.65)), b = E.sm(ramp(re, (1 - stag[id]) * 0.35, (1 - stag[id]) * 0.35 + 0.65)); return a * (1 - b); },
         assemble: (id) => { const k = E.outBack(ramp(t, arrive[id], arrive[id] + 0.95), 1.1); return { k: Math.min(1.04, k) > 1 ? 1 : k, alpha: ramp(t, arrive[id], arrive[id] + 0.3) * (cutSet[id] ? 1 - cutSet[id] * cut : 1) }; },
         focus: tr ? tr.id : null, focusA: tr ? tr.a : 0, dimTo: 0.012, light: { az: -38 + 26 * Math.sin(t * 0.23), el: 54 },
-        mech: mechAt(t), hint: t < ASM_END ? 'ASSEMBLY' : t < tE0 ? (PRESS ? 'KEY PRESS' : ENIG ? 'ENCIPHERING' : ENGN ? 'FOUR-STROKE CYCLE' : 'POWER PATH') : t < tT0 ? 'EXPLODED VIEW' : t < tR0 ? 'PART ' + ((tr ? tr.j : tourIds.length - 1) + 1) + ' OF ' + tourIds.length : t < tP0 ? 'RE-ASSEMBLY' : 'EVIDENCE',
-        readout: md && t >= tM0 && t < tR0 ? md.label + '  -  ' + (PRESS ? pressAt(t).toFixed(2) + ' mm' : ENIG ? ((mechAt(t).enigma || {}).window || '') : ENGN ? Math.round(crankDeg(mechAt(t).eng.theta)) + ' / 720 deg' : an.modes[modeIdx(t)].ratio.toFixed(3) + ' : 1') : parts.length + ' parts', infoAt: [64, H - 360] };
+        mech: mechAt(t), hint: t < ASM_END ? 'ASSEMBLY' : t < tE0 ? (PRESS ? 'KEY PRESS' : ENIG ? 'ENCIPHERING' : CUBE ? 'FACE TURNS' : ENGN ? 'FOUR-STROKE CYCLE' : 'POWER PATH') : t < tT0 ? 'EXPLODED VIEW' : t < tR0 ? 'PART ' + ((tr ? tr.j : tourIds.length - 1) + 1) + ' OF ' + tourIds.length : t < tP0 ? 'RE-ASSEMBLY' : 'EVIDENCE',
+        readout: md && t >= tM0 && t < tR0 ? md.label + '  -  ' + (PRESS ? pressAt(t).toFixed(2) + ' mm' : ENIG ? ((mechAt(t).enigma || {}).window || '') : CUBE ? cubeDone(t) + ' turns' : ENGN ? Math.round(crankDeg(mechAt(t).eng.theta)) + ' / 720 deg' : an.modes[modeIdx(t)].ratio.toFixed(3) + ' : 1') : parts.length + ' parts', infoAt: [64, H - 360] };
       s.modeA = md && t >= tM0 && t < tE0 ? Math.min(ramp(t, tM0, tM0 + 0.6), 1 - ramp(t, tE0 - 0.5, tE0 - 0.1)) : 0; s.mode = md; s.modeI = modeIdx(t); s.speed = speedAt(t);
       return s;
     };
@@ -215,10 +236,25 @@
       }
       c.restore();
     };
+    // cubo: la secuencia de la fase con el giro actual resaltado, y el estado real del cubo (aristas dadas vuelta, esquinas en su sitio)
+    const drawCube = (c, s) => {
+      const a = s.modeA; if (!(a > 0.01)) return; const mi = s.modeI, m = modes[mi], r = an.modes[mi], run = an.cubeRuns[mi], x = 78, y = H - 318, t = s.t, nDone = cubeDone(t);
+      c.save(); c.globalAlpha = a; c.fillStyle = MX.rgba(T.paper, T.dark ? 0.86 : 0.9); c.fillRect(x - 24, y - 70, W - 2 * x + 48, 262); c.fillStyle = T.teal; c.fillRect(x - 24, y - 70, 4, 262);
+      MX.A = 1; MX.text(m.label, x, y, { size: 64, font: MX.SERIF, w: 500, color: T.ink }); MX.text(m.formula || '', x, y + 42, { size: 21, font: MX.SANS, color: T.mute });
+      MX.text(r.text + (m.unit ? ' ' + m.unit : ''), W - x, y - 2, { size: 64, font: MX.SERIF, w: 500, color: T.ink, align: 'right' });
+      if (m.publish) { const cl = claimBy[m.publish.claim], w = 190; const pt = String(m.publish.text || m.publish.value || m.publish.length + ' MOVES'); tagPill(c, W - x - w - 4, y + 44, cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + (pt.length > 14 ? '' : ' ' + pt)); MX.text(r.ok ? 'matches the model' : 'MISMATCH', W - x - w - 18, y + 44, { size: 19, font: MX.SANS, color: r.ok ? T.teal : T.ember, align: 'right', w: 500 }); }
+      const first = CEV.findIndex((q) => q.k === mi), cur = first < 0 ? 0 : clamp(nDone - first, 0, run.moves.length), per = 15, st0 = clamp(cur - 6, 0, Math.max(0, run.moves.length - per));
+      run.moves.slice(st0, st0 + per).forEach((mv, j) => { const gi = st0 + j, col = gi < cur ? T.mute : gi === cur ? T.ember : T.ink; MX.text(mv.text, x + j * 62, y + 112, { size: 32, font: MX.MONO, w: gi === cur ? 700 : 500, color: col }); });
+      if (run.moves.length) MX.text(cur + ' of ' + run.moves.length + ' turns', W - x, y + 170, { size: 20, font: MX.SANS, color: T.mute, align: 'right' });
+      const cl2 = CB.classify(CST[Math.min(nDone, CST.length - 1)] || CB.create());
+      MX.text('EDGES IN PLACE ' + cl2.edgesInPlace + '/12   FLIPPED ' + cl2.edgesFlipped + '      CORNERS IN PLACE ' + cl2.cornersInPlace + '/8   TWISTED ' + cl2.cornersTwisted, x, y + 170, { size: 17, font: MX.SANS, w: 600, color: cl2.solved ? T.teal : T.ink, spacing: 1.4 });
+      c.restore();
+    };
     const drawMode = (c, s) => {
       if (PRESS) return drawPress(c, s);
       if (ENIG) return drawEnigma(c, s);
       if (ENGN) return drawEngine(c, s);
+      if (CUBE) return drawCube(c, s);
       const a = s.modeA; if (!(a > 0.01)) return; const mi = s.modeI, m = modes[mi], r = an.modes[mi], x = 78, y = H - 318, ratio = r.ratio, drpm = drive.rpm * s.speed, hrpm = drpm * ratio;
       c.save(); c.globalAlpha = a; c.fillStyle = MX.rgba(T.paper, T.dark ? 0.86 : 0.9); c.fillRect(x - 24, y - 70, W - 2 * x + 48, 232); c.fillStyle = T.teal; c.fillRect(x - 24, y - 70, 4, 232);
       MX.A = 1; MX.text(m.label, x, y, { size: 64, font: MX.SERIF, w: 500, color: T.ink });
@@ -232,12 +268,12 @@
     const drawPanel = (c, pn, t) => {
       const a = Math.min(ramp(t, pn.t0, pn.t0 + 0.5), 1 - ramp(t, pn.t1 - 0.4, pn.t1)); if (a < 0.01) return;
       if (pn.kind === 'ratios') {
-        if (!H2.panel(a, spec.fig || 'Fig', ENIG ? 'Run against the published tests' : ENGN ? 'Computed from the geometry' : 'Measured against published', (ENGN ? 'Every figure is computed from the drawn dimensions and compared with what the maker publishes.' : PRESS ? 'Each phase is read off the running model, then compared with the number the maker publishes.' : ENIG ? 'The machine is run on every published test and compared letter by letter.' : 'Each ratio is read off the running model, then compared with the number the maker publishes.'))) return;
+        if (!H2.panel(a, spec.fig || 'Fig', ENIG ? 'Run against the published tests' : ENGN || CUBE ? 'Computed from the geometry' : 'Measured against published', (CUBE ? 'The cube is 26 pieces that really turn; every figure below is read off them and compared with what is published.' : ENGN ? 'Every figure is computed from the drawn dimensions and compared with what the maker publishes.' : PRESS ? 'Each phase is read off the running model, then compared with the number the maker publishes.' : ENIG ? 'The machine is run on every published test and compared letter by letter.' : 'Each ratio is read off the running model, then compared with the number the maker publishes.'))) return;
         an.modes.forEach((r, i) => {
           const m = modes[i], y = 540 + i * 168, ai = a * ramp(t, pn.t0 + 0.4 + i * 0.35, pn.t0 + 0.9 + i * 0.35);
           c.save(); c.globalAlpha = ai; c.strokeStyle = T.line; c.beginPath(); c.moveTo(86, y - 74); c.lineTo(W - 86, y - 74); c.stroke(); c.restore();
           MX.A = ai; MX.text(m.label, 86, y, { size: 54, font: MX.SERIF, w: 500 }); MX.text(m.formula || '', 86, y + 36, { size: 21, font: MX.SANS, color: T.mute }); MX.text(m.note || '', 86, y + 66, { size: 19, font: MX.SANS, color: T.mute });
-          MX.text(ENIG ? r.text : ENGN ? r.text + (m.unit ? ' ' + m.unit : '') : PRESS ? r.ratio.toFixed(2) + ' ' + (M.press.unit || 'mm') : r.ratio.toFixed(4), W - 86, y, { size: 58, font: MX.SERIF, w: 500, align: 'right' });
+          MX.text(ENIG ? r.text : ENGN || CUBE ? r.text + (m.unit ? ' ' + m.unit : '') : PRESS ? r.ratio.toFixed(2) + ' ' + (M.press.unit || 'mm') : r.ratio.toFixed(4), W - 86, y, { size: 58, font: MX.SERIF, w: 500, align: 'right' });
           if (m.publish) { const cl = claimBy[m.publish.claim]; c.save(); c.globalAlpha = ai; tagPill(c, W - 86 - 330, y + 52, cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + ' ' + m.publish.text + (r.ok ? '  OK' : '  MISMATCH')); c.restore(); }
           MX.A = a;
         });
@@ -308,6 +344,7 @@
           if (x < M.press.travel - 0.3) bottom = false; prev = x;
         }
       }
+      if (CUBE) CEV.forEach((e2, i) => { ev.push({ t: e2.t0 + 0.02, v: 'tick', f: 1900 + MX.hash(i, 5) * 500, vel: 0.5, pan: -0.2 }, { t: e2.t1 - 0.01, v: 'detent', f: 820 + MX.hash(i, 9) * 260, vel: 0.85, pan: 0.1, send: 0.2 }); });
       if (ENGN) {
         let prevD = crankDeg(thetaAt(tM0 - 0.01)), prevR = thetaAt(tM0 - 0.01);
         for (let t = tM0; t < tE0 + 2; t += 1 / 120) {
@@ -421,14 +458,14 @@
     if (explore && ENIG) startEnigmaExplore();
     else if (explore) {
       const it = new Integrator(an, drive.rpm), live = { mode: modes[0] || null, spin: true, last: performance.now() };
-      const tg = [{ label: PRESS ? 'PRESS' : 'SPIN', get: () => live.spin, set: (v) => { live.spin = v; } }].concat(PRESS || ENGN ? [] : modes.map((m) => ({ label: m.label.toUpperCase().replace('GEAR ', 'G'), get: () => live.mode === m, set: () => { live.mode = m; } })));
+      const tg = [{ label: PRESS ? 'PRESS' : 'SPIN', get: () => live.spin, set: (v) => { live.spin = v; } }].concat(PRESS || ENGN || CUBE ? [] : modes.map((m) => ({ label: m.label.toUpperCase().replace('GEAR ', 'G'), get: () => live.mode === m, set: () => { live.mode = m; } })));
       const HOME = UP ? Object.assign({}, VW.iso, { zoom: VW.expl.zoom * 1.3 }) : VW.iso;
       F.explore({ views: [['FRONT', VW.front], ['ISO', HOME], ['SIDE', VW.side]], home: HOME, start: HOME, toggleW: 100, toggles: tg, minZoom: 3, maxZoom: 400,
         reset: () => { live.mode = modes[0] || null; live.spin = true; },
         extra: (Sx) => {
           const now = performance.now(), dt = Math.min(0.05, (now - live.last) / 1000); live.last = now; if (an.K) it.step(dt, live.mode, live.spin ? 1 : 0); if (live.spin) live.t = (live.t || 0) + dt; const r = live.mode ? an.modes[modes.indexOf(live.mode)].ratio : null, px = PRESS ? (1 - Math.cos((live.t || 0) * 2.2)) / 2 * M.press.travel : 0;
           const eth = ENGN ? (live.t || 0) * (drive.rpm || 40) * 6 * RAD : 0;
-          return { mech: { ang: (b) => (an.K ? it.ang(b) : 0), press: px, eng: ENGN ? { theta: eth } : undefined }, light: { az: -38, el: 54 }, dimTo: 0.1, readout: (ENGN ? Math.round(crankDeg(eth)) + ' / 720 deg  -  ' : PRESS ? px.toFixed(2) + ' mm  ' + Math.round(forceAt(px)) + ' ' + (M.press.forceUnit || 'cN') + '  -  ' : live.mode && !ENGN ? live.mode.label + '  ' + r.toFixed(3) + ' : 1  -  ' : '') + 'EXPLODE ' + Math.round(Sx.e * 100) + '%' };
+          return { mech: { ang: (b) => (an.K ? it.ang(b) : 0), press: px, eng: ENGN ? { theta: eth } : undefined, cube: CUBE ? cubeFrame(tM0 + (live.t || 0) % (tMend - tM0)) : undefined }, light: { az: -38, el: 54 }, dimTo: 0.1, readout: (CUBE ? 'FACE TURNS  -  ' : ENGN ? Math.round(crankDeg(eth)) + ' / 720 deg  -  ' : PRESS ? px.toFixed(2) + ' mm  ' + Math.round(forceAt(px)) + ' ' + (M.press.forceUnit || 'cN') + '  -  ' : live.mode && !ENGN && !CUBE ? live.mode.label + '  ' + r.toFixed(3) + ' : 1  -  ' : '') + 'EXPLODE ' + Math.round(Sx.e * 100) + '%' };
         } });
     } else F.run({ duration: DUR, keys, script, audio, poster: tM0 + MD * 0.5 });
     return { F, an, DUR };
