@@ -1,6 +1,6 @@
 {
   "name": "mechanism",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Build inspectable models from evidence. See what is known, estimated and tested.",
   "license": "MIT",
   "private": true,

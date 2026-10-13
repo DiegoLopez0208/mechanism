@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.0 - 2026-10-13
+
+The pre-launch release: audited, faster to render, lighter to install.
+
+- **Audit.** Two read-only audits (secrets, personal data and licences across the tree and all 34 revisions; a code-level security review). No secrets, no personal data, no local paths. Fixed what they found: `SECURITY.md` and `SKILL.md` now say plainly that the gate is not a sandbox (a spec is code: read it before running it, or use `node --permission` or a container); `registry.mjs` only accepts well-formed object names and escapes every id; the CI token is read-only; `.gitignore` covers render leftovers; the checksum of the vendored three bundle is in `THIRD_PARTY.md`.
+- **Faster renders.** Headless Edge was drawing on the integrated GPU. `render.mjs`, `probe.mjs` and `stranger.mjs` now ask for the high-performance GPU: a blurred frame went from 289 to 86 ms, a 30 s film from 155 s to 92 s on the test machine (a laptop with an integrated and a discrete GPU).
+- **Lighter install.** A partial sparse clone is 4 MB instead of 85 MB or more (the repository keeps the films and the site; the skill does not need them). The command is in the README.
+- Social preview image (`docs/social-preview.png`).
+- 30 tests, now including the lock and a tampered key pin.
+
 ## 0.5.0 - 2026-10-13
 
 - **Pin tumbler lock** (examples/lock): the Kwikset KW1 keying table cross-checked (pin + cut depth = .501 in for all six heights, within .003 in of the plug diameter), the right key aligns five splits on the shear line, a wrong key blocks the plug, MACS respected; blind test recognised by two judges.
