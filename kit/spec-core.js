@@ -17,7 +17,7 @@
 (function (g) {
   'use strict';
   const MX = (g.MX = g.MX || {}), S = (MX.spec = MX.spec || {});
-  const KINDS = ['gear', 'ring', 'sprocket', 'shaft', 'pin', 'disc', 'flange', 'tube', 'plate', 'bearing', 'spring', 'nut', 'bolt', 'box', 'block', 'cross', 'rotor'];
+  const KINDS = ['gear', 'ring', 'sprocket', 'shaft', 'pin', 'disc', 'flange', 'tube', 'plate', 'bearing', 'spring', 'nut', 'bolt', 'box', 'block', 'cross', 'rotor', 'crankshaft', 'conrod', 'piston', 'engblock', 'camshaft', 'valve'];
   const CONFS = ['spec', 'measured', 'derived', 'estimated'];
   S.KINDS = KINDS; S.CONFS = CONFS;
   const teethOf = (d) => (d.kind === 'gear' || d.kind === 'ring' ? d.p.z : d.kind === 'sprocket' ? d.p.teeth : null);
@@ -54,12 +54,42 @@
     });
   }
 
+  // Motor de piston (biela-manivela). Con radio de manivela r = carrera / 2, biela l y angulo a (0 = punto muerto superior) el perno del piston esta en
+  // y = r cos a + sqrt(l^2 - r^2 sin^2 a) y la biela se inclina atan2(r sin a, sqrt(l^2 - r^2 sin^2 a)). Es la cinematica exacta, no un seno aproximado.
+  S.eng = {
+    pinY: (r, l, a) => r * Math.cos(a) + Math.sqrt(l * l - r * r * Math.sin(a) * Math.sin(a)),
+    rodAng: (r, l, a) => Math.atan2(r * Math.sin(a), Math.sqrt(l * l - r * r * Math.sin(a) * Math.sin(a))),
+    // fase de un cilindro en su ciclo de 720 grados (0 = encendido): 0-180 fuerza, 180-360 escape, 360-540 admision, 540-720 compresion
+    phase: (theta, ign) => (((theta - ign) % 720) + 720) % 720,
+    stroke: (phi) => (phi < 180 ? 'POWER' : phi < 360 ? 'EXHAUST' : phi < 540 ? 'INTAKE' : 'COMPRESSION'),
+    lift: (phi, open, close, max) => { const L = (((close - open) % 720) + 720) % 720, u = (((phi - open) % 720) + 720) % 720; return u >= L ? 0 : max * Math.pow(Math.sin(Math.PI * u / L), 2); },
+  };
+  // El orden de encendido publicado tiene que ser posible con el cigueñal: el cilindro que enciende en el lugar i del orden lo hace a i * 720 / n grados
+  // y esa posicion solo existe si coincide (modulo 360) con el angulo de su munequilla; la leva se encarga de la vuelta que sobra (cam = 0 o 1).
+  function analyzeEngine(M, out) {
+    const en = M.engine, n = en.cylinders, r = en.stroke / 2, ign = [], cam = [];
+    if ((en.throws || []).length !== n) out.problems.push('el ciguenal declara ' + (en.throws || []).length + ' munequillas y el motor ' + n + ' cilindros');
+    if ((en.firing || []).length !== n || new Set(en.firing).size !== n) out.problems.push('el orden de encendido tiene que nombrar cada cilindro una vez');
+    else en.firing.forEach((cyl, i) => { const need = i * 720 / n, th = en.throws[cyl - 1], d = need - th; if (Math.abs(((d % 360) + 360) % 360) > 1e-6 && Math.abs((((d % 360) + 360) % 360) - 360) > 1e-6) out.problems.push('orden de encendido ' + en.firing.join('-') + ': el cilindro ' + cyl + ' tendria que encender a ' + need + ' grados y su munequilla esta a ' + th + ' (no es posible con ese ciguenal)'); ign[cyl - 1] = need; cam[cyl - 1] = Math.round((((d % 720) + 720) % 720) / 360) % 2; });
+    const disp = n * Math.PI / 4 * en.bore * en.bore * en.stroke / 1000, chImplied = en.deck != null ? en.deck - r - en.rod : null;
+    if (en.deck != null && en.ch != null && Math.abs(chImplied - en.ch) > 0.05) out.problems.push('el piston no llega a la cubierta: deck ' + en.deck + ' - radio ' + r + ' - biela ' + en.rod + ' = ' + chImplied.toFixed(2) + ' mm y la altura de compresion declarada es ' + en.ch);
+    if (en.pitch < en.bore + 2) out.problems.push('la distancia entre cilindros (' + en.pitch + ' mm) deja menos de 2 mm de pared entre camisas de ' + en.bore + ' mm');
+    out.engine = { n, r, ign, cam, displacement: disp, rodRatio: en.rod / r, ch: chImplied, firing: (en.firing || []).join('-') };
+    ((M.drive && M.drive.modes) || []).forEach((m) => {
+      const pub = m.publish, val = m.metric === 'displacement' ? disp : null, text = m.metric === 'firing' ? out.engine.firing : val != null ? val.toFixed(1) : '';
+      const ok = !pub ? null : m.metric === 'displacement' ? Math.abs(val - pub.value) <= (pub.tol == null ? 1 : pub.tol) : text === pub.text;
+      out.modes.push({ id: m.id, label: m.label, ratio: val, text, publish: pub || null, ok });
+      if (ok === false) out.problems.push('fase ' + m.label + ': el modelo da ' + text + ' y lo publicado es ' + (pub.text || pub.value));
+    });
+  }
+
   // analisis del mecanismo: cinematica, fases de dientes, distancias entre centros, relaciones por modo
   S.analyze = (spec) => {
     const out = { problems: [], K: null, modes: [], phi: {}, meshes: [], centers: [] }, M = spec.mechanism;
     if (!M || !MX.kin) return out;
     if (M.press) analyzePress(M, out);
     if (M.enigma) { analyzeEnigma(M, out); return out; }
+    if (M.engine) { analyzeEngine(M, out); return out; }
     if (!M.links || !M.links.length) return out;
     const byBody = {}; spec.parts.forEach((d) => { const b = d.body || d.id; (byBody[b] = byBody[b] || []).push(d); });
     const gearOf = (b) => (byBody[b] || []).find((d) => teethOf(d)) || (byBody[b] || [])[0];
@@ -114,6 +144,7 @@
     const lines = []; lines.push('piezas: ' + spec.parts.length + '   afirmaciones: ' + (R.claims || []).length + '   fuentes: ' + (R.sources || []).length);
     CONFS.forEach((k) => lines.push('  ' + k.toUpperCase().padEnd(10) + ' piezas ' + spec.parts.filter((d) => d.conf === k).length + '   afirmaciones ' + (R.claims || []).filter((c) => c.conf === k).length));
     if (an.enigmaTests) { lines.push('enigma: pruebas publicadas'); an.enigmaTests.forEach((t) => lines.push('  ' + t.id + ': ' + t.got + (t.expect ? ' (publicado ' + t.expect + ')' : '') + (t.win ? ' ventanas ' + t.win : '') + (t.ok ? '  ok' : '  MAL'))); an.modes.forEach((m) => lines.push('  fase ' + m.label + ': ' + m.text + (m.publish ? '  publicado ' + m.publish.text + (m.ok ? '  ok' : '  MAL') : ''))); }
+    if (an.engine) { const e = an.engine; lines.push('motor: ' + e.n + ' cilindros, cilindrada ' + e.displacement.toFixed(1) + ' cc, relacion biela/radio ' + e.rodRatio.toFixed(2) + (e.ch != null ? ', altura de compresion implicada ' + e.ch.toFixed(2) + ' mm' : '') + ', orden ' + e.firing); an.modes.forEach((m) => lines.push('  fase ' + m.label + ': ' + m.text + (m.publish ? '  publicado ' + (m.publish.text || m.publish.value) + (m.ok ? '  ok' : '  MAL') : ''))); }
     if (an.press) { lines.push('presion: recorrido ' + an.press.travel + ' mm, actuacion ' + an.press.actuation + ' mm' + (an.press.predictedFinal ? '; resorte lineal daria ' + an.press.predictedFinal.toFixed(1) + ' al final, publicado ' + an.press.publishedFinal + (an.press.consistent ? '  ok' : '  NO CIERRA (explicado)') : '')); an.modes.forEach((m) => lines.push('  fase ' + m.label + ': ' + m.ratio + (m.publish ? '  publicado ' + m.publish.value + (m.ok ? '  ok' : '  MAL') : ''))); }
     if (an.K) { lines.push('mecanismo: residuo ' + an.K.residual.toExponential(1)); an.centers.forEach((c) => lines.push('  centros ' + c.a + '-' + c.b + ': ' + c.dist.toFixed(3) + ' mm (exigido ' + c.need.toFixed(3) + ')  ' + (c.ok ? 'ok' : 'MAL'))); an.modes.forEach((m) => lines.push('  modo ' + m.label + ': ' + m.ratio.toFixed(4) + (m.publish ? '  publicado ' + m.publish.value + (m.ok ? '  ok' : '  MAL') : ''))); }
     return { errors, warnings, lines, analysis: an };

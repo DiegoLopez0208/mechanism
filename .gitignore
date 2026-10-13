@@ -16,3 +16,4 @@ data/**/*.txt
 # restos de pruebas locales
 kit/vendor/three.min.js
 examples/test.html
+data/audio/dl/

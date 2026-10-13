@@ -105,9 +105,48 @@
   }
   const VOICES = { impact: modal, click, whoosh: noiseSweep, servo, charge, blip, tone, boom, clack, detent, thock, tick };
 
+  /* ------------------------------------------------------------ grabaciones reales (kit/samples.js)
+   * Si estan cargadas, las voces mecanicas salen de grabaciones reales (teclas, impactos de metal / vidrio / plancha / goma, clics) en vez de sintesis,
+   * se apagan la musica generativa, las campanas y los pitidos, y el reverb baja: las grabaciones ya traen su sala. */
+  const CACHE = {};
+  const getSample = (name) => {
+    const m = MX.SAMPLES; if (!m || !m.d[name]) return null; if (CACHE[name]) return CACHE[name];
+    const bin = atob(m.d[name]), n = bin.length >> 1, f = new Float32Array(n);
+    for (let i = 0; i < n; i++) { let v = bin.charCodeAt(2 * i) | (bin.charCodeAt(2 * i + 1) << 8); if (v > 32767) v -= 65536; f[i] = v / 32768; }
+    return (CACHE[name] = f);
+  };
+  function play(sr, names, o, R, rate0) {
+    const nm = Array.isArray(names) ? names[Math.floor(R() * names.length) % names.length] : names, src = getSample(nm); if (!src) return new Float32Array(1);
+    const rate = (rate0 || 1) * (1 + (R() - 0.5) * 0.08) * (MX.SAMPLES.sr / sr), n = Math.floor(src.length / rate), out = new Float32Array(n), v = o.vel == null ? 1 : o.vel;
+    for (let i = 0; i < n; i++) { const x = i * rate, k = Math.floor(x), fr = x - k; out[i] = ((src[k] || 0) * (1 - fr) + (src[k + 1] || 0) * fr) * v; }
+    return out;
+  }
+  const GROUPS = {
+    steel: { l: ['metal_l1', 'metal_l2', 'metal_l3'], m: ['metal_m1', 'metal_m2'], h: ['metal_h1'] }, aluminum: { l: ['tin_m1', 'tin_m2'], m: ['tin_m1', 'tin_m2', 'metal_m1'], h: ['plate_m1', 'metal_m2'] },
+    plastic: { l: ['gen_l1', 'gen_l2', 'gen_l3'], m: ['wood_m1', 'gen_l2'], h: ['wood_m1'] }, pcb: { l: ['gen_l1', 'plate_l1'], m: ['plate_l1', 'wood_m1'], h: ['plate_m1'] },
+    ceramic: { l: ['glass_l1', 'glass_l2'], m: ['glass_l2', 'glass_m1'], h: ['glass_m1'] }, glass: { l: ['glass_l1', 'glass_l2'], m: ['glass_m1'], h: ['glass_h1', 'glass_m1'] },
+    pouch: { l: ['soft_m1', 'soft_m2'], m: ['soft_m1', 'soft_m2'], h: ['soft_h1'] }, rubber: { l: ['soft_m1', 'soft_m2'], m: ['soft_m2'], h: ['soft_h1'] },
+  };
+  const KEYS = ['k1', 'k2', 'k3', 'k4', 'k5', 'k6', 'k7', 'k8'], silent = () => new Float32Array(1);
+  S.REAL = () => !!(MX.SAMPLES && MX.SAMPLES.d);
+  const applyReal = () => {
+    if (!S.REAL() || applyReal.done) return; applyReal.done = true; const synthWhoosh = noiseSweep;
+    Object.assign(VOICES, {
+      impact: (sr, o, R) => { const g = GROUPS[o.mat] || GROUPS.steel, size = o.size || 20, cls = size < 9 ? 'l' : size < 38 ? 'm' : 'h'; return play(sr, g[cls], { vel: (o.vel == null ? 0.6 : o.vel) * 1.15 }, R, Math.max(0.85, Math.min(1.25, Math.pow(25 / Math.max(6, size), 0.12)))); },
+      clack: (sr, o, R) => play(sr, KEYS, { vel: o.vel }, R, 1),
+      thock: (sr, o, R) => play(sr, KEYS, { vel: o.vel }, R, 0.8),
+      detent: (sr, o, R) => play(sr, ['sw1', 'sw2', 'sw3', 'tog1', 'tog2'], { vel: o.vel }, R, Math.max(0.85, Math.min(1.2, (o.f || 1100) / 1100))),
+      tick: (sr, o, R) => play(sr, ['tick1', 'tick2'], { vel: (o.vel == null ? 1 : o.vel) * 0.8 }, R, 1),
+      click: (sr, o, R) => play(sr, ['click1', 'click2', 'click3'], { vel: (o.sharp == null ? 0.7 : o.sharp) }, R, Math.max(0.8, Math.min(1.3, (o.f || 2400) / 2400))),
+      boom: (sr, o, R) => play(sr, 'soft_h1', { vel: 0.8 }, R, 0.75),
+      whoosh: (sr, o, R) => { const a = synthWhoosh(sr, o, R); for (let i = 0; i < a.length; i++) a[i] *= 0.45; return a; },
+      blip: silent, tone: silent, charge: silent, servo: silent,
+    });
+  };
+
   /* ------------------------------------------------------------ base musical generativa */
   function bed(sr, N, c, R) {
-    const L = new Float32Array(N), Rr = new Float32Array(N); if (!c) return [L, Rr];
+    const L = new Float32Array(N), Rr = new Float32Array(N); if (!c || (S.REAL && S.REAL() && !c.force)) return [L, Rr];
     const bpm = c.bpm || 100, beat = 60 / bpm, root = c.root || 50, sc = S.SCALES[c.mode || 'major'], lvl = c.level == null ? 0.5 : c.level, prog = c.prog || [0, 5, 3, 4];
     const lev = (t) => { const k = c.curve || [[0, 0.4], [N / sr, 0.4]]; for (let i = 1; i < k.length; i++) if (t <= k[i][0]) return k[i - 1][1] + (k[i][1] - k[i - 1][1]) * (t - k[i - 1][0]) / (k[i][0] - k[i - 1][0]); return k[k.length - 1][1]; };
     const add = (arr, t0, dur, amp, fn) => { const i0 = Math.floor(t0 * sr), n = Math.floor(dur * sr); for (let i = 0; i < n && i0 + i < N; i++) arr[i0 + i] += fn(i / sr, i / n) * amp; };
@@ -135,11 +174,12 @@
   /* ------------------------------------------------------------ render */
   // cfg: { duration, sr, seed, events: [{t, v: 'impact'|..., pan, gain, send, ...params}], bed: {...}, room: {size, wet, fb} }
   S.render = (cfg) => {
+    applyReal();
     const sr = cfg.sr || 44100, N = Math.floor(cfg.duration * sr), L = new Float32Array(N), Rr = new Float32Array(N), sL = new Float32Array(N), sR = new Float32Array(N), R = MX.rng(cfg.seed || 17);
     const b = bed(sr, N, cfg.bed, MX.rng((cfg.seed || 17) + 5)); for (let i = 0; i < N; i++) { L[i] += b[0][i]; Rr[i] += b[1][i]; sL[i] += b[0][i] * 0.5; sR[i] += b[1][i] * 0.5; }
     if (cfg.tone) { const lvl = cfg.tone; let a = 0, b = 0; for (let i = 0; i < N; i++) { const x = R() * 2 - 1; a += (x - a) * 0.02; b += (a - b) * 0.05; L[i] += b * lvl * 8; Rr[i] += b * lvl * 8; } }       // ruido de sala: casi inaudible, pero evita el silencio digital
     (cfg.events || []).forEach((e) => {
-      const f = VOICES[e.v]; if (!f) return; const seg = f(sr, e, R), pan = Math.max(-1, Math.min(1, e.pan || 0)), gl = Math.cos((pan + 1) * Math.PI / 4), gr = Math.sin((pan + 1) * Math.PI / 4), gain = e.gain == null ? 1 : e.gain, send = e.send == null ? 0.5 : e.send, i0 = Math.floor(e.t * sr);
+      const f = VOICES[e.v]; if (!f) return; const seg = f(sr, e, R), pan = Math.max(-1, Math.min(1, e.pan || 0)), gl = Math.cos((pan + 1) * Math.PI / 4), gr = Math.sin((pan + 1) * Math.PI / 4), gain = e.gain == null ? 1 : e.gain, send = e.send == null ? (S.REAL && S.REAL() ? 0.16 : 0.5) : e.send, i0 = Math.floor(e.t * sr);
       for (let i = 0; i < seg.length && i0 + i < N; i++) { if (i0 + i < 0) continue; const v = seg[i] * gain; L[i0 + i] += v * gl; Rr[i0 + i] += v * gr; sL[i0 + i] += v * gl * send; sR[i0 + i] += v * gr * send; }
     });
     const rv = reverb(sr, sL, sR, cfg.room || {}); let pk = 0;

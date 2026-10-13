@@ -55,7 +55,7 @@
     const V = S.validate(spec), an = V.analysis, explore = q.has('explore');
     V.errors.forEach((e) => console.error('SPEC: ' + e)); V.warnings.forEach((w) => console.warn('SPEC: ' + w));
     if (V.errors.length && !explore) { document.title = 'SPEC ERROR'; throw new Error('el spec no pasa la validacion:\n' + V.errors.join('\n')); }
-    const M = spec.mechanism || null, drive = (M && M.drive) || { modes: [], rpm: 30 }, modes = drive.modes || [], dir = spec.director || {}, PRESS = !!(M && M.press), ENIG = !!(M && M.enigma), UP = spec.up === 'z', ORI = spec.orient || (UP ? [-90, 0, 0] : null);
+    const M = spec.mechanism || null, drive = (M && M.drive) || { modes: [], rpm: 30 }, modes = drive.modes || [], dir = spec.director || {}, PRESS = !!(M && M.press), ENIG = !!(M && M.enigma), ENGN = !!(M && M.engine), RAD = Math.PI / 180, UP = spec.up === 'z', ORI = spec.orient || (UP ? [-90, 0, 0] : null);
     const claims = (spec.research && spec.research.claims) || [], sources = (spec.research && spec.research.sources) || [], claimBy = Object.fromEntries(claims.map((c) => [c.id, c]));
 
     /* ---------------------------------------------------------- figura y piezas */
@@ -71,15 +71,31 @@
       if (role === 'UKW') return { kind: 'reflector', wiring: EN.REFLECTOR[ENC.reflector] };
       return { kind: 'etw' };
     }
+    // Motor: cinematica exacta de biela-manivela (kit/spec-core.js) y levas cuyas puntas quedan calculadas desde la ventana de cada valvula
+    const EGN = ENGN ? M.engine : null, AE = ENGN ? an.engine : null, EGE = S.eng;
+    function camCfg(d) {
+      if (!ENGN || !d.engine || d.engine.role !== 'cam') return {};
+      const v = EGN.valves[d.engine.valve], mid = (v.open + (v.close < v.open ? v.close + 720 : v.close)) / 2;
+      return { lobes: d.p.lobes.map((l) => { const psi = ((((AE.ign[l.cyl - 1] + mid) / 2) % 360) + 360) % 360; return Object.assign({}, l, { a: (((180 - psi) % 360) + 360) % 360, lift: v.lift }); }) };
+    }
+    function engPose(d, p, e) {
+      const g = d.engine, k = (g.cyl || 1) - 1, r = EGN.stroke / 2, l = EGN.rod, a0 = (EGN.throws[k] || 0) * RAD, a = e.theta + a0;
+      if (g.role === 'crank') p.group.rotation.z += -e.theta;
+      else if (g.role === 'cam') p.group.rotation.z += -e.theta / 2;
+      else if (g.role === 'piston') p.group.position.y += EGE.pinY(r, l, a) - EGE.pinY(r, l, a0);
+      else if (g.role === 'rod') { const y1 = EGE.pinY(r, l, a), y0 = EGE.pinY(r, l, a0); p.group.position.x += r * (Math.sin(a) - Math.sin(a0)) / 2; p.group.position.y += (r * Math.cos(a) + y1 - r * Math.cos(a0) - y0) / 2; p.group.rotation.z += EGE.rodAng(r, l, a) - EGE.rodAng(r, l, a0); }
+      else if (g.role === 'valve') { const v = EGN.valves[g.valve]; p.group.position.y -= EGE.lift(EGE.phase(e.theta / RAD, AE.ign[k]), v.open, v.close, v.lift); }
+    }
     const root = new TH.Group(); if (ORI) root.rotation.set(ORI[0] * Math.PI / 180, ORI[1] * Math.PI / 180, ORI[2] * Math.PI / 180); st.scene.add(root);          // up: 'z' -> el eje z del spec queda vertical
     spec.parts.forEach((d, i) => {
-      const grp = P[d.kind](Object.assign({}, d.p, { mat: d.mat }, roleCfg(d.role))), base = v3(S.startPos(d)); grp.userData.spec = d;
+      const grp = P[d.kind](Object.assign({}, d.p, { mat: d.mat }, roleCfg(d.role), camCfg(d))), base = v3(S.startPos(d)); grp.userData.spec = d;
       grp.traverse((m) => { if (m.isMesh || m.isLine) m.material = Array.isArray(m.material) ? m.material.map((q) => q.clone()) : m.material.clone(); });      // material propio por pieza: la atenuacion de una no puede tocar a las demas
       const part = F.add({ id: d.id, group: grp, base, explode: v3(d.explode || [0, 0, 0]), from: new TH.Vector3(0, 0, 90), conf: d.conf, est: d.conf === 'estimated' && d.kind !== 'pin', info: d.info || autoInfo(d, grp.userData), spec: d, body: d.body || null });
       part.arc = new TH.Vector3(0, 14, 0); part.spin = new TH.Vector3(0, 0, (MX.hash(i, 7) - 0.5) * 3.2); part.name = d.name || d.id;
       const phi = d.body && byBodyPhi[d.body] != null && S.teethOf(d) ? byBodyPhi[d.body] : 0;
       part.pose = (s, p) => {
         const m = s.mech, pr = m && m.press ? m.press : 0;
+        if (d.engine && m && m.eng) { engPose(d, p, m.eng); return; }
         if (d.slide) p.group.position[d.slide.axis || 'z'] += d.slide.k * pr;
         if (d.compress) p.group.scale.z = Math.max(0.12, 1 - pr / d.compress.free);
         if (!m) { p.group.rotation.z += phi; return; }
@@ -93,19 +109,19 @@
     st.scene.updateMatrixWorld(true); const wbox = new TH.Box3(); parts.forEach((p) => wbox.expandByObject(p.group)); const ctr = wbox.getCenter(new TH.Vector3());      // centro del objeto armado, en ejes del mundo
 
     /* ---------------------------------------------------------- vistas */
-    let rxy = 10, zMin = 1e9, zMax = -1e9, zMinA = 1e9, zMaxA = -1e9;
-    parts.forEach((p) => { rxy = Math.max(rxy, Math.hypot(p.base.x, p.base.y) + Math.max(p.size.x, p.size.y) / 2); zMin = Math.min(zMin, p.base.z - p.size.z / 2 + Math.min(0, p.explode.z)); zMax = Math.max(zMax, p.base.z + p.size.z / 2 + Math.max(0, p.explode.z)); zMinA = Math.min(zMinA, p.base.z - p.size.z / 2); zMaxA = Math.max(zMaxA, p.base.z + p.size.z / 2); });
-    const D = rxy * 2, zExt = Math.max(1, zMax - zMin), zf = W * 0.7 / (ORI ? Math.max(D, (zMaxA - zMinA) * 0.9) : D) * (asp === '9:16' ? 1.22 : 1), cy = H * (asp === '9:16' ? 0.5 : 0.48), zc = (zMin + zMax) / 2, shExt = Math.max(rxy * 2.5, zExt * 0.9);
+    let rxy = 10, zMin = 1e9, zMax = -1e9, zMinA = 1e9, zMaxA = -1e9, yMin = 1e9, yMax = -1e9;
+    parts.forEach((p) => { yMin = Math.min(yMin, p.base.y - p.size.y / 2 + Math.min(0, p.explode.y)); yMax = Math.max(yMax, p.base.y + p.size.y / 2 + Math.max(0, p.explode.y)); rxy = Math.max(rxy, Math.hypot(p.base.x, p.base.y) + Math.max(p.size.x, p.size.y) / 2); zMin = Math.min(zMin, p.base.z - p.size.z / 2 + Math.min(0, p.explode.z)); zMax = Math.max(zMax, p.base.z + p.size.z / 2 + Math.max(0, p.explode.z)); zMinA = Math.min(zMinA, p.base.z - p.size.z / 2); zMaxA = Math.max(zMaxA, p.base.z + p.size.z / 2); });
+    const D = rxy * 2, zExt = Math.max(1, zMax - zMin), zf = W * 0.7 / (ORI ? Math.max(D, (zMaxA - zMinA) * 0.9) : D) * (asp === '9:16' ? 1.22 : 1) * (dir.zoom || 1), cy = H * (asp === '9:16' ? 0.5 : 0.48), zc = (zMin + zMax) / 2, shExt = Math.max(rxy * 2.5, zExt * 0.9);
     ['left', 'bottom'].forEach((k) => { key.shadow.camera[k] = -shExt; }); ['right', 'top'].forEach((k) => { key.shadow.camera[k] = shExt; }); key.shadow.camera.updateProjectionMatrix();
     st.floor.scale.setScalar(Math.max(0.1, Math.max(D, zExt) * 5 / 1200));      // el plano de sombra sigue el tamano del objeto (si no, su borde lejano sale de la luz y se ve una franja gris)
     st.ao.updateGtaoMaterial({ radius: D * 0.088, thickness: D * 0.05 }); parts.forEach((p) => { p.from.set(0, 0, D * 1.1); p.arc.set(0, D * 0.18, 0); });      // todo escala con el objeto: un switch de 16 mm y un buje de 80 mm
     const mk = (yaw, pitch, zoom, o) => Object.assign({ yaw, pitch, zoom, tx: ctr.x, ty: ctr.y, tz: ctr.z, cx: W / 2, cy, dof: 0 }, o || {});
-    const VW = { front: mk(0, 0, zf * 0.92), iso: mk(-34, 22, zf * (ORI ? 0.85 : 0.7)), side: mk(-72, 14, zf * (ORI ? 0.95 : 0.6)), expl: mk(-50, 18, W * 0.8 / (ORI ? Math.max(D, zExt) * 1.2 : D * 0.62 + zExt * 0.8)), three: mk(-18, 40, zf * (ORI ? 0.85 : 0.72)) };
+    const VW = { front: mk(0, 0, zf * 0.92), iso: mk(-34, 22, zf * (ORI ? 0.85 : 0.7)), side: mk(-72, 14, zf * (ORI ? 0.95 : 0.6)), expl: mk(-50, 18, W * 0.8 / (ORI ? Math.max(D, zExt, yMax - yMin) * 1.2 : D * 0.62 + zExt * 0.8)), three: mk(-18, 40, zf * (ORI ? 0.85 : 0.72)) };
     Object.keys(dir.views || {}).forEach((k) => { VW[k] = Object.assign({}, VW[k] || VW.iso, dir.views[k]); });      // las vistas del spec se mezclan sobre las de fabrica
     const shot = (id, o) => { const p = parts.find((x) => x.id === id), dim = Math.max(p.size.x, p.size.y, p.size.z * 0.6); return Object.assign(F.shot(id, { yaw: o.yaw, pitch: o.pitch, zoom: clamp(W * 0.46 / dim, 3.5, 140), e: 1, cy: cy - 40 }), { dof: o.dof == null ? 0.5 : o.dof }); };
 
     /* ---------------------------------------------------------- plan del video */
-    const order = parts.slice().sort((a, b) => a.base.z - b.base.z || parts.indexOf(a) - parts.indexOf(b)), N = order.length, step = Math.min(0.3, 6.2 / N), arrive = {};
+    const order = parts.slice().sort((a, b) => (a.spec.late ? 1 : 0) - (b.spec.late ? 1 : 0) || a.base.z - b.base.z || parts.indexOf(a) - parts.indexOf(b)), N = order.length, step = Math.min(0.3, 6.2 / N), arrive = {};
     order.forEach((p, i) => { arrive[p.id] = 0.9 + i * step; });
     const ASM_END = 0.9 + (N - 1) * step + 1.1, MD = dir.modeDur || 4.6, TD = dir.tourDur || 3.3, tM0 = ASM_END + 0.3, KD = dir.keyDur || 1.35, runs = an.enigmaRuns || [];
     const mD = modes.map((m, k) => (ENIG ? 1.1 + (runs[k] ? runs[k].events.length : 1) * KD + 0.6 : MD)), mS = []; { let acc = tM0; mD.forEach((d) => { mS.push(acc); acc += d; }); }
@@ -134,8 +150,12 @@
     const TL = an.K ? new Timeline(an, drive.rpm, DUR, modeAt, speedAt) : null;
     // mecanismo de presion: el recorrido x (mm) de cada fase va de from a to con arranque y frenado suaves
     const pressAt = (t) => { if (!PRESS || !modes.length) return 0; if (t < tM0) return modes[0].from; const k = modeIdx(t), m = modes[k]; return lerp(m.from, m.to, E.sm(ramp(t - mS[k], 0.15, mD[k] - 0.35))); };
+    // motor: el angulo del ciguenal es la integral de la velocidad del conductor (parado mientras se arma, vivo en las fases, lento en el despiece)
+    const EGT = ENGN ? (() => { const m2 = Math.ceil(DUR * 60) + 2, arr = new Float32Array(m2), rate = (drive.rpm || 40) * 6 * RAD; let th = 0; for (let i = 1; i < m2; i++) { th += rate * speedAt(i / 60) / 60; arr[i] = th; } return arr; })() : null;
+    const thetaAt = (t) => { const x = clamp(t * 60, 0, EGT.length - 2), i = Math.floor(x); return lerp(EGT[i], EGT[i + 1], x - i); };
+    const crankDeg = (th) => ((th / RAD) % 720 + 720) % 720;
     const enig = ENIG ? makeEnigma() : null;
-    const mechAt = (t) => (ENIG ? enig.mech(t) : TL ? Object.assign(TL.view(t), { press: pressAt(t) }) : { ang: () => 0, press: pressAt(t) });
+    const mechAt = (t) => (ENIG ? enig.mech(t) : ENGN ? { ang: () => 0, press: 0, eng: { theta: thetaAt(t) } } : TL ? Object.assign(TL.view(t), { press: pressAt(t) }) : { ang: () => 0, press: pressAt(t) });
 
     // camara por claves
     const keys = [[0, Object.assign({}, VW.iso, { zoom: VW.iso.zoom * 0.5, yaw: -62, pitch: 30 })], [ASM_END, VW.iso, [0.3, 0, 0.2, 1]]];
@@ -150,14 +170,14 @@
 
     const stag = {}; order.slice().sort((a, b) => (a.explode.length() - b.explode.length())).forEach((p, i) => { stag[p.id] = i / Math.max(1, N - 1); });
     const tourAt = (t) => { const j = Math.floor((t - tT0) / TD); if (j < 0 || j >= tourIds.length) return null; const ts = tT0 + j * TD, a = Math.min(ramp(t, ts + 0.25, ts + 0.7), 1 - ramp(t, ts + TD - 0.4, ts + TD)); return { id: tourIds[j], a, j }; };
-    const cutSet = Object.fromEntries(parts.filter((p) => p.spec.cutaway).map((p) => [p.id, true]));   // piezas que se vuelven casi transparentes mientras corre el mecanismo (vista de corte)
+    const cutSet = Object.fromEntries(parts.filter((p) => p.spec.cutaway).map((p) => [p.id, typeof p.spec.cutaway === 'number' ? p.spec.cutaway : 0.9]));   // piezas que se vuelven casi transparentes mientras corre el mecanismo (vista de corte)
     const script = (t) => {
       const cut = ramp(t, tM0 - 0.3, tM0 + 0.5) * (1 - ramp(t, tE0 - 0.6, tE0 - 0.1)), ex = ramp(t, tE0, tE0 + ED), re = ramp(t, tR0, tR0 + RD), eg = ex * (1 - re), tr = tourAt(t), md = modeAt(t);
       const s = { t, e: eg, explodeK: (id) => { const dl = stag[id] * 0.35, a = E.sm(ramp(ex, dl, dl + 0.65)), b = E.sm(ramp(re, (1 - stag[id]) * 0.35, (1 - stag[id]) * 0.35 + 0.65)); return a * (1 - b); },
-        assemble: (id) => { const k = E.outBack(ramp(t, arrive[id], arrive[id] + 0.95), 1.1); return { k: Math.min(1.04, k) > 1 ? 1 : k, alpha: ramp(t, arrive[id], arrive[id] + 0.3) * (cutSet[id] ? 1 - 0.9 * cut : 1) }; },
+        assemble: (id) => { const k = E.outBack(ramp(t, arrive[id], arrive[id] + 0.95), 1.1); return { k: Math.min(1.04, k) > 1 ? 1 : k, alpha: ramp(t, arrive[id], arrive[id] + 0.3) * (cutSet[id] ? 1 - cutSet[id] * cut : 1) }; },
         focus: tr ? tr.id : null, focusA: tr ? tr.a : 0, dimTo: 0.012, light: { az: -38 + 26 * Math.sin(t * 0.23), el: 54 },
-        mech: mechAt(t), hint: t < ASM_END ? 'ASSEMBLY' : t < tE0 ? (PRESS ? 'KEY PRESS' : ENIG ? 'ENCIPHERING' : 'POWER PATH') : t < tT0 ? 'EXPLODED VIEW' : t < tR0 ? 'PART ' + ((tr ? tr.j : tourIds.length - 1) + 1) + ' OF ' + tourIds.length : t < tP0 ? 'RE-ASSEMBLY' : 'EVIDENCE',
-        readout: md && t >= tM0 && t < tR0 ? md.label + '  -  ' + (PRESS ? pressAt(t).toFixed(2) + ' mm' : ENIG ? ((mechAt(t).enigma || {}).window || '') : an.modes[modeIdx(t)].ratio.toFixed(3) + ' : 1') : parts.length + ' parts', infoAt: [64, H - 360] };
+        mech: mechAt(t), hint: t < ASM_END ? 'ASSEMBLY' : t < tE0 ? (PRESS ? 'KEY PRESS' : ENIG ? 'ENCIPHERING' : ENGN ? 'FOUR-STROKE CYCLE' : 'POWER PATH') : t < tT0 ? 'EXPLODED VIEW' : t < tR0 ? 'PART ' + ((tr ? tr.j : tourIds.length - 1) + 1) + ' OF ' + tourIds.length : t < tP0 ? 'RE-ASSEMBLY' : 'EVIDENCE',
+        readout: md && t >= tM0 && t < tR0 ? md.label + '  -  ' + (PRESS ? pressAt(t).toFixed(2) + ' mm' : ENIG ? ((mechAt(t).enigma || {}).window || '') : ENGN ? Math.round(crankDeg(mechAt(t).eng.theta)) + ' / 720 deg' : an.modes[modeIdx(t)].ratio.toFixed(3) + ' : 1') : parts.length + ' parts', infoAt: [64, H - 360] };
       s.modeA = md && t >= tM0 && t < tE0 ? Math.min(ramp(t, tM0, tM0 + 0.6), 1 - ramp(t, tE0 - 0.5, tE0 - 0.1)) : 0; s.mode = md; s.modeI = modeIdx(t); s.speed = speedAt(t);
       return s;
     };
@@ -180,9 +200,25 @@
       bar(y + 92, 'TRAVEL', x, pr.travel, T.teal, x.toFixed(2) + ' ' + u); bar(y + 124, 'FORCE', Fv, fmax, T.ember, Math.round(Fv) + ' ' + fu);
       c.restore();
     };
+    // motor: la cifra de la fase a la derecha y, abajo, el ciclo de 720 grados de cada cilindro con la posicion actual del ciguenal
+    const STK = ['POWER', 'EXHAUST', 'INTAKE', 'COMPRESSION'];
+    const drawEngine = (c, s) => {
+      const a = s.modeA; if (!(a > 0.01)) return; const mi = s.modeI, m = modes[mi], r = an.modes[mi], x = 78, y = H - 318, th = crankDeg(s.mech.eng.theta), bw = 430, col = [T.ember, T.mute, T.teal, T.ink];
+      c.save(); c.globalAlpha = a; c.fillStyle = MX.rgba(T.paper, T.dark ? 0.86 : 0.9); c.fillRect(x - 24, y - 70, W - 2 * x + 48, 262); c.fillStyle = T.teal; c.fillRect(x - 24, y - 70, 4, 262);
+      MX.A = 1; MX.text(m.label, x, y, { size: 64, font: MX.SERIF, w: 500, color: T.ink }); MX.text(m.formula || '', x, y + 42, { size: 21, font: MX.SANS, color: T.mute });
+      MX.text(r.text + (m.unit ? ' ' + m.unit : ''), W - x, y - 2, { size: 64, font: MX.SERIF, w: 500, color: T.ink, align: 'right' });
+      if (m.publish) { const cl = claimBy[m.publish.claim], w = 190; tagPill(c, W - x - w - 4, y + 44, cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + ' ' + (m.publish.text || m.publish.value)); MX.text(r.ok ? 'matches the model' : 'MISMATCH', W - x - w - 18, y + 44, { size: 19, font: MX.SANS, color: r.ok ? T.teal : T.ember, align: 'right', w: 500 }); }
+      for (let k = 0; k < AE.n; k++) {
+        const yy = y + 92 + k * 28, ph = EGE.phase(th, AE.ign[k]), name = EGE.stroke(ph); MX.text('CYL ' + (k + 1), x, yy + 5, { size: 15, font: MX.SANS, color: T.mute, spacing: 2.2, w: 600 });
+        STK.forEach((nm, q) => { c.fillStyle = MX.rgba(col[q], nm === name ? 0.9 : 0.2); c.fillRect(x + 150 + q * bw / 4 + 1, yy - 8, bw / 4 - 2, 12); });
+        c.fillStyle = T.ink; c.fillRect(x + 150 + bw * ph / 720 - 1.5, yy - 13, 3, 22); MX.text(name, x + 600, yy + 5, { size: 18, font: MX.SANS, color: ph < 30 ? T.ember : T.ink, w: 500 });
+      }
+      c.restore();
+    };
     const drawMode = (c, s) => {
       if (PRESS) return drawPress(c, s);
       if (ENIG) return drawEnigma(c, s);
+      if (ENGN) return drawEngine(c, s);
       const a = s.modeA; if (!(a > 0.01)) return; const mi = s.modeI, m = modes[mi], r = an.modes[mi], x = 78, y = H - 318, ratio = r.ratio, drpm = drive.rpm * s.speed, hrpm = drpm * ratio;
       c.save(); c.globalAlpha = a; c.fillStyle = MX.rgba(T.paper, T.dark ? 0.86 : 0.9); c.fillRect(x - 24, y - 70, W - 2 * x + 48, 232); c.fillStyle = T.teal; c.fillRect(x - 24, y - 70, 4, 232);
       MX.A = 1; MX.text(m.label, x, y, { size: 64, font: MX.SERIF, w: 500, color: T.ink });
@@ -196,12 +232,12 @@
     const drawPanel = (c, pn, t) => {
       const a = Math.min(ramp(t, pn.t0, pn.t0 + 0.5), 1 - ramp(t, pn.t1 - 0.4, pn.t1)); if (a < 0.01) return;
       if (pn.kind === 'ratios') {
-        if (!H2.panel(a, spec.fig || 'Fig', ENIG ? 'Run against the published tests' : 'Measured against published', (PRESS ? 'Each phase is read off the running model, then compared with the number the maker publishes.' : ENIG ? 'The machine is run on every published test and compared letter by letter.' : 'Each ratio is read off the running model, then compared with the number the maker publishes.'))) return;
+        if (!H2.panel(a, spec.fig || 'Fig', ENIG ? 'Run against the published tests' : ENGN ? 'Computed from the geometry' : 'Measured against published', (ENGN ? 'Every figure is computed from the drawn dimensions and compared with what the maker publishes.' : PRESS ? 'Each phase is read off the running model, then compared with the number the maker publishes.' : ENIG ? 'The machine is run on every published test and compared letter by letter.' : 'Each ratio is read off the running model, then compared with the number the maker publishes.'))) return;
         an.modes.forEach((r, i) => {
           const m = modes[i], y = 540 + i * 168, ai = a * ramp(t, pn.t0 + 0.4 + i * 0.35, pn.t0 + 0.9 + i * 0.35);
           c.save(); c.globalAlpha = ai; c.strokeStyle = T.line; c.beginPath(); c.moveTo(86, y - 74); c.lineTo(W - 86, y - 74); c.stroke(); c.restore();
           MX.A = ai; MX.text(m.label, 86, y, { size: 54, font: MX.SERIF, w: 500 }); MX.text(m.formula || '', 86, y + 36, { size: 21, font: MX.SANS, color: T.mute }); MX.text(m.note || '', 86, y + 66, { size: 19, font: MX.SANS, color: T.mute });
-          MX.text(ENIG ? r.text : PRESS ? r.ratio.toFixed(2) + ' ' + (M.press.unit || 'mm') : r.ratio.toFixed(4), W - 86, y, { size: 58, font: MX.SERIF, w: 500, align: 'right' });
+          MX.text(ENIG ? r.text : ENGN ? r.text + (m.unit ? ' ' + m.unit : '') : PRESS ? r.ratio.toFixed(2) + ' ' + (M.press.unit || 'mm') : r.ratio.toFixed(4), W - 86, y, { size: 58, font: MX.SERIF, w: 500, align: 'right' });
           if (m.publish) { const cl = claimBy[m.publish.claim]; c.save(); c.globalAlpha = ai; tagPill(c, W - 86 - 330, y + 52, cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + ' ' + m.publish.text + (r.ok ? '  OK' : '  MISMATCH')); c.restore(); }
           MX.A = a;
         });
@@ -272,6 +308,13 @@
           if (x < M.press.travel - 0.3) bottom = false; prev = x;
         }
       }
+      if (ENGN) {
+        let prevD = crankDeg(thetaAt(tM0 - 0.01)), prevR = thetaAt(tM0 - 0.01);
+        for (let t = tM0; t < tE0 + 2; t += 1 / 120) {
+          const th = thetaAt(t), d = crankDeg(th); AE.ign.forEach((ig, k) => { const before = (((prevD - ig) % 720) + 720) % 720, now = (((d - ig) % 720) + 720) % 720; if (th > prevR && now < before) ev.push({ t, v: 'impact', mat: 'steel', size: 70, vel: 0.5, hard: 0.4, pan: (k - 1.5) * 0.3, thump: 80 }); });
+          prevD = d; prevR = th;
+        }
+      }
       if (ENIG) runs.forEach((run) => run.events.forEach((e) => {
         const jit = (MX.hash(e.ch.charCodeAt(0), Math.round(e.te * 10)) - 0.5) * 0.012;
         ev.push({ t: e.te + jit, v: 'clack', vel: 0.85 + MX.hash(e.ch.charCodeAt(0), 3) * 0.3, pan: -0.1, send: 0.35 });
@@ -284,7 +327,7 @@
       ev.push({ t: tR0 - 0.1, v: 'whoosh', d: 1.6, f0: 3400, f1: 240, gain: 0.8 }, { t: tR0 + RD - 0.3, v: 'boom', gain: 0.8 });
       panels.forEach((pn) => { ev.push({ t: pn.t0 + 0.1, v: 'blip', f: 900, gain: 0.5 }); (pn.rows || an.modes).forEach((r, i) => ev.push({ t: pn.t0 + 0.5 + i * 0.3, v: 'blip', f: 1100 + i * 90, gain: 0.35, pan: 0.2 })); });
       ev.push({ t: DUR - 3.2, v: 'tone', f: note(0, 4), timbre: 'bell', d: 3.4, ring: 2, gain: 0.6 }, { t: DUR - 3.0, v: 'tone', f: note(0, 9), timbre: 'bell', d: 3, ring: 2, gain: 0.45 });
-      return SND.render({ duration: DUR, seed: 61, events: ev, bed: (dir.sound && 'bed' in dir.sound) ? dir.sound.bed : { bpm: 92, root: 48, mode: 'dorian', level: 0.55, prog: [0, 5, 3, 4], curve: [[0, 0.2], [tM0, 0.4], [tE0, 0.6], [tT0, 0.5], [tP0, 0.3], [DUR, 0.15]] }, room: (dir.sound && dir.sound.room) || { size: 1.1, wet: 0.22, fb: 0.78 }, tone: 0.003 });
+      return SND.render({ duration: DUR, seed: 61, events: ev, bed: (dir.sound && 'bed' in dir.sound) ? dir.sound.bed : { bpm: 92, root: 48, mode: 'dorian', level: 0.55, prog: [0, 5, 3, 4], curve: [[0, 0.2], [tM0, 0.4], [tE0, 0.6], [tT0, 0.5], [tP0, 0.3], [DUR, 0.15]] }, room: (dir.sound && dir.sound.room) || { size: 1.1, wet: 0.22, fb: 0.78 }, tone: 0.002 });
     }
 
     /* ---------------------------------------------------------- exportacion */
@@ -378,13 +421,14 @@
     if (explore && ENIG) startEnigmaExplore();
     else if (explore) {
       const it = new Integrator(an, drive.rpm), live = { mode: modes[0] || null, spin: true, last: performance.now() };
-      const tg = [{ label: PRESS ? 'PRESS' : 'SPIN', get: () => live.spin, set: (v) => { live.spin = v; } }].concat(PRESS ? [] : modes.map((m) => ({ label: m.label.toUpperCase().replace('GEAR ', 'G'), get: () => live.mode === m, set: () => { live.mode = m; } })));
+      const tg = [{ label: PRESS ? 'PRESS' : 'SPIN', get: () => live.spin, set: (v) => { live.spin = v; } }].concat(PRESS || ENGN ? [] : modes.map((m) => ({ label: m.label.toUpperCase().replace('GEAR ', 'G'), get: () => live.mode === m, set: () => { live.mode = m; } })));
       const HOME = UP ? Object.assign({}, VW.iso, { zoom: VW.expl.zoom * 1.3 }) : VW.iso;
       F.explore({ views: [['FRONT', VW.front], ['ISO', HOME], ['SIDE', VW.side]], home: HOME, start: HOME, toggleW: 100, toggles: tg, minZoom: 3, maxZoom: 400,
         reset: () => { live.mode = modes[0] || null; live.spin = true; },
         extra: (Sx) => {
           const now = performance.now(), dt = Math.min(0.05, (now - live.last) / 1000); live.last = now; if (an.K) it.step(dt, live.mode, live.spin ? 1 : 0); if (live.spin) live.t = (live.t || 0) + dt; const r = live.mode ? an.modes[modes.indexOf(live.mode)].ratio : null, px = PRESS ? (1 - Math.cos((live.t || 0) * 2.2)) / 2 * M.press.travel : 0;
-          return { mech: { ang: (b) => (an.K ? it.ang(b) : 0), press: px }, light: { az: -38, el: 54 }, dimTo: 0.1, readout: (PRESS ? px.toFixed(2) + ' mm  ' + Math.round(forceAt(px)) + ' ' + (M.press.forceUnit || 'cN') + '  -  ' : live.mode ? live.mode.label + '  ' + r.toFixed(3) + ' : 1  -  ' : '') + 'EXPLODE ' + Math.round(Sx.e * 100) + '%' };
+          const eth = ENGN ? (live.t || 0) * (drive.rpm || 40) * 6 * RAD : 0;
+          return { mech: { ang: (b) => (an.K ? it.ang(b) : 0), press: px, eng: ENGN ? { theta: eth } : undefined }, light: { az: -38, el: 54 }, dimTo: 0.1, readout: (ENGN ? Math.round(crankDeg(eth)) + ' / 720 deg  -  ' : PRESS ? px.toFixed(2) + ' mm  ' + Math.round(forceAt(px)) + ' ' + (M.press.forceUnit || 'cN') + '  -  ' : live.mode && !ENGN ? live.mode.label + '  ' + r.toFixed(3) + ' : 1  -  ' : '') + 'EXPLODE ' + Math.round(Sx.e * 100) + '%' };
         } });
     } else F.run({ duration: DUR, keys, script, audio, poster: tM0 + MD * 0.5 });
     return { F, an, DUR };

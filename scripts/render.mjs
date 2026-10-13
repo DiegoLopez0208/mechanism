@@ -23,7 +23,8 @@ const BROWSER = BROWSERS.find((b) => existsSync(b));
 if (!BROWSER) { console.error('no encontre un navegador Chromium; define BROWSER=<ruta>'); process.exit(1); }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // loudnorm de dos pasadas (medir, luego aplicar lineal): en una sola pasada el audio dinamico queda unos 4 LU por debajo del objetivo
-const loudAf = (file) => { const mm = spawnSync(FFMPEG, ['-hide_banner', '-nostats', '-i', file, '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11:print_format=json', '-f', 'null', '-'], { encoding: 'utf8' }), j = /{[^}]*"input_i"[^}]*}/.exec(mm.stderr || ''); if (!j) return 'loudnorm=I=-16:TP=-1.5:LRA=11'; const d = JSON.parse(j[0]); return `loudnorm=I=-16:TP=-1.5:LRA=11:measured_I=${d.input_i}:measured_LRA=${d.input_lra}:measured_TP=${d.input_tp}:measured_thresh=${d.input_thresh}:offset=${d.target_offset}:linear=true`; };
+const PRE = 'alimiter=limit=0.95:attack=2:release=40';      // limitador de seguridad: los golpes secos de las grabaciones reales son picudos; sin compresor para no aplastar la dinamica
+const loudAf = (file) => { const mm = spawnSync(FFMPEG, ['-hide_banner', '-nostats', '-i', file, '-af', PRE + ',loudnorm=I=-16:TP=-2.5:LRA=11:print_format=json', '-f', 'null', '-'], { encoding: 'utf8' }), j = /{[^}]*"input_i"[^}]*}/.exec(mm.stderr || ''); if (!j) return PRE + ',loudnorm=I=-16:TP=-2.5:LRA=11'; const d = JSON.parse(j[0]); return PRE + `,loudnorm=I=-16:TP=-2.5:LRA=11:measured_I=${d.input_i}:measured_LRA=${d.input_lra}:measured_TP=${d.input_tp}:measured_thresh=${d.input_thresh}:offset=${d.target_offset}:linear=true`; };
 
 const profile = path.join(os.tmpdir(), 'mx-browser-' + Date.now());
 const proc = spawn(BROWSER, ['--headless=new', `--remote-debugging-port=${PORT}`, `--user-data-dir=${profile}`, '--hide-scrollbars', '--mute-audio', '--no-first-run', '--force-device-scale-factor=1', 'about:blank'], { stdio: 'ignore' });

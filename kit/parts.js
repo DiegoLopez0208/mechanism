@@ -186,4 +186,60 @@
     const lg = new TH.BufferGeometry(); lg.setAttribute('position', new TH.Float32BufferAttribute(pts, 3)); gr.add(new TH.LineSegments(lg, new TH.LineBasicMaterial({ color: '#d9b25a', transparent: true, opacity: 0.85 })));
     gr.userData = { kind: 'rotor', r, w, rc }; return gr;
   };
+  /* ------------------------------------------------------------ motor de piston: ciguenal, biela, piston, bloque, arbol de levas, valvula */
+  // Convencion: el eje del ciguenal es z, los cilindros apuntan a +y y el angulo 0 de una munequilla es hacia +y (punto muerto superior).
+  // Una munequilla con angulo a (grados) queda en (r sin a, r cos a): el ciguenal gira con rotation.z = -theta.
+  const hull = (pts) => {
+    const p = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]), cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]), lo = [], up = [];
+    p.forEach((q) => { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); });
+    for (let i = p.length - 1; i >= 0; i--) { const q = p[i]; while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
+    lo.pop(); up.pop(); return lo.concat(up);
+  };
+  const circ = (cx, cy, r, n = 28) => Array.from({ length: n }, (_, i) => [cx + r * Math.cos(i / n * TAU), cy + r * Math.sin(i / n * TAU)]);
+  const dbl = (name) => { const m = P.mat(name).clone(); m.side = TH.DoubleSide; return m; };
+  // ciguenal: n cilindros a distancia pitch, carrera stroke, munequillas en throws[k] grados; contrapesos opuestos a cada munequilla
+  P.crankshaft = (o) => {
+    const gr = new TH.Group(), r = o.stroke / 2, mat = o.mat || 'steel', zc = (k) => (k - (o.n - 1) / 2) * o.pitch, pinLen = o.pinLen, webT = o.webT, webR = o.webR || o.mainR + 5;
+    const shaft = cyl(o.mainR, o.mainR, o.n * o.pitch + 2 * (o.nose || 16), mat); gr.add(shaft);
+    const webGeo = extrude(toShape(hull(circ(0, r, o.pinR + 3.5).concat(circ(0, 0, webR * 0.8), circ(0, -r * 0.55, webR * 1.12)))), webT, 0.4);
+    for (let k = 0; k < o.n; k++) {
+      const a = o.throws[k] * rad, pin = cyl(o.pinR, o.pinR, pinLen, mat, 40); pin.position.set(r * Math.sin(a), r * Math.cos(a), zc(k)); gr.add(pin);
+      [-1, 1].forEach((s) => { const w = new TH.Mesh(webGeo, P.mat(mat)); w.position.z = zc(k) + s * (pinLen / 2 + webT / 2); w.rotation.z = -a; gr.add(w); });
+    }
+    gr.userData = { kind: 'crankshaft', n: o.n, stroke: o.stroke, mainR: o.mainR, pinR: o.pinR }; return gr;
+  };
+  // biela: l entre centros, extremo grande en y = -l/2 y pequeno en y = +l/2 (el origen es el punto medio), espesor t en z
+  P.conrod = (o) => {
+    const sh = toShape(hull(circ(0, -o.l / 2, o.bigR, 36).concat(circ(0, o.l / 2, o.smallR, 28))));
+    sh.holes.push(circlePath(o.bigBore, 0, -o.l / 2), circlePath(o.smallBore, 0, o.l / 2));
+    return grp(new TH.Mesh(extrude(sh, o.t, 0.4), P.mat(o.mat || 'steel')), { kind: 'conrod', l: o.l, t: o.t });
+  };
+  // piston: diametro d, alto total h, ch = altura de compresion (de la corona al eje del perno, que es el origen), tres canales de aros
+  P.piston = (o) => {
+    const R = o.d / 2, wall = o.wall || 3.4, top = 4.5, pts = [[0, 0], [R - 1.4, 0], [R, -1.4]];
+    for (let i = 0; i < 3; i++) { const gy = 5 + i * 3.4; pts.push([R, -gy], [R - 1.2, -gy], [R - 1.2, -gy - 1.5], [R, -gy - 1.5]); }
+    pts.push([R, -o.h], [R - wall, -o.h], [R - wall, -top], [0, -top]);
+    const m = new TH.Mesh(new TH.LatheGeometry(pts.map((p) => new TH.Vector2(p[0], p[1])), 56), dbl(o.mat || 'aluminum')); m.position.y = o.ch;
+    return grp(m, { kind: 'piston', d: o.d, h: o.h, ch: o.ch });
+  };
+  // bloque o culata vistos desde arriba: w en x, l en z, h en y, origen al centro; holes [[z, r, x]] son pasantes
+  P.engblock = (o) => {
+    const sh = rrect(o.w, o.l, o.r == null ? 4 : o.r); (o.holes || []).forEach((q) => sh.holes.push(circlePath(q[1], q[2] || 0, -q[0])));
+    const geo = extrude(sh, o.h, Math.min(0.6, o.h * 0.04)); geo.rotateX(-Math.PI / 2);
+    return grp(new TH.Mesh(geo, P.mat(o.mat || 'aluminum-dark')), { kind: 'engblock', w: o.w, l: o.l, h: o.h });
+  };
+  // arbol de levas: lobes [{ z, a (grados, punta hacia +y a 0), r, lift, w }]
+  P.camshaft = (o) => {
+    const gr = new TH.Group(); gr.add(cyl(o.r, o.r, o.len, o.mat || 'steel'));
+    (o.lobes || []).forEach((l) => {
+      const R = l.r || o.r * 1.7, geo = extrude(toShape(hull(circ(0, 0, R).concat(circ(0, R + l.lift - R * 0.38, R * 0.38)))), l.w || 8, 0.3), m = new TH.Mesh(geo, P.mat(o.mat || 'steel-dark'));
+      m.position.z = l.z; m.rotation.z = -(l.a || 0) * rad; gr.add(m);
+    });
+    gr.userData = { kind: 'camshaft', len: o.len }; return gr;
+  };
+  // valvula de hongo: el origen es la cara del plato y el vastago sube a +y
+  P.valve = (o) => {
+    const pts = [[0, -0.5], [o.headR * 0.9, 0], [o.headR, 1], [o.stemR * 1.7, 3.2], [o.stemR, 6], [o.stemR, o.len], [0, o.len]];
+    return grp(new TH.Mesh(new TH.LatheGeometry(pts.map((p) => new TH.Vector2(p[0], p[1])), 28), dbl(o.mat || 'steel')), { kind: 'valve', headR: o.headR, len: o.len });
+  };
 })(typeof window !== 'undefined' ? window : globalThis);

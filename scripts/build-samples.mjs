@@ -1,0 +1,49 @@
+#!/usr/bin/env node
+// build-samples.mjs - empaqueta grabaciones reales de libre uso (CC0) en kit/samples.js: mono, 44,1 kHz, recortadas al primer golpe, con fade y pico normalizado.
+// Las fuentes se bajan a data/audio/dl/ (no se versionan):
+//   kb/      OpenGameArt "Keyboard Soundpack #1" (unicaegames, CC0)   https://opengameart.org/sites/default/files/unicae_games_keyboard_soundpack_1_0.zip
+//   impact/  Kenney "Impact Sounds" (CC0)                             https://kenney.nl/assets/impact-sounds
+//   ui/      Kenney "Interface Sounds" (CC0)                          https://kenney.nl/assets/interface-sounds
+// Uso: node scripts/build-samples.mjs     (necesita ffmpeg)
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), dl = path.join(root, 'data/audio/dl'), SR = 44100, FFMPEG = process.env.FFMPEG || 'ffmpeg';
+const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]));
+const find = (pack, name) => { const f = walk(path.join(dl, pack)).find((p) => path.basename(p).replace(/\.(wav|ogg)$/, '') === name); if (!f) throw new Error('no esta ' + pack + '/' + name); return f; };
+
+// nombre -> [paquete, archivo, duracion maxima (s)]
+const M = {};
+[3, 7, 11, 15, 19, 23, 27, 31].forEach((n, i) => { M['k' + (i + 1)] = ['kb', 'keypress-' + String(n).padStart(3, '0'), 0.32]; });          // teclas
+const imp = (name, group, n, d) => { M[name] = ['impact', group + '_' + String(n).padStart(3, '0'), d]; };
+[0, 1, 2].forEach((n, i) => imp('metal_l' + (i + 1), 'impactMetal_light', n, 0.55)); [0, 2].forEach((n, i) => imp('metal_m' + (i + 1), 'impactMetal_medium', n, 0.7)); imp('metal_h1', 'impactMetal_heavy', 0, 0.8);
+imp('plate_l1', 'impactPlate_light', 0, 0.5); imp('plate_m1', 'impactPlate_medium', 0, 0.6); imp('plate_h1', 'impactPlate_heavy', 0, 0.8);
+[0, 1].forEach((n, i) => imp('tin_m' + (i + 1), 'impactTin_medium', n, 0.5));
+[0, 1].forEach((n, i) => imp('glass_l' + (i + 1), 'impactGlass_light', n, 0.5)); imp('glass_m1', 'impactGlass_medium', 0, 0.6); imp('glass_h1', 'impactGlass_heavy', 0, 0.8);
+[0, 1].forEach((n, i) => imp('soft_m' + (i + 1), 'impactSoft_medium', n, 0.4)); imp('soft_h1', 'impactSoft_heavy', 0, 0.5);
+[0, 1, 2].forEach((n, i) => imp('gen_l' + (i + 1), 'impactGeneric_light', n, 0.3)); imp('wood_m1', 'impactPlank_medium', 0, 0.5);
+[1, 3, 5].forEach((n, i) => { M['click' + (i + 1)] = ['ui', 'click_' + String(n).padStart(3, '0'), 0.18]; });
+[1, 3, 5].forEach((n, i) => { M['sw' + (i + 1)] = ['ui', 'switch_' + String(n).padStart(3, '0'), 0.22]; });
+[1, 2].forEach((n, i) => { M['tick' + (i + 1)] = ['ui', 'tick_' + String(n).padStart(3, '0'), 0.12]; });
+[1, 3].forEach((n, i) => { M['tog' + (i + 1)] = ['ui', 'toggle_' + String(n).padStart(3, '0'), 0.25]; });
+[1, 3].forEach((n, i) => { M['scroll' + (i + 1)] = ['ui', 'scroll_' + String(n).padStart(3, '0'), 0.3]; });
+
+const out = {}; let total = 0;
+for (const [name, [pack, file, maxD]] of Object.entries(M)) {
+  const r = spawnSync(FFMPEG, ['-v', 'error', '-i', find(pack, file), '-ac', '1', '-ar', String(SR), '-f', 'f32le', '-'], { maxBuffer: 1 << 28 });
+  if (r.status !== 0) throw new Error('ffmpeg fallo con ' + file);
+  const x = new Float32Array(r.stdout.buffer, r.stdout.byteOffset, Math.floor(r.stdout.byteLength / 4)); let pk = 0; for (let i = 0; i < x.length; i++) pk = Math.max(pk, Math.abs(x[i]));
+  let i0 = 0; while (i0 < x.length && Math.abs(x[i0]) < 0.03 * pk) i0++; i0 = Math.max(0, i0 - Math.floor(0.002 * SR));
+  const n = Math.min(x.length - i0, Math.floor(maxD * SR)), y = new Int16Array(n), fade = Math.floor(0.05 * SR);
+  for (let i = 0; i < n; i++) { const f = i > n - fade ? (n - i) / fade : 1; y[i] = Math.round(Math.max(-1, Math.min(1, x[i0 + i] / (pk || 1) * 0.7 * f)) * 32767); }
+  out[name] = Buffer.from(y.buffer).toString('base64'); total += y.byteLength;
+}
+fs.writeFileSync(path.join(root, 'kit/samples.js'), `/*
+ * kit/samples.js - grabaciones reales de libre uso (CC0) para el sonido: teclas, impactos de metal / vidrio / plancha / goma, clics. Generado por scripts/build-samples.mjs.
+ * Fuentes: OpenGameArt "Keyboard Soundpack #1" (unicaegames, CC0); Kenney "Impact Sounds" y "Interface Sounds" (CC0). Mono, 44,1 kHz, Int16 en base64.
+ */
+(function (g) { const MX = (g.MX = g.MX || {}); MX.SAMPLES = { sr: ${SR}, d: ${JSON.stringify(out)} }; })(typeof window !== 'undefined' ? window : globalThis);
+`);
+console.log(Object.keys(out).length + ' muestras, ' + (total / 1024).toFixed(0) + ' KB de audio, kit/samples.js ' + (fs.statSync(path.join(root, 'kit/samples.js')).size / 1024).toFixed(0) + ' KB');
