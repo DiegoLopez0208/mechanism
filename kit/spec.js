@@ -356,7 +356,7 @@
         rows.forEach((r, i) => {
           const y = 520 + i * 70, ai = a * ramp(t, pn.t0 + 0.4 + i * 0.28, pn.t0 + 0.8 + i * 0.28), col = r.ok === false ? T.ember : T.teal;
           c.save(); c.globalAlpha = ai; c.strokeStyle = T.line; c.beginPath(); c.moveTo(86, y - 44); c.lineTo(W - 86, y - 44); c.stroke(); c.restore();
-          MX.A = ai; MX.text(String(r.label).slice(0, 34), 86, y, { size: 22, font: MX.MONO, color: T.mute }); MX.text(r.pub, W - 380, y, { size: r.pub.length > 8 ? 22 : 28, font: MX.MONO, w: 600, color: T.ink, align: 'right' }); MX.text(r.got, W - 130, y, { size: r.got.length > 8 ? 22 : 28, font: MX.MONO, w: 600, color: col, align: 'right' }); MX.text(r.ok === false ? 'X' : 'OK', W - 86, y, { size: 22, font: MX.MONO, w: 700, color: col, align: 'right' }); MX.A = a;
+          MX.A = ai; MX.text(String(r.label).slice(0, 34), 86, y, { size: 22, font: MX.MONO, color: T.mute }); MX.text(r.pub, W - 380, y, { size: (r.pub.length > 16 ? 15 : r.pub.length > 8 ? 22 : 28), font: MX.MONO, w: 600, color: T.ink, align: 'right' }); MX.text(r.got, W - 130, y, { size: (r.got.length > 16 ? 15 : r.got.length > 8 ? 22 : 28), font: MX.MONO, w: 600, color: col, align: 'right' }); MX.text(r.ok === false ? 'X' : 'OK', W - 86, y, { size: 22, font: MX.MONO, w: 700, color: col, align: 'right' }); MX.A = a;
         });
         MX.A = a * ramp(t, pn.t0 + 0.3, pn.t0 + 0.7); MX.text('PUBLISHED', W - 380, 470, { size: 13, font: MX.MONO, color: T.mute, align: 'right', spacing: 2.4 }); MX.text('MODEL', W - 130, 470, { size: 13, font: MX.MONO, color: T.mute, align: 'right', spacing: 2.4 }); MX.A = a;
         const sy = 520 + rows.length * 70 + 60, as = a * ramp(t, pn.t0 + 0.8 + rows.length * 0.28, pn.t0 + 1.4 + rows.length * 0.28), sc = 1 + 0.35 * (1 - ramp(t, pn.t0 + 0.8 + rows.length * 0.28, pn.t0 + 1.3 + rows.length * 0.28)), stamp = VOK ? 'VERIFIED' : 'DOES NOT PASS', scol = VOK ? T.teal : T.ember;
@@ -397,8 +397,8 @@
       rows.forEach((r, i) => {
         const y = y0 + 60 + i * 78, t1 = 2.3 + i * 0.4, t2 = COLD - 3.0 + i * 0.4, done = t >= t2, col = r.ok === false ? T.ember : T.teal;
         c.save(); c.globalAlpha = fade * ramp(t, t1, t1 + 0.4); c.strokeStyle = T.line; c.beginPath(); c.moveTo(86, y - 46); c.lineTo(W - 86, y - 46); c.stroke(); c.restore();
-        MX.A = fade * ramp(t, t1, t1 + 0.4); MX.text(String(r.label).slice(0, 26), 86, y, { size: 21, font: MX.MONO, color: T.mute }); MX.text(r.pub, W - 360, y, { size: r.pub.length > 8 ? 22 : 32, font: MX.MONO, w: 700, color: T.ink, align: 'right' });
-        MX.A = fade * (done ? ramp(t, t2, t2 + 0.3) : 0.5 + 0.4 * Math.sin(t * 7 + i)); MX.text(done ? r.got + '  ' + (r.ok === false ? 'X' : 'OK') : 'checking...', W - 86, y, { size: done ? (r.got.length > 8 ? 22 : 32) : 20, font: MX.MONO, w: 700, color: done ? col : T.mute, align: 'right' });
+        MX.A = fade * ramp(t, t1, t1 + 0.4); MX.text(String(r.label).slice(0, 26), 86, y, { size: 21, font: MX.MONO, color: T.mute }); MX.text(r.pub, W - 360, y, { size: (r.pub.length > 16 ? 15 : r.pub.length > 8 ? 22 : 32), font: MX.MONO, w: 700, color: T.ink, align: 'right' });
+        MX.A = fade * (done ? ramp(t, t2, t2 + 0.3) : 0.5 + 0.4 * Math.sin(t * 7 + i)); MX.text(done ? r.got + '  ' + (r.ok === false ? 'X' : 'OK') : 'checking...', W - 86, y, { size: done ? (r.got.length > 16 ? 15 : r.got.length > 8 ? 22 : 32) : 20, font: MX.MONO, w: 700, color: done ? col : T.mute, align: 'right' });
       });
       MX.A = fade * ramp(t, COLD - 1.2, COLD - 0.6); MX.text(rows.filter((r) => r.ok !== false).length + ' of ' + rows.length + ' reproduced by a model built from the published numbers. Now, how it is built.', 86, y0 + 60 + rows.length * 78 + 24, { size: 19, font: MX.SANS, color: T.mute });
       MX.A = 1; c.restore();
