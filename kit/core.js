@@ -51,6 +51,7 @@
     dossier: { dark: true, paper: '#0a1828', plate: '#10253b', plateEdge: '#1d3b59', ink: '#d6e6f5', mute: '#6f8ba6', metal: '#7fa0bd', steel: '#5d7a96', darkc: '#bcd4e8', ember: '#ffb347', teal: '#4fd1ff', red: '#ff6b6b', green: '#6ee7a8', gold: '#ffd166', glass: '#5cc7e8', line: 'rgba(110,180,230,0.28)', card: 'dossier', titleFont: 'mono', mono: true, gl: { inner: '#153756', outer: '#050d18', floorK: 2.6, floor: '#000000', bloom: 0.07, thr: 0.97, grid: { px: 54, every: 5, minor: 'rgba(110,180,255,0.075)', major: 'rgba(110,180,255,0.16)' } } },
     studio: { dark: true, paper: '#09090c', plate: '#17171d', plateEdge: '#2a2a33', ink: '#f4f2ee', mute: '#8a8892', metal: '#9c9ba3', steel: '#74747c', darkc: '#d3d2d8', ember: '#ff9a62', teal: '#ff6a3d', red: '#ff6b6b', green: '#69db7c', gold: '#e6c35c', glass: '#7ac7d6', line: 'rgba(244,242,238,0.2)', card: 'studio', titleFont: 'sans', accent: true, gl: { inner: '#22222a', outer: '#030305', floorK: 3.4, floor: '#000000', bloom: 0.1, thr: 0.95, rimColor: 'accent', rimK: 2.2, exposure: 1.08, glow: 'accent', glowA: 0.4 } },
   };
+  MX.DEFAULT_STYLE = 'dossier';      // la firma visual de mechanism: plano azul, regla, cajetin de evidencia. Los otros tres estilos son opciones (--style)
   MX.styles = THEMES; MX.STYLE_NAMES = Object.keys(THEMES);
   const SERIF0 = MX.SERIF, MONO0 = MX.MONO, REALMONO = '"Cascadia Mono","Cascadia Code",Consolas,"SF Mono",Menlo,"DejaVu Sans Mono",monospace';
   MX.THEME = {};
@@ -60,7 +61,7 @@
     if (accent && t.accent) MX.THEME.teal = accent;
     MX.SERIF = t.titleFont === 'mono' ? REALMONO : t.titleFont === 'sans' ? MONO0 : SERIF0; if (t.mono) { MX.MONO = REALMONO; } else { MX.MONO = MONO0; }
   };
-  MX.setStyle(g.MX_THEME || 'paper');
+  MX.setStyle(g.MX_THEME || MX.DEFAULT_STYLE);
 
   /* ------------------------------------------------------------ tarjetas alternativas */
   // dossier: marco completo con regla de marcas, encabezado y titulo en monoespaciada, doble filete y cajetin de datos arriba a la derecha (o.blocks: [[nombre, valor]])
@@ -151,6 +152,7 @@
     const paint = (t) => { MX.ctx = ctx; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.filter = 'none'; cfg.draw(ctx, clamp(t, 0, DUR - 1e-6)); };
     // motion blur: promedio de n subtiempos dentro de un obturador (fraccion del intervalo de frame)
     const frame = (t, n = 1, shutter = 0.5) => {
+      if (cfg.blurAt) n = Math.min(n, cfg.blurAt(t));      // adaptativo: sin movimiento no hace falta desenfoque, y cada subframe cuesta un render
       if (n <= 1) { paint(t); return; }
       for (let i = 0; i < n; i++) {
         paint(t + (i / (n - 1) - 0.5) * shutter / FPS);
@@ -158,7 +160,7 @@
       }
       ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.drawImage(acc, 0, 0);
     };
-    g.__frame = (t, n, shutter) => { frame(t, n, shutter); return cv.toDataURL('image/png'); };
+    g.__frame = (t, n, shutter, fmt) => { frame(t, n, shutter); return fmt === 'jpg' ? cv.toDataURL('image/jpeg', 0.97) : cv.toDataURL('image/png'); };
     g.__audioWav = () => {
       const raw = cfg.audio ? cfg.audio() : new Float32Array(Math.floor(DUR * (cfg.sr || 44100))), sr = (raw && raw.sr) || cfg.sr || 44100, ch = raw && raw.L ? [raw.L, raw.R] : [raw], N = ch[0].length, nch = ch.length;
       const b = new ArrayBuffer(44 + N * nch * 2), v = new DataView(b), w = (o, str) => { for (let i = 0; i < str.length; i++) v.setUint8(o + i, str.charCodeAt(i)); };

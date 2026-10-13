@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="paper">
+<html lang="en" data-theme="dossier">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -175,7 +175,7 @@ footer a { border-bottom:1px solid var(--line); }
 
 <header class="hero" id="top"><div class="wrap hero-grid">
   <div>
-    <div class="eyebrow">A skill for coding agents &middot; four looks, one spec</div>
+    <div class="eyebrow">A skill for coding agents &middot; evidence first</div>
     <h1>Model it <em>exactly.</em><br>Take it apart.<br>Film it.</h1>
     <p class="lead">Give it a real object. It looks the numbers up, writes a spec where every number says where it came from, and renders a film, a viewer and a 3D model. If the numbers do not add up, it does not render.</p>
     <div class="btns"><a class="btn fill" href="#examples">Watch the films</a><a class="btn" href="examples/enigma/index.html?explore" target="_blank">Type on the Enigma</a><a class="btn" href="#install">Install</a></div>
@@ -213,39 +213,39 @@ footer a { border-bottom:1px solid var(--line); }
 <section id="examples"><div class="wrap">
   <div class="head rv"><h2>The check is on the card.</h2><p>Each one carries what its model had to reproduce, and says plainly what it could not source.</p></div>
   <div class="grid">
-    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-enigma.jpg" data-paper="out/enigma.mp4" data-night="out/enigma-night.mp4" data-dossier="out/enigma-dossier.mp4" data-studio="out/enigma-studio.mp4"></video><div class="shine"></div></div>
+    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-enigma.jpg" data-paper="out/enigma.mp4"></video><div class="shine"></div></div>
       <h3>Enigma I</h3><span class="chip ok">AAAAA to BDZGO, reproduced</span>
       <p>Wiring, notches and stepping are simulated and must match the published tests, including the middle rotor's double step. In the viewer you type on your keyboard.</p>
       <div class="dl"><a href="examples/enigma/index.html?explore" target="_blank">Viewer (type!)</a><a href="https://github.com/DiegoLopez0208/mechanism/releases/download/v0.1.0/enigma.glb">GLB</a><a href="examples/enigma/spec.js" target="_blank">spec.js</a></div></article>
-    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-rubik.jpg" data-paper="out/rubik.mp4" data-night="out/rubik-night.mp4" data-dossier="out/rubik-dossier.mp4" data-studio="out/rubik-studio.mp4"></video><div class="shine"></div></div>
+    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-rubik.jpg" data-paper="out/rubik.mp4"></video><div class="shine"></div></div>
       <h3>Rubik's Cube</h3><span class="chip ok">20-move superflip, reproduced</span>
       <p>26 pieces that really turn, no tables. The model flips all 12 edges in the published 20 moves, comes back after 1,260 repeats of the longest sequence, and counts 43,252,003,274,489,856,000 positions.</p>
       <div class="dl"><a href="examples/rubik/index.html?explore" target="_blank">Viewer</a><a href="https://github.com/DiegoLopez0208/mechanism/releases/download/v0.1.0/rubik.glb">GLB</a><a href="examples/rubik/spec.js" target="_blank">spec.js</a></div></article>
-    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-k20a.jpg" data-paper="out/k20a.mp4" data-night="out/k20a-night.mp4" data-dossier="out/k20a-dossier.mp4" data-studio="out/k20a-studio.mp4"></video><div class="shine"></div></div>
+    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-k20a.jpg" data-paper="out/k20a.mp4"></video><div class="shine"></div></div>
       <h3>Honda K20A</h3><span class="chip warn">1,998 cc and 1-3-4-2, checked; rod is a guess</span>
       <p>A real crank-slider: 16 valves, cams placed from the valve windows. Displacement is computed from bore and stroke, and the published firing order must be possible with the crank. Honda does not publish the rod, so it is dashed.</p>
       <div class="dl"><a href="examples/k20a/index.html?explore" target="_blank">Viewer</a><a href="https://github.com/DiegoLopez0208/mechanism/releases/download/v0.1.0/k20a.glb">GLB</a><a href="examples/k20a/spec.js" target="_blank">spec.js</a></div></article>
-    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-rtx4090.jpg" data-paper="out/rtx4090.mp4" data-night="out/rtx4090-night.mp4" data-dossier="out/rtx4090-dossier.mp4" data-studio="out/rtx4090-studio.mp4"></video><div class="shine"></div></div>
+    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-rtx4090.jpg" data-paper="out/rtx4090.mp4"></video><div class="shine"></div></div>
       <h3>GeForce RTX 4090</h3><span class="chip warn">6 figures checked; the inside is a guess</span>
       <p>82.58 TFLOPS, 1,290 Gtex/s, 1,008 GB/s and 24 GB are each computed from the published cores, clocks, bus and data rate. Every variable carries its source, so the estimated memory packages show in another colour. The inside of the card is not published and is dashed.</p>
       <div class="dl"><a href="examples/rtx4090/index.html?explore" target="_blank">Viewer</a><a href="https://github.com/DiegoLopez0208/mechanism/releases/download/v0.1.0/rtx4090.glb">GLB</a><a href="examples/rtx4090/spec.js" target="_blank">spec.js</a></div></article>
-    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-mos6502.jpg" data-paper="out/mos6502.mp4" data-night="out/mos6502-night.mp4"></video><div class="shine"></div></div>
+    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-mos6502.jpg" data-paper="out/mos6502.mp4"></video><div class="shine"></div></div>
       <h3>MOS 6502</h3><span class="chip ok">64 KB, 105 opcodes, 16.6 mm2, checked</span>
       <p>Two sources have to agree. The gate counts the address and data pins on the pinout and compares them with the published bus widths, and measures the drawn leads against the DIP standard: 2.54 mm pitch, 15.24 mm rows.</p>
       <div class="dl"><a href="examples/mos6502/index.html?explore" target="_blank">Viewer</a><a href="https://github.com/DiegoLopez0208/mechanism/releases/download/v0.1.0/mos6502.glb">GLB</a><a href="examples/mos6502/spec.js" target="_blank">spec.js</a></div></article>
-    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-hub.jpg" data-paper="out/hub.mp4" data-night="out/hub-night.mp4"></video><div class="shine"></div></div>
+    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-hub.jpg" data-paper="out/hub.mp4"></video><div class="shine"></div></div>
       <h3>Three-speed hub</h3><span class="chip ok">0.75 / 1.00 / 1.333, matches</span>
       <p>A planetary stage with the sun fixed. The running model gives the ratios the maker publishes as 75, 100 and 133 %. Tooth counts are derived; sizes are estimated and dashed.</p>
       <div class="dl"><a href="examples/hub/index.html?explore" target="_blank">Viewer</a><a href="https://github.com/DiegoLopez0208/mechanism/releases/download/v0.1.0/hub.glb">GLB</a><a href="examples/hub/spec.js" target="_blank">spec.js</a></div></article>
-    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-switch.jpg" data-paper="out/switch.mp4" data-night="out/switch-night.mp4"></video><div class="shine"></div></div>
+    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-switch.jpg" data-paper="out/switch.mp4"></video><div class="shine"></div></div>
       <h3>Cherry MX2A Red</h3><span class="chip warn">30, 45, 100 cN do not add up</span>
       <p>A press, not gears. The datasheet's three force points cannot come from one linear spring, and the film plots that instead of hiding it.</p>
       <div class="dl"><a href="examples/switch/index.html?explore" target="_blank">Viewer</a><a href="https://github.com/DiegoLopez0208/mechanism/releases/download/v0.1.0/switch.glb">GLB</a><a href="examples/switch/spec.js" target="_blank">spec.js</a></div></article>
-    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-s25-vs-s26.jpg" data-paper="out/s25-vs-s26.mp4" data-night="out/s25-vs-s26-night.mp4"></video><div class="shine"></div></div>
+    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-s25-vs-s26.jpg" data-paper="out/s25-vs-s26.mp4"></video><div class="shine"></div></div>
       <h3>Galaxy S25 Ultra vs S26 Ultra</h3><span class="chip ok">Measured on official renders</span>
       <p>Five separate lens rings against one pill, titanium against aluminum, corners of 5.6 against 7 mm. Interiors are not drawn: no readable photo, and the film says so.</p>
       <div class="dl"><a href="examples/s25-vs-s26/index.html?explore" target="_blank">Viewer</a></div></article>
-    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-phones.jpg" data-paper="out/phones.mp4" data-night="out/phones-night.mp4"></video><div class="shine"></div></div>
+    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-phones.jpg" data-paper="out/phones.mp4"></video><div class="shine"></div></div>
       <h3>POCO X8 Pro Max vs S26 Ultra</h3><span class="chip ok">Interior measured</span>
       <p>Lenses, island and corners measured on official photos, and the POCO's interior measured on the maker's own spare-parts photos.</p>
       <div class="dl"><a href="examples/phones/index.html?explore" target="_blank">Viewer</a></div></article>
@@ -339,7 +339,7 @@ node scripts/render.mjs examples/my-object/index.html</div>
 (function () {
   const root = document.documentElement, file = location.protocol === 'file:', LOOKS = ['paper', 'night', 'dossier', 'studio'];
   const vurl = (p) => (file ? p : 'docs/media/video/' + p.split('/').pop());      // from disk: the full renders in out/; on the web: 720p copies
-  const setVideo = (v) => { const th = root.dataset.theme, src = vurl(v.dataset[th] || (th === 'paper' ? v.dataset.paper : v.dataset.night || v.dataset.paper)), was = v.currentTime, playing = !v.paused; if (!v.src.endsWith(src)) { v.src = src; v.addEventListener('loadedmetadata', function f() { v.currentTime = was || 0; if (playing) v.play().catch(() => {}); v.removeEventListener('loadedmetadata', f); }); } };
+  const setVideo = (v) => { const src = vurl(v.dataset.paper), was = v.currentTime, playing = !v.paused; if (!v.src.endsWith(src)) { v.src = src; v.addEventListener('loadedmetadata', function f() { v.currentTime = was || 0; if (playing) v.play().catch(() => {}); v.removeEventListener('loadedmetadata', f); }); } };
   const apply = (t) => { if (!LOOKS.includes(t)) t = 'paper'; root.dataset.theme = t; document.querySelectorAll('#looks button').forEach((b) => b.classList.toggle('on', b.dataset.look === t)); try { localStorage.setItem('mx-theme', t); } catch (e) {} document.querySelectorAll('video[data-paper]').forEach(setVideo); if (window.heroTheme) window.heroTheme(t); loadViewer(false); };
   document.querySelectorAll('#looks button').forEach((b) => b.addEventListener('click', () => apply(b.dataset.look)));
   document.querySelectorAll('.copy').forEach((b) => b.addEventListener('click', () => { navigator.clipboard.writeText(b.dataset.copy).then(() => { b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy'; }, 1400); }).catch(() => {}); }));
@@ -376,7 +376,7 @@ node scripts/render.mjs examples/my-object/index.html</div>
   document.querySelectorAll('#pick button').forEach((b) => b.addEventListener('click', () => { which = b.dataset.v; document.querySelectorAll('#pick button').forEach((x) => x.classList.toggle('on', x === b)); vimg.src = 'docs/media/poster-' + which + '.jpg'; if (loaded) loadViewer(true); }));
 
   let saved = null; try { saved = localStorage.getItem('mx-theme'); } catch (e) {}
-  apply(saved || (matchMedia('(prefers-color-scheme: dark)').matches ? 'night' : 'paper'));
+  apply(saved || 'dossier');
 })();
 </script>
 </body>

@@ -132,7 +132,7 @@
     };
     F.run = (o) => {
       const cam = F.camera(o.keys);
-      MX.run({ w: W, h: H, fps: FPS, duration: o.duration, poster: o.poster == null ? o.duration * 0.35 : o.poster,
+      MX.run({ w: W, h: H, fps: FPS, duration: o.duration, blurAt: o.blurAt, poster: o.poster == null ? o.duration * 0.35 : o.poster,
         draw: (ctx, t) => { const s = o.script(t); s.t = t; s.view = s.view || (o.drift === false ? cam(t) : F.drift(cam(t), t, o.drift == null ? 1 : o.drift)); F.frame(ctx, s); }, audio: () => (o.audio ? o.audio() : MX.audio.render({ duration: o.duration, cues: o.cues ? o.cues() : [], reverb: 0.2 })) });
     };
 

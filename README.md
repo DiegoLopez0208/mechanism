@@ -110,7 +110,7 @@ node scripts/new.mjs my-object --title "My object"          # a spec that alread
 node scripts/check-spec.mjs examples/my-object/spec.js      # the gate
 node scripts/probe.mjs "examples/my-object/index.html?explore" out/probe   # mouse-driven check of the viewer
 node scripts/render.mjs examples/my-object/index.html --blur 3 --out out/my-object.mp4
-node scripts/render.mjs examples/my-object/index.html --style dossier --aspect 9:16 --out out/my-object-916.mp4    # paper | night | dossier | studio
+node scripts/render.mjs examples/my-object/index.html --style studio --aspect 9:16 --out out/my-object-916.mp4    # dossier (default) | paper | night | studio
 node scripts/render.mjs examples/my-object/index.html --from 13 --to 21 --out out/clip.mp4      # a clip
 node scripts/render.mjs examples/my-object/index.html --export glb --e 1 --out out/my-object.mp4   # also: --export stl
 node scripts/render.mjs examples/my-object/index.html --remux out/my-object.mp4                  # redo only the sound, in seconds
@@ -145,18 +145,16 @@ A part, with the evidence it stands on:
 
 The director builds the film by itself: staggered assembly, a cutaway while the mechanism runs, one mode at a time with its published number, the exploded view, a tour with a callout per part, re-assembly, and an evidence table with the sources.
 
-### Four looks
+### The look
 
-The same spec renders in four visual styles, chosen with `--style` (or `?style=` in the viewers):
+Every film is drawn as a **dossier**: a blue engineering drawing with a grid and ruler ticks, monospaced type, and a data block that counts how many numbers are SPEC, DERIVED and ESTIMATED. It is the look of evidence, not of a pretty explainer. The same engine can draw three other styles, chosen with `--style` (or `?style=` in the viewers) and defined as one table entry each in `MX.styles` (`kit/core.js`):
 
 | Style | Look |
 |---|---|
-| `paper` | Light paper, serif titles, corner-marked card. The original. |
-| `night` | The same card in the dark. |
-| `dossier` | Blue engineering drawing: grid, ruler ticks, monospaced type and a data block counting SPEC, DERIVED and ESTIMATED. |
-| `studio` | Black product-film set: big bold title and a glow, a rim light and an accent taken from the maker's colour (`brand: { accent }` in the spec). |
-
-Each style sets the palette, the title font, the card layout and the 3D stage (background, grid, shadow, bloom, rim light) in one table, `MX.styles` in `kit/core.js`, so a new look is one more entry.
+| `dossier` | The default. Blueprint grid, ruler, mono type, evidence block. |
+| `paper` | Light paper, serif titles, corner-marked card. |
+| `night` | The paper card in the dark. |
+| `studio` | Black product-film set with a glow and rim light in the maker's colour (`brand: { accent }` in the spec). |
 
 ### Brand identity
 
@@ -186,7 +184,7 @@ Real recordings, not synthesis: keys, metal, glass, plastic and rubber impacts (
 - The hub's power path per mode is simplified: pawls and clutch are not modelled, and the film says so.
 - Interiors need photos or drawings. Without them they are estimated and dashed.
 - A single photo gives no millimetres: it needs a published size, a ruler or a datasheet.
-- Rendering is heavy: about 6 minutes per minute of video.
+- Rendering takes about 2.5 minutes per minute of video (the evidence pages render in one pass, the moving shots in three; `--draft` gives a quick preview).
 - The sources can be wrong too. The spec keeps them next to each claim so you can check, and notes where a page refused to be read.
 
 ## Roadmap

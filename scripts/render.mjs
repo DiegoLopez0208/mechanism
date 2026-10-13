@@ -16,7 +16,7 @@ const page = args.find((a, i) => !a.startsWith('--') && !(i > 0 && args[i - 1].s
 const opt = (k, d) => { const i = args.indexOf('--' + k); return i >= 0 ? args[i + 1] : d; };
 if (!page) { console.error('uso: node scripts/render.mjs <pagina.html> [--duration 28] [--fps 30] [--blur 4] [--out out/x.mp4] [--still t]'); process.exit(1); }
 
-const DUR_ARG = opt('duration', null), FPS = Number(opt('fps', 30)), BLUR = Number(opt('blur', 4)), SHUT = Number(opt('shutter', 0.5)), CRF = opt('crf', '17');
+const DUR_ARG = opt('duration', null), FPS = Number(opt('fps', 30)), DRAFT = args.includes('--draft'), BLUR = Number(opt('blur', DRAFT ? 1 : 4)), SHUT = Number(opt('shutter', 0.5)), CRF = opt('crf', DRAFT ? '24' : '17'), PRESET = opt('preset', DRAFT ? 'veryfast' : 'medium');
 const OUT = path.resolve(opt('out', 'out/figure.mp4')), FFMPEG = process.env.FFMPEG || 'ffmpeg', PORT = Number(process.env.CDP_PORT || 9344);
 const BROWSERS = [process.env.BROWSER, 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe', 'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe', 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', '/usr/bin/google-chrome', '/usr/bin/chromium', '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'].filter(Boolean);
 const BROWSER = BROWSERS.find((b) => existsSync(b));
@@ -53,18 +53,20 @@ try {
   const still = opt('still', null);
   if (still != null) { const f = OUT.replace(/\.mp4$/, `-still-${still}.png`); writeFileSync(f, png(await evalJs(`window.__frame(${Number(still)}, ${BLUR}, ${SHUT})`))); console.log('still:', f); }
   else {
-    const frames = path.join(path.dirname(OUT), '.frames'); rmSync(frames, { recursive: true, force: true }); mkdirSync(frames, { recursive: true });
+    // el video se codifica MIENTRAS se renderiza (frames JPEG al 97 % por un pipe a ffmpeg); al final solo se pega el audio
+    const vtmp = OUT.replace(/.mp4$/, '.video-' + process.pid + '.mp4');
+    const enc = spawn(FFMPEG, ['-y', '-v', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-', '-c:v', 'libx264', '-crf', CRF, '-preset', PRESET, '-pix_fmt', 'yuv420p', vtmp], { stdio: ['pipe', 'ignore', 'inherit'] }); let encDone = new Promise((res) => enc.on('close', res));
     const total = Math.round((TO - FROM) * FPS), t0 = Date.now();
     for (let i = 0; i < total; i++) {
-      writeFileSync(path.join(frames, String(i).padStart(5, '0') + '.png'), png(await evalJs(`window.__frame(${(FROM + i / FPS).toFixed(5)}, ${BLUR}, ${SHUT})`)));
+      const buf = png(await evalJs(`window.__frame(${(FROM + i / FPS).toFixed(5)}, ${BLUR}, ${SHUT}, 'jpg')`)); if (!enc.stdin.write(buf)) await new Promise((res) => enc.stdin.once('drain', res));
       if (i % 60 === 0) console.log(`frame ${i}/${total}  ${((Date.now() - t0) / 1000).toFixed(0)} s`);
     }
-    console.log('audio...');
+    enc.stdin.end(); await encDone; console.log('audio...');
     const wav = path.join(path.dirname(OUT), '.audio-' + process.pid + '.wav'); writeFileSync(wav, Buffer.from(await evalJs('window.__audioWav()'), 'base64'));
     // loudnorm a -16 LUFS: suena parejo en el telefono y en el escritorio
-    const r = spawnSync(FFMPEG, ['-y', '-framerate', String(FPS), '-i', path.join(frames, '%05d.png'), '-ss', String(FROM), '-t', String(TO - FROM), '-i', wav, '-af', loudAf(wav), '-c:v', 'libx264', '-crf', CRF, '-preset', 'slow', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', OUT], { encoding: 'utf8' });
+    const r = spawnSync(FFMPEG, ['-y', '-i', vtmp, '-ss', String(FROM), '-t', String(TO - FROM), '-i', wav, '-af', loudAf(wav), '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', OUT], { encoding: 'utf8' });
     if (r.status !== 0) throw new Error('ffmpeg fallo: ' + r.stderr.slice(-500));
-    rmSync(frames, { recursive: true, force: true }); rmSync(wav, { force: true });
+    rmSync(vtmp, { force: true }); rmSync(wav, { force: true });
     console.log('listo:', OUT, `(${((Date.now() - t0) / 1000).toFixed(0)} s)`);
   }
 } finally { cleanup(); }

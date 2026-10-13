@@ -511,7 +511,7 @@
           const eth = ENGN ? (live.t || 0) * (drive.rpm || 40) * 6 * RAD : 0;
           return { mech: { ang: (b) => (an.K ? it.ang(b) : 0), press: px, eng: ENGN ? { theta: eth } : undefined, cube: CUBE ? cubeFrame(tM0 + (live.t || 0) % (tMend - tM0)) : undefined }, light: { az: -38, el: 54 }, dimTo: 0.1, readout: (CUBE ? 'FACE TURNS  -  ' : ENGN ? Math.round(crankDeg(eth)) + ' / 720 deg  -  ' : PRESS ? px.toFixed(2) + ' mm  ' + Math.round(forceAt(px)) + ' ' + (M.press.forceUnit || 'cN') + '  -  ' : live.mode && !ENGN && !CUBE && !CALC ? live.mode.label + '  ' + r.toFixed(3) + ' : 1  -  ' : '') + 'EXPLODE ' + Math.round(Sx.e * 100) + '%' };
         } });
-    } else F.run({ duration: DUR, keys, script, audio, poster: tM0 + MD * 0.5 });
+    } else F.run({ duration: DUR, keys, script, audio, poster: tM0 + MD * 0.5, blurAt: (t) => (t >= tP0 - 0.2 ? 1 : 99) });      // las paginas de evidencia no se mueven: un solo render por frame
     return { F, an, DUR };
   };
 })(typeof window !== 'undefined' ? window : globalThis);
