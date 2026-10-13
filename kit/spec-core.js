@@ -160,8 +160,9 @@
   // texto de relleno: lo que deja una plantilla sin completar
   const PH = /\b(todo|tbd|fixme|lorem ipsum|placeholder|changeme|xxx+)\b/i, PH_URL = /^https?:\/\/(www\.)?(example\.(com|org|net)|localhost|127\.0\.0\.1|test\.com|foo\.bar)(\/|:|$)/i;
   const DIMS = ['w', 'h', 'd', 'r', 'ro', 'ri', 'm', 'len', 'length', 'width', 'height', 'depth', 'thick', 'thickness', 't', 'rad', 'radius', 'teeth', 'z', 'n'];
+  const RANK = { spec: 0, measured: 1, derived: 2, estimated: 3 };
   S.validate = (spec) => {
-    const errors = [], warnings = [], R = spec.research || { sources: [], claims: [] }, src = {}, cl = {}, ids = new Set();
+    const paramRows = [], mixed = [], errors = [], warnings = [], R = spec.research || { sources: [], claims: [] }, src = {}, cl = {}, ids = new Set();
     if (!Array.isArray(spec.parts) || !spec.parts.length) { errors.push('the spec has no parts: there is nothing to model'); spec = Object.assign({}, spec, { parts: [] }); }
     if (!(R.claims || []).length) errors.push('the spec has no claims: nothing says where any number comes from');
     if (!(R.sources || []).length) errors.push('the spec has no sources');
@@ -183,6 +184,26 @@
       if (d.conf === 'estimated' && !(d.claims || []).length && !d.why) errors.push('part ' + d.id + ' is ESTIMATED without saying why (give it an estimated claim or a why)');
       if (PH.test(d.name || '') || PH.test((d.info && d.info.title) || '') || ((d.info && d.info.lines) || []).some((l) => PH.test(String(l)))) errors.push('part ' + d.id + ' still has placeholder text (TODO / TBD)');
       const bad = (o, label) => Object.keys(o || {}).forEach((k) => { const v = o[k]; if (typeof v === 'number' && !isFinite(v)) errors.push('part ' + d.id + ': ' + label + '.' + k + ' is not finite'); else if (label === 'p' && typeof v === 'number' && DIMS.includes(k) && v <= 0) errors.push('part ' + d.id + ': dimension ' + k + ' = ' + v + ' must be positive'); });
+      if (d.params) {      // provenance per dimension
+        let worst = -1, worstK = null;
+        Object.keys(d.params).forEach((k) => {
+          const q = d.params[k] || {};
+          if (!d.p || !(k in d.p)) { errors.push('part ' + d.id + ': params.' + k + ' is not a dimension of this part'); return; }
+          if (!CONFS.includes(q.conf)) { errors.push('part ' + d.id + ': params.' + k + ' has no valid conf'); return; }
+          if (RANK[q.conf] > worst) { worst = RANK[q.conf]; worstK = k; }
+          if (q.conf === 'estimated') { if (!q.why && !(q.claim && cl[q.claim])) errors.push('part ' + d.id + ': params.' + k + ' is ESTIMATED without saying why'); }
+          else if (!q.claim || !cl[q.claim]) errors.push('part ' + d.id + ': params.' + k + ' (' + q.conf + ') cites no claim that exists');
+          if (q.value != null) {
+            const drawn = d.p[k], tol = q.tol == null ? Math.abs(q.value) * 0.001 : q.tol;
+            if (typeof q.value !== 'number' || !isFinite(q.value)) errors.push('part ' + d.id + ': params.' + k + '.value is not a finite number');
+            else if (!(typeof tol === 'number' && isFinite(tol) && tol >= 0)) errors.push('part ' + d.id + ': params.' + k + ' has an invalid tolerance');
+            else if (typeof drawn !== 'number') errors.push('part ' + d.id + ': ' + k + ' is not a number, it cannot be compared with its source');
+            else if (Math.abs(drawn - q.value) > tol) errors.push('part ' + d.id + ': ' + k + ' is drawn at ' + drawn + ' but the source says ' + q.value + ' (tolerance ' + tol + ')');
+            else if (q.conf !== 'estimated') paramRows.push({ part: d.id, key: k, drawn, value: q.value });
+          }
+        });
+        if (d.conf && worst >= 0 && RANK[d.conf] < worst) { mixed.push(d.id); warnings.push('part ' + d.id + ' is ' + d.conf.toUpperCase() + ' but its dimension ' + worstK + ' is ' + d.params[worstK].conf.toUpperCase() + ': the card lists both'); }
+      }
       bad(d.p, 'p'); [d.at, d.explode].forEach((a, i) => (a || []).forEach((v) => { if (typeof v !== 'number' || !isFinite(v)) errors.push('part ' + d.id + ': ' + (i ? 'explode' : 'at') + ' has a value that is not a finite number'); }));
     });
     // reconocible: que deberia decir alguien que ve el objeto sin leyenda, y los rasgos que lo hacen ese objeto (cada uno atado a piezas que existen)
@@ -213,9 +234,10 @@
     if (an.calc) { lines.push('calc: ' + Object.keys(an.calc.vars).length + ' variables'); an.modes.forEach((m) => lines.push('  phase ' + m.label + ': ' + m.text + (m.publish ? '  published ' + (m.publish.text != null ? m.publish.text : m.publish.value) + (m.ok ? '  ok' : '  MISMATCH') : ''))); }
     if (an.press) { lines.push('press: travel ' + an.press.travel + ' mm, actuation ' + an.press.actuation + ' mm' + (an.press.predictedFinal ? '; a linear spring would give ' + an.press.predictedFinal.toFixed(1) + ' at the end, published ' + an.press.publishedFinal + (an.press.consistent ? '  ok' : '  NOT LINEAR (the spec states its own reading of why; it is not a claim by the maker)') : '')); an.modes.forEach((m) => lines.push('  phase ' + m.label + ': ' + m.ratio + (m.publish ? '  published ' + m.publish.value + (m.ok ? '  ok' : '  MISMATCH') : ''))); }
     if (an.K) { lines.push('mechanism: residual ' + an.K.residual.toExponential(1)); an.centers.forEach((c) => lines.push('  centres ' + c.a + '-' + c.b + ': ' + c.dist.toFixed(3) + ' mm (required ' + c.need.toFixed(3) + ')  ' + (c.ok ? 'ok' : 'MISMATCH'))); an.modes.forEach((m) => lines.push('  mode ' + m.label + ': ' + m.ratio.toFixed(4) + (m.publish ? '  published ' + m.publish.value + (m.ok ? '  ok' : '  MISMATCH') : ''))); }
-    const rowsV = (an.enigmaTests || []).length ? an.enigmaTests.map((t) => t.ok) : an.modes.filter((m) => m.publish).map((m) => m.ok), checked = rowsV.filter((o) => o === true).length, failed = rowsV.filter((o) => o === false).length, pending = rowsV.filter((o) => o !== true && o !== false).length;
-    const estimated = (R.claims || []).filter((c) => c.conf === 'estimated').length, verdict = { state: errors.length ? 'DOES NOT PASS' : !checked ? 'NOTHING CHECKED' : pending ? 'INCOMPLETE' : 'VERIFIED', checked, failed, pending, estimated, recognition: recog, claims: (R.claims || []).length, sources: (R.sources || []).length, parts: spec.parts.length };
+    const rowsV = (an.enigmaTests || []).length ? an.enigmaTests.map((t) => t.ok) : an.modes.filter((m) => m.publish).map((m) => m.ok), checked = rowsV.filter((o) => o === true).length + paramRows.length, failed = rowsV.filter((o) => o === false).length, pending = rowsV.filter((o) => o !== true && o !== false).length;
+    const estimated = (R.claims || []).filter((c) => c.conf === 'estimated').length, verdict = { state: errors.length ? 'DOES NOT PASS' : !checked ? 'NOTHING CHECKED' : pending ? 'INCOMPLETE' : 'VERIFIED', checked, failed, pending, estimated, dimensions: paramRows.length, mixed: mixed.length, recognition: recog, claims: (R.claims || []).length, sources: (R.sources || []).length, parts: spec.parts.length };
     if (!errors.length && !checked) warnings.push('no published figure is compared with the model: this is a description, not a verification');
+    if (paramRows.length || mixed.length) lines.push('dimensions: ' + paramRows.length + ' compared with their source, ' + mixed.length + ' part(s) mix sourced and estimated dimensions');
     lines.push('recognisable: ' + (recog.declared ? recog.features + ' iconic features built, blind test ' + recog.blind : 'not declared'));
     lines.push('verdict: ' + verdict.state + '   ' + checked + ' reproduced, ' + estimated + ' estimated, ' + pending + ' unchecked');
     return { errors, warnings, lines, analysis: an, verdict };

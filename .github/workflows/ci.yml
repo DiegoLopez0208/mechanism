@@ -25,3 +25,5 @@ jobs:
         run: |
           node scripts/new.mjs ci-draft --title "CI draft"
           if node scripts/check-spec.mjs examples/ci-draft/spec.js; then echo "the unfinished template passed the gate"; exit 1; fi
+      - name: The register builds from the gate output
+        run: node scripts/registry.mjs

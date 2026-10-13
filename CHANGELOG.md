@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0 - 2026-10-13
+
+- **Provenance per dimension.** `part.params` (value, unit, conf, claim, tolerance, why): the gate compares drawn sizes with their sources, counts them as reproduced figures and reports mixed parts. The Cherry switch uses it (footprint and cutout sourced; walls, spring and stem arms estimated).
+- **Register.** `scripts/registry.mjs` writes docs/registry.html, registry.json and an SVG badge per object from the gate output.
+- Viewer: GUESSES and BREAK IT. Plain sentence and legend in the films (`director.what`, `director.legend`).
+
 ## 0.2.0 - 2026-10-13
 
 - **Gate.** Rejects placeholder sources and claims (example.com, TODO), non-positive or non-finite dimensions, specs with no parts, calculated variables with no claim, expressions that give undefined / NaN / Infinity, invalid tolerances and ESTIMATED parts with no reason. New drafts from new.mjs fail until completed.

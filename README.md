@@ -164,6 +164,17 @@ The gate ends with `verdict: VERIFIED   8 reproduced, 1 estimated, 0 unchecked`.
 
 It also refuses what a template leaves behind: `example.com` and `TODO` in sources, claims or part names, non-positive or non-finite dimensions, a spec with no parts, a calculated variable with no claim, an expression that gives `undefined`/`NaN`/`Infinity`, an invalid tolerance and an ESTIMATED part with no reason. `node scripts/new.mjs` starts a draft that fails until it is filled in. Every one of those cases is a test in `tests/gate.test.mjs` (`npm test`) and runs in CI.
 
+### Provenance per dimension, and a register
+
+A part can say where each of its sizes comes from, and the gate compares the drawn size with the source:
+
+```js
+params: { w: { value: 15.63, unit: 'mm', conf: 'spec', claim: 'size', tol: 0.005 },
+          wall: { unit: 'mm', conf: 'estimated', why: 'the datasheet has no drawing' } }
+```
+
+A drawn 15.0 against a sourced 15.63 is an error; the compared dimensions count as reproduced figures; and a part whose headline class is stronger than its weakest dimension is reported as mixed (the card lists both). `node scripts/registry.mjs` runs the gate on every example and writes [`docs/registry.html`](docs/registry.html), `docs/registry.json` and an SVG badge per object (`docs/badges/<id>.svg`), all straight from the gate's output.
+
 ### Recognisable, not just correct
 
 A model whose numbers all match can still look like nothing. A spec declares what a stranger should call the object and the features that make it that object, each tied to parts that exist:

@@ -99,6 +99,26 @@ test('nothing compared is NOT verified', () => {
   assert.ok(r.warnings.some((w) => /not a verification/.test(w)));
 });
 
+test('params: a drawn dimension is compared with its source', () => {
+  const withP = (p) => mutate((s) => { s.parts[0].params = p; });
+  const ok = withP({ w: { value: 10, unit: 'mm', conf: 'spec', claim: 'c1', tol: 0.01 } });
+  assert.equal(ok.errors.length, 0, ok.errors.join('; '));
+  assert.equal(ok.verdict.dimensions, 1);
+  assert.equal(ok.verdict.checked, 2);      // the published mode plus the dimension
+  assert.ok(withP({ w: { value: 9.5, unit: 'mm', conf: 'spec', claim: 'c1', tol: 0.01 } }).errors.some((e) => /drawn at 10 but the source says 9.5/.test(e)));
+  assert.ok(withP({ nope: { value: 1, conf: 'spec', claim: 'c1' } }).errors.some((e) => /not a dimension/.test(e)));
+  assert.ok(withP({ w: { value: 10, conf: 'spec' } }).errors.some((e) => /cites no claim/.test(e)));
+  assert.ok(withP({ w: { conf: 'estimated' } }).errors.some((e) => /ESTIMATED without saying why/.test(e)));
+  assert.ok(withP({ w: { value: 10, conf: 'spec', claim: 'c1', tol: -1 } }).errors.some((e) => /invalid tolerance/.test(e)));
+});
+
+test('params: a part stronger than its weakest dimension is reported as mixed', () => {
+  const r = mutate((s) => { s.parts[0].params = { w: { value: 10, conf: 'spec', claim: 'c1' }, h: { conf: 'estimated', why: 'no drawing' } }; });
+  assert.equal(r.errors.length, 0, r.errors.join('; '));
+  assert.equal(r.verdict.mixed, 1);
+  assert.ok(r.warnings.some((w) => /dimension h is ESTIMATED/.test(w)));
+});
+
 test('recognize: features must be built from parts that exist', () => {
   const ok = mutate((s) => { s.recognize = { object: 'A plate', iconic: [{ text: 'a flat plate', parts: ['a'] }, { text: 'its corner radius', partsPrefix: 'a' }] }; });
   assert.equal(ok.errors.length, 0, ok.errors.join('; '));
