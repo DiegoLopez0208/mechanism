@@ -97,9 +97,9 @@ As a Claude Code skill:
 
 ```bash
 # macOS / Linux
-git clone https://github.com/DiegoLopez0208/mechanism ~/.claude/skills/mechanism
+git clone --depth 1 https://github.com/DiegoLopez0208/mechanism ~/.claude/skills/mechanism
 # Windows (PowerShell)
-git clone https://github.com/DiegoLopez0208/mechanism $env:USERPROFILE\.claude\skills\mechanism
+git clone --depth 1 https://github.com/DiegoLopez0208/mechanism $env:USERPROFILE\.claude\skills\mechanism
 ```
 
 The skill can also be found with `npx skills add DiegoLopez0208/mechanism --list` (checked: it lists it). The kit, the scripts and the examples are plain files in this repo, so a clone is the safe way to get all of them.
