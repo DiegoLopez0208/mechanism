@@ -70,11 +70,14 @@ section { padding:90px 0; border-top:1px solid var(--line); }
 .code span { color:var(--mute); }
 footer { padding:50px 0 80px; border-top:1px solid var(--line); color:var(--mute); font-size:14px; }
 footer .wrap { display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap; }
+.hero-grid { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr); gap:56px; align-items:center; }
+.hero h1 { font-size:clamp(44px, 6vw, 90px); }
+.hero-media img { width:100%; display:block; border-radius:8px; box-shadow:var(--shadow); border:1px solid var(--line); }
 .grid.two { grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:56px; }
 .dl { display:flex; gap:18px; flex-wrap:wrap; }
 .dl a { font:500 12px 'Inter'; letter-spacing:.16em; text-transform:uppercase; color:var(--teal); border-bottom:1px solid currentColor; padding-bottom:2px; }
 .code b { color:var(--teal); font-weight:600; } .code i { color:var(--ember); font-style:normal; }
-@media (max-width: 860px) { .feature { grid-template-columns:1fr; gap:36px; } nav ul { display:none; } .facts li { grid-template-columns:1fr; gap:4px; } }
+@media (max-width: 860px) { .hero-grid { grid-template-columns:1fr; gap:36px; } .feature { grid-template-columns:1fr; gap:36px; } nav ul { display:none; } .facts li { grid-template-columns:1fr; gap:4px; } }
 </style>
 </head>
 <body>
@@ -84,11 +87,14 @@ footer .wrap { display:flex; justify-content:space-between; gap:20px; flex-wrap:
   <button class="toggle" id="theme">Night</button>
 </div></nav>
 
-<header class="hero" id="top"><div class="wrap">
-  <div class="eyebrow">A skill for agents</div>
-  <h1>Model it <em>exactly.</em><br>Take it apart.<br>Film it.</h1>
-  <p>mechanism researches a real object, measures it on official photos, explodes it into its parts and renders a narrated film with its own sound, plus an interactive viewer. Every number on screen says where it came from.</p>
-  <div class="btns"><a class="btn fill" href="#phones">Watch the phones film</a><a class="btn" href="#method">How it works</a></div>
+<header class="hero" id="top"><div class="wrap hero-grid">
+  <div>
+    <div class="eyebrow">A skill for agents</div>
+    <h1>Model it <em>exactly.</em><br>Take it apart.<br>Film it.</h1>
+    <p>Give it a real object. It looks the numbers up, writes a spec where every number says where it came from, and renders a film, a viewer and a 3D model. If the numbers do not add up, it does not render. The Enigma model has to reproduce the published test: AAAAA becomes BDZGO.</p>
+    <div class="btns"><a class="btn fill" href="examples/enigma/index.html?explore" target="_blank">Type on the Enigma</a><a class="btn" href="#spec">Watch the films</a><a class="btn" href="https://github.com/DiegoLopez0208/mechanism" target="_blank">GitHub</a></div>
+  </div>
+  <div class="hero-media"><a href="examples/enigma/index.html?explore" target="_blank"><img src="docs/media/enigma.gif" alt="Enigma I: the signal travelling through the rotors, checked against the published test"></a></div>
 </div></header>
 
 <section id="spec"><div class="wrap">
@@ -167,7 +173,7 @@ footer .wrap { display:flex; justify-content:space-between; gap:20px; flex-wrap:
 (function () {
   const root = document.documentElement, btn = document.getElementById('theme'), vid = document.getElementById('vid-phones'), stage = document.getElementById('stage-phones');
   let mode = 'film'; const pv = document.getElementById('vid-phones');
-  const REL = 'https://github.com/DiegoLopez0208/mechanism/releases/download/v0.1.0/', vurl = (p) => (location.protocol === 'file:' ? p : REL + p.split('/').pop());
+  const vurl = (p) => (location.protocol === 'file:' ? p : 'docs/media/video/' + p.split('/').pop());      // desde el disco: los renders completos de out/; en la web: copias de 720p
   const setVideo = (v) => { const t = root.dataset.theme, src = vurl(v.dataset[t] || v.dataset.paper), was = v.currentTime, playing = !v.paused; if (!v.src.endsWith(src)) { v.src = src; v.addEventListener('loadedmetadata', function f() { v.currentTime = was || 0; if (playing) v.play().catch(() => {}); v.removeEventListener('loadedmetadata', f); }); } };
   const setVideos = () => document.querySelectorAll('video[data-paper]').forEach(setVideo);
   const setStage = () => { const old = stage.querySelector('iframe'), url = 'examples/phones/index.html?explore&theme=' + root.dataset.theme; if (mode === 'viewer') { vid.pause(); vid.style.display = 'none'; if (!old) { const f = document.createElement('iframe'); f.src = url; stage.appendChild(f); } else old.src = url; } else { if (old) old.remove(); vid.style.display = ''; } };

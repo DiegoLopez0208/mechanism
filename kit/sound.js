@@ -78,7 +78,32 @@
     for (let i = 0; i < n; i++) { const t = i / sr, f = 52 * (1 + 1.6 * Math.exp(-t / 0.05)); out[i] = Math.sin(TAU * f * t) * Math.exp(-t / 0.32) * 0.8 * (o.gain || 1); lp += ((R() * 2 - 1) - lp) * 0.06; out[i] += lp * Math.exp(-t / 0.15) * 0.4; }
     return out;
   }
-  const VOICES = { impact: modal, click, whoosh: noiseSweep, servo, charge, blip, tone, boom };
+  // ---- voces mecanicas (cada una mezcla un cuerpo grave, un golpe metalico y un poco de ruido de contacto, con variacion por semilla)
+  function clack(sr, o, R) {                      // tecla de maquina de escribir: golpe de la tecla + golpe de la barra + tintineo del resorte
+    const n = Math.floor(0.4 * sr), out = new Float32Array(n), v = o.vel == null ? 1 : o.vel, d = Math.floor(0.011 * sr); let lp = 0;
+    for (let i = 0; i < n; i++) { const t = i / sr; out[i] += Math.sin(TAU * 150 * (1 - 0.45 * Math.min(1, t / 0.05)) * t) * Math.exp(-t / 0.03) * 0.75 * v; }
+    [2600, 4100, 6300].forEach((f, k) => { const ff = f * (1 + (R() - 0.5) * 0.06); for (let i = d; i < n; i++) { const t = (i - d) / sr; out[i] += Math.sin(TAU * ff * t) * Math.exp(-t / (0.016 / (1 + k * 0.6))) * 0.34 * v / (1 + k * 0.7); } });
+    for (let i = 0; i < Math.floor(0.02 * sr); i++) { const x = (R() * 2 - 1) * Math.exp(-i / (0.004 * sr)); lp += (x - lp) * 0.5; out[i] += (x - lp) * 0.5 * v; }
+    for (let i = Math.floor(0.05 * sr); i < n; i++) { const t = (i - 0.05 * sr) / sr; out[i] += Math.sin(TAU * 1900 * t) * Math.exp(-t / 0.05) * 0.05 * v; }
+    return out;
+  }
+  function detent(sr, o, R) {                     // trinquete: un clic seco y dos rebotes del resorte
+    const n = Math.floor(0.09 * sr), out = new Float32Array(n), f = (o.f || 1100) * (1 + (R() - 0.5) * 0.08), v = o.vel == null ? 1 : o.vel; let lp = 0;
+    [[0, 1], [0.008, 0.45], [0.015, 0.22]].forEach(([dl, a]) => { const d = Math.floor(dl * sr); for (let i = 0; i + d < n; i++) { const t = i / sr, x = (R() * 2 - 1) * Math.exp(-t / 0.0016); lp += (x - lp) * 0.35; out[i + d] += ((x - lp) * 0.9 + Math.sin(TAU * f * t) * Math.exp(-t / 0.007) * 0.6) * a * v * 0.6; } });
+    return out;
+  }
+  function thock(sr, o, R) {                      // fondo de un interruptor de teclado: golpe grave y sordo + un tintineo corto del resorte
+    const n = Math.floor(0.3 * sr), out = new Float32Array(n), v = o.vel == null ? 1 : o.vel; let lp = 0;
+    for (let i = 0; i < n; i++) { const t = i / sr; out[i] += Math.sin(TAU * (230 - 70 * Math.min(1, t / 0.06)) * t) * Math.exp(-t / 0.05) * 0.9 * v + Math.sin(TAU * 3100 * t) * Math.exp(-t / 0.03) * 0.07 * v; }
+    for (let i = 0; i < Math.floor(0.015 * sr); i++) { const x = (R() * 2 - 1) * Math.exp(-i / (0.003 * sr)); lp += (x - lp) * 0.18; out[i] += lp * 0.8 * v; }
+    return out;
+  }
+  function tick(sr, o, R) {                       // relé / contacto electrico: un chasquido finito
+    const n = Math.floor(0.05 * sr), out = new Float32Array(n), f = (o.f || 2400) * (1 + (R() - 0.5) * 0.06), v = o.vel == null ? 1 : o.vel; let lp = 0;
+    for (let i = 0; i < n; i++) { const t = i / sr, x = (R() * 2 - 1) * Math.exp(-t / 0.0012); lp += (x - lp) * 0.5; out[i] = ((x - lp) * 0.8 + Math.sin(TAU * f * t) * Math.exp(-t / 0.006) * 0.5) * v * 0.5; }
+    return out;
+  }
+  const VOICES = { impact: modal, click, whoosh: noiseSweep, servo, charge, blip, tone, boom, clack, detent, thock, tick };
 
   /* ------------------------------------------------------------ base musical generativa */
   function bed(sr, N, c, R) {
@@ -112,6 +137,7 @@
   S.render = (cfg) => {
     const sr = cfg.sr || 44100, N = Math.floor(cfg.duration * sr), L = new Float32Array(N), Rr = new Float32Array(N), sL = new Float32Array(N), sR = new Float32Array(N), R = MX.rng(cfg.seed || 17);
     const b = bed(sr, N, cfg.bed, MX.rng((cfg.seed || 17) + 5)); for (let i = 0; i < N; i++) { L[i] += b[0][i]; Rr[i] += b[1][i]; sL[i] += b[0][i] * 0.5; sR[i] += b[1][i] * 0.5; }
+    if (cfg.tone) { const lvl = cfg.tone; let a = 0, b = 0; for (let i = 0; i < N; i++) { const x = R() * 2 - 1; a += (x - a) * 0.02; b += (a - b) * 0.05; L[i] += b * lvl * 8; Rr[i] += b * lvl * 8; } }       // ruido de sala: casi inaudible, pero evita el silencio digital
     (cfg.events || []).forEach((e) => {
       const f = VOICES[e.v]; if (!f) return; const seg = f(sr, e, R), pan = Math.max(-1, Math.min(1, e.pan || 0)), gl = Math.cos((pan + 1) * Math.PI / 4), gr = Math.sin((pan + 1) * Math.PI / 4), gain = e.gain == null ? 1 : e.gain, send = e.send == null ? 0.5 : e.send, i0 = Math.floor(e.t * sr);
       for (let i = 0; i < seg.length && i0 + i < N; i++) { if (i0 + i < 0) continue; const v = seg[i] * gain; L[i0 + i] += v * gl; Rr[i0 + i] += v * gr; sL[i0 + i] += v * gl * send; sR[i0 + i] += v * gr * send; }

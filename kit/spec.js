@@ -266,24 +266,25 @@
         let prev = pressAt(tM0 - 0.01), bottom = false;
         for (let t = tM0; t < tE0; t += 1 / 120) {
           const x = pressAt(t);
-          if (prev < M.press.actuation && x >= M.press.actuation) ev.push({ t, v: 'blip', f: 2100, gain: 0.7, fm: 0.3 }, { t, v: 'click', f: 2600, gain: 0.35, sharp: 0.9 });
+          if (prev < M.press.actuation && x >= M.press.actuation) ev.push({ t, v: 'tick', f: 2600, vel: 0.9 }, { t, v: 'blip', f: 2100, gain: 0.35, fm: 0.3 });
           if (prev >= M.press.actuation && x < M.press.actuation) ev.push({ t, v: 'click', f: 1700, gain: 0.3, sharp: 0.6 });
-          if (!bottom && x >= M.press.travel - 0.02) { bottom = true; ev.push({ t, v: 'impact', mat: 'plastic', size: 14, vel: 0.9, hard: 0.7, ring: 0.7, thump: 120 }); }
+          if (!bottom && x >= M.press.travel - 0.02) { bottom = true; ev.push({ t, v: 'thock', vel: 1 }); }
           if (x < M.press.travel - 0.3) bottom = false; prev = x;
         }
       }
       if (ENIG) runs.forEach((run) => run.events.forEach((e) => {
-        ev.push({ t: e.te, v: 'impact', mat: 'plastic', size: 22, vel: 0.5, hard: 0.8, ring: 0.3, pan: -0.1 }, { t: e.te + 0.01, v: 'click', f: 1600 + MX.hash(e.ch.charCodeAt(0), 5) * 500, gain: 0.5, sharp: 0.8 });
-        e.stepped.forEach((sp, rr) => { if (sp) ev.push({ t: e.te + 0.05 + rr * 0.025, v: 'click', f: 700 + rr * 330, gain: 0.55, sharp: 0.55, pan: (rr - 1) * 0.45 }, { t: e.te + 0.06 + rr * 0.025, v: 'impact', mat: 'steel', size: 16, vel: 0.28, pan: (rr - 1) * 0.45, ring: 0.4 }); });
-        for (let i = 0; i < 8; i++) ev.push({ t: e.te + 0.14 + i * 0.075, v: 'blip', f: 1200 + i * 90 + (i > 3 ? 160 : 0), gain: 0.13, fm: 0.3, pan: -0.5 + i * 0.14 });
-        ev.push({ t: e.te + 0.64, v: 'tone', f: SND.note(57, 'major', (e.out.charCodeAt(0) - 65) % 14), timbre: 'bell', d: 1.0, gain: 0.34, pan: 0.15 });
+        const jit = (MX.hash(e.ch.charCodeAt(0), Math.round(e.te * 10)) - 0.5) * 0.012;
+        ev.push({ t: e.te + jit, v: 'clack', vel: 0.85 + MX.hash(e.ch.charCodeAt(0), 3) * 0.3, pan: -0.1, send: 0.35 });
+        e.stepped.forEach((sp, rr) => { if (sp) ev.push({ t: e.te + 0.07 + rr * 0.035, v: 'detent', f: 800 + rr * 360, vel: 0.9, pan: (rr - 1) * 0.5, send: 0.3 }); });
+        for (let i = 0; i < 8; i++) ev.push({ t: e.te + 0.15 + i * 0.07, v: 'tick', f: 1800 + i * 160, vel: 0.28, pan: -0.5 + i * 0.14, send: 0.2 });
+        ev.push({ t: e.te + 0.64, v: 'tone', f: SND.note(57, 'major', (e.out.charCodeAt(0) - 65) % 14), timbre: 'bell', d: 0.9, gain: 0.22, pan: 0.15 }, { t: e.te + 0.64, v: 'tick', f: 3200, vel: 0.5, pan: 0.15 });
       }));
       ev.push({ t: tE0 - 0.1, v: 'whoosh', d: 1.5, f0: 220, f1: 3400, gain: 0.8, skew: 0.8 }, { t: tE0 + ED - 0.5, v: 'boom', gain: 0.7 });
       tourIds.forEach((id, j) => { const p = parts.find((x) => x.id === id), ts = tT0 + j * TD; ev.push({ t: ts + 0.3, v: 'tone', f: note(0, j * 2), timbre: 'bell', d: 1.3, gain: 0.42, pan: pan(p) }, { t: ts + 0.32, v: 'impact', mat: P.soundMat(p.spec.mat), size: clamp(Math.max(p.size.x, p.size.y), 4, 80), vel: 0.32, pan: pan(p), ring: 0.6 }); });
       ev.push({ t: tR0 - 0.1, v: 'whoosh', d: 1.6, f0: 3400, f1: 240, gain: 0.8 }, { t: tR0 + RD - 0.3, v: 'boom', gain: 0.8 });
       panels.forEach((pn) => { ev.push({ t: pn.t0 + 0.1, v: 'blip', f: 900, gain: 0.5 }); (pn.rows || an.modes).forEach((r, i) => ev.push({ t: pn.t0 + 0.5 + i * 0.3, v: 'blip', f: 1100 + i * 90, gain: 0.35, pan: 0.2 })); });
       ev.push({ t: DUR - 3.2, v: 'tone', f: note(0, 4), timbre: 'bell', d: 3.4, ring: 2, gain: 0.6 }, { t: DUR - 3.0, v: 'tone', f: note(0, 9), timbre: 'bell', d: 3, ring: 2, gain: 0.45 });
-      return SND.render({ duration: DUR, seed: 61, events: ev, bed: { bpm: 92, root: 48, mode: 'dorian', level: 0.55, prog: [0, 5, 3, 4], curve: [[0, 0.2], [tM0, 0.4], [tE0, 0.6], [tT0, 0.5], [tP0, 0.3], [DUR, 0.15]] }, room: { size: 1.1, wet: 0.22, fb: 0.78 } });
+      return SND.render({ duration: DUR, seed: 61, events: ev, bed: (dir.sound && 'bed' in dir.sound) ? dir.sound.bed : { bpm: 92, root: 48, mode: 'dorian', level: 0.55, prog: [0, 5, 3, 4], curve: [[0, 0.2], [tM0, 0.4], [tE0, 0.6], [tT0, 0.5], [tP0, 0.3], [DUR, 0.15]] }, room: (dir.sound && dir.sound.room) || { size: 1.1, wet: 0.22, fb: 0.78 }, tone: 0.003 });
     }
 
     /* ---------------------------------------------------------- exportacion */

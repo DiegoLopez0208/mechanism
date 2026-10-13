@@ -6,7 +6,7 @@
 //   node scripts/render.mjs examples/backpressure/index.html --duration 28 --fps 30 --out out/backpressure.mp4
 //   opciones: --aspect 4:5|9:16|1:1 (figuras de spec)  --from 12 --to 20 (clip)  --export stl|glb --e 1 (modelo 3D, con --out archivo)  --theme night|paper  --blur 4 (subframes por frame, 1 = sin blur)  --shutter 0.5 (fraccion del intervalo)  --crf 16  --still 12.5 (solo un PNG)
 import { spawn, spawnSync } from 'node:child_process';
-import { mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
+import { mkdirSync, writeFileSync, rmSync, existsSync, renameSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 import os from 'node:os';
@@ -22,6 +22,8 @@ const BROWSERS = [process.env.BROWSER, 'C:\\Program Files (x86)\\Microsoft\\Edge
 const BROWSER = BROWSERS.find((b) => existsSync(b));
 if (!BROWSER) { console.error('no encontre un navegador Chromium; define BROWSER=<ruta>'); process.exit(1); }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// loudnorm de dos pasadas (medir, luego aplicar lineal): en una sola pasada el audio dinamico queda unos 4 LU por debajo del objetivo
+const loudAf = (file) => { const mm = spawnSync(FFMPEG, ['-hide_banner', '-nostats', '-i', file, '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11:print_format=json', '-f', 'null', '-'], { encoding: 'utf8' }), j = /{[^}]*"input_i"[^}]*}/.exec(mm.stderr || ''); if (!j) return 'loudnorm=I=-16:TP=-1.5:LRA=11'; const d = JSON.parse(j[0]); return `loudnorm=I=-16:TP=-1.5:LRA=11:measured_I=${d.input_i}:measured_LRA=${d.input_lra}:measured_TP=${d.input_tp}:measured_thresh=${d.input_thresh}:offset=${d.target_offset}:linear=true`; };
 
 const profile = path.join(os.tmpdir(), 'mx-browser-' + Date.now());
 const proc = spawn(BROWSER, ['--headless=new', `--remote-debugging-port=${PORT}`, `--user-data-dir=${profile}`, '--hide-scrollbars', '--mute-audio', '--no-first-run', '--force-device-scale-factor=1', 'about:blank'], { stdio: 'ignore' });
@@ -45,6 +47,8 @@ try {
   const ex = opt('export', null);
   if (ex) { const b = await evalJs(ex === 'glb' ? `window.__exportGLB(${Number(opt('e', 0))})` : `window.__exportSTL(${Number(opt('e', 0))})`); const f = OUT.replace(/.mp4$/, '.' + ex); writeFileSync(f, Buffer.from(b, 'base64')); console.log('modelo:', f, (Buffer.from(b, 'base64').length / 1024).toFixed(0) + ' KB'); cleanup(); process.exit(0); }
   const SPECDUR = await evalJs('window.__specInfo ? window.__specInfo().duration : null'), DUR = Number(DUR_ARG || SPECDUR || 28), FROM = Number(opt('from', 0)), TO = Number(opt('to', DUR));
+  const rem = opt('remux', null);       // --remux out/x.mp4: regenera SOLO el audio y lo pega sobre el video ya renderizado (segundos, no minutos)
+  if (rem) { const wav = path.join(path.dirname(OUT), '.audio-' + process.pid + '.wav'), tmp = rem.replace(/.mp4$/, '.remux.mp4'); writeFileSync(wav, Buffer.from(await evalJs('window.__audioWav()'), 'base64')); const rr = spawnSync(FFMPEG, ['-y', '-i', rem, '-i', wav, '-af', loudAf(wav), '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', tmp], { encoding: 'utf8' }); if (rr.status !== 0) throw new Error('ffmpeg fallo: ' + rr.stderr.slice(-400)); renameSync(tmp, rem); rmSync(wav, { force: true }); console.log('audio nuevo en', rem); cleanup(); process.exit(0); }
   const still = opt('still', null);
   if (still != null) { const f = OUT.replace(/\.mp4$/, `-still-${still}.png`); writeFileSync(f, png(await evalJs(`window.__frame(${Number(still)}, ${BLUR}, ${SHUT})`))); console.log('still:', f); }
   else {
@@ -55,9 +59,9 @@ try {
       if (i % 60 === 0) console.log(`frame ${i}/${total}  ${((Date.now() - t0) / 1000).toFixed(0)} s`);
     }
     console.log('audio...');
-    const wav = path.join(path.dirname(OUT), '.audio.wav'); writeFileSync(wav, Buffer.from(await evalJs('window.__audioWav()'), 'base64'));
+    const wav = path.join(path.dirname(OUT), '.audio-' + process.pid + '.wav'); writeFileSync(wav, Buffer.from(await evalJs('window.__audioWav()'), 'base64'));
     // loudnorm a -16 LUFS: suena parejo en el telefono y en el escritorio
-    const r = spawnSync(FFMPEG, ['-y', '-framerate', String(FPS), '-i', path.join(frames, '%05d.png'), '-ss', String(FROM), '-t', String(TO - FROM), '-i', wav, '-af', 'loudnorm=I=-16:TP=-1.5:LRA=9', '-c:v', 'libx264', '-crf', CRF, '-preset', 'slow', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', OUT], { encoding: 'utf8' });
+    const r = spawnSync(FFMPEG, ['-y', '-framerate', String(FPS), '-i', path.join(frames, '%05d.png'), '-ss', String(FROM), '-t', String(TO - FROM), '-i', wav, '-af', loudAf(wav), '-c:v', 'libx264', '-crf', CRF, '-preset', 'slow', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', OUT], { encoding: 'utf8' });
     if (r.status !== 0) throw new Error('ffmpeg fallo: ' + r.stderr.slice(-500));
     rmSync(frames, { recursive: true, force: true }); rmSync(wav, { force: true });
     console.log('listo:', OUT, `(${((Date.now() - t0) / 1000).toFixed(0)} s)`);
