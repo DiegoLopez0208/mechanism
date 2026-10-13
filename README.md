@@ -101,6 +101,8 @@ git clone https://github.com/DiegoLopez0208/mechanism ~/.claude/skills/mechanism
 git clone https://github.com/DiegoLopez0208/mechanism $env:USERPROFILE\.claude\skills\mechanism
 ```
 
+The skill can also be found with `npx skills add DiegoLopez0208/mechanism --list` (checked: it lists it). The kit, the scripts and the examples are plain files in this repo, so a clone is the safe way to get all of them.
+
 Then ask: *"Use mechanism to model a mechanical keyboard switch from its published sources."* The agent researches, writes the spec, runs the gate and renders.
 
 Needs Node 22+, Edge or Chrome, and `ffmpeg`. `uv` is only used to measure photos. Nothing to install to render.
