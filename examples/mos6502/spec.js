@@ -30,7 +30,7 @@
   const pinIds = (re) => NAMES.map((n, i) => (re.test(n) ? 'pin' + (i + 1) : null)).filter(Boolean);
 
   window.SPEC = {
-    id: 'mos6502', fig: 'Fig 11', kicker: 'REAL MICROPROCESSOR', title: 'MOS 6502', sub: 'Two sources have to agree: the pinout and the datasheet numbers.',
+    brand: { accent: '#e9b53a' }, id: 'mos6502', fig: 'Fig 11', kicker: 'REAL MICROPROCESSOR', title: 'MOS 6502', sub: 'Two sources have to agree: the pinout and the datasheet numbers.',
     research: {
       sources: [
         { id: 'wiki-6502', title: 'MOS Technology 6502 - Wikipedia', url: 'https://en.wikipedia.org/wiki/MOS_Technology_6502', fetched: '2026-10-13', note: '8-bit data bus, 16-bit address bus addressing the full 64 KB, 151 of the 256 possible opcodes used (105 undefined), die 3.9 mm x 4.3 mm (153 x 168 mils) = 16.6 mm2, 8 micron process, 3,510 transistors (a second count of 3,218 is also cited), 40-pin DIP, +5 V. It does NOT give a full pinout. The last 40 % of the page was not read.' },

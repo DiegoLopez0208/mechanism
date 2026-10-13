@@ -21,7 +21,7 @@
   }
 
   window.SPEC = {
-    id: 'rubik', fig: 'Fig 9', kicker: 'REAL PUZZLE', title: "Rubik's Cube", sub: '26 pieces that really turn. The facts come out of them.',
+    brand: { accent: '#e5382b' }, id: 'rubik', fig: 'Fig 9', kicker: 'REAL PUZZLE', title: "Rubik's Cube", sub: '26 pieces that really turn. The facts come out of them.',
     research: {
       sources: [
         { id: 'wiki-rubik', title: "Rubik's Cube - Wikipedia", url: 'https://en.wikipedia.org/wiki/Rubik%27s_Cube', fetched: '2026-10-13', note: 'Size 5.6 cm per side; 26 unique miniature cubes (21 pieces counting the core and the 20 movable ones); the total number of arrangements, 43,252,003,274,489,856,000, as 8! x 3^7 x 12!/2 x 2^11; God\'s number 20; maximum period of a move sequence 1260; notation (F B U D L R, prime = anticlockwise, 2 = half turn). The first 100,000 characters were read. The page gives 5.6 cm, not 57 mm, and does not give the superflip length.' },

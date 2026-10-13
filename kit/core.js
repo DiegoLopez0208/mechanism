@@ -42,11 +42,61 @@
   MX.fmt = (n) => Math.round(n).toLocaleString('en-US');
 
   /* ------------------------------------------------------------ paleta de la lamina */
+  // Cuatro estilos: la paleta, la tipografia de los titulos, el diseno de la tarjeta y los parametros del escenario 3D (fondo, rejilla, sombra, resplandor, luz de contorno).
+  //   paper    papel claro con tarjeta de esquinas (el original)        night    el mismo en oscuro
+  //   dossier  plano de ingenieria azul con rejilla, mono, regla y cajetin de datos     studio   fondo de estudio negro, titulo grande y acento de la marca
   const THEMES = {
-    paper: { dark: false, paper: '#f6f5f0', plate: '#e8e6dd', plateEdge: '#cfccc0', ink: '#23221f', mute: '#8b887d', metal: '#d9d7cf', steel: '#bdbbb1', darkc: '#6b6a63', ember: '#c8542a', teal: '#0b7285', red: '#c0392b', green: '#2f9e44', gold: '#c9a227', glass: '#9bd3dc', line: 'rgba(35,34,31,0.2)' },
-    night: { dark: true, paper: '#101218', plate: '#1a1d25', plateEdge: '#2b2f3a', ink: '#ecebe6', mute: '#8d909b', metal: '#8f939c', steel: '#6d717b', darkc: '#c9cbd2', ember: '#ff9a62', teal: '#5ad1d8', red: '#ff6b6b', green: '#69db7c', gold: '#e6c35c', glass: '#7ac7d6', line: 'rgba(236,235,230,0.22)' },
+    paper: { dark: false, paper: '#f6f5f0', plate: '#e8e6dd', plateEdge: '#cfccc0', ink: '#23221f', mute: '#8b887d', metal: '#d9d7cf', steel: '#bdbbb1', darkc: '#6b6a63', ember: '#c8542a', teal: '#0b7285', red: '#c0392b', green: '#2f9e44', gold: '#c9a227', glass: '#9bd3dc', line: 'rgba(35,34,31,0.2)', card: 'frame', titleFont: 'serif', gl: { inner: '#faf9f5', outer: '#dedbd1', floorK: 1, floor: '#2a2418', bloom: 0.12, thr: 0.92 } },
+    night: { dark: true, paper: '#101218', plate: '#1a1d25', plateEdge: '#2b2f3a', ink: '#ecebe6', mute: '#8d909b', metal: '#8f939c', steel: '#6d717b', darkc: '#c9cbd2', ember: '#ff9a62', teal: '#5ad1d8', red: '#ff6b6b', green: '#69db7c', gold: '#e6c35c', glass: '#7ac7d6', line: 'rgba(236,235,230,0.22)', card: 'frame', titleFont: 'serif', gl: { inner: '#2b2f3a', outer: '#090a0e', floorK: 3.2, floor: '#000000', bloom: 0.035, thr: 0.985 } },
+    dossier: { dark: true, paper: '#0a1828', plate: '#10253b', plateEdge: '#1d3b59', ink: '#d6e6f5', mute: '#6f8ba6', metal: '#7fa0bd', steel: '#5d7a96', darkc: '#bcd4e8', ember: '#ffb347', teal: '#4fd1ff', red: '#ff6b6b', green: '#6ee7a8', gold: '#ffd166', glass: '#5cc7e8', line: 'rgba(110,180,230,0.28)', card: 'dossier', titleFont: 'mono', mono: true, gl: { inner: '#153756', outer: '#050d18', floorK: 2.6, floor: '#000000', bloom: 0.07, thr: 0.97, grid: { px: 54, every: 5, minor: 'rgba(110,180,255,0.075)', major: 'rgba(110,180,255,0.16)' } } },
+    studio: { dark: true, paper: '#09090c', plate: '#17171d', plateEdge: '#2a2a33', ink: '#f4f2ee', mute: '#8a8892', metal: '#9c9ba3', steel: '#74747c', darkc: '#d3d2d8', ember: '#ff9a62', teal: '#ff6a3d', red: '#ff6b6b', green: '#69db7c', gold: '#e6c35c', glass: '#7ac7d6', line: 'rgba(244,242,238,0.2)', card: 'studio', titleFont: 'sans', accent: true, gl: { inner: '#22222a', outer: '#030305', floorK: 3.4, floor: '#000000', bloom: 0.1, thr: 0.95, rimColor: 'accent', rimK: 2.2, exposure: 1.08, glow: 'accent', glowA: 0.4 } },
   };
-  MX.THEME = Object.assign({}, THEMES[g.MX_THEME] || THEMES.paper);
+  MX.styles = THEMES; MX.STYLE_NAMES = Object.keys(THEMES);
+  const SERIF0 = MX.SERIF, MONO0 = MX.MONO, REALMONO = '"Cascadia Mono","Cascadia Code",Consolas,"SF Mono",Menlo,"DejaVu Sans Mono",monospace';
+  MX.THEME = {};
+  // cambia de estilo EN SITIO (los modulos guardan la referencia a MX.THEME); accent: el color de la marca, que los estilos con accent usan en lugar del acento propio
+  MX.setStyle = (name, accent) => {
+    const t = THEMES[name] || THEMES.paper; Object.keys(MX.THEME).forEach((k) => { delete MX.THEME[k]; }); Object.assign(MX.THEME, t); MX.THEME.name = THEMES[name] ? name : 'paper';
+    if (accent && t.accent) MX.THEME.teal = accent;
+    MX.SERIF = t.titleFont === 'mono' ? REALMONO : t.titleFont === 'sans' ? MONO0 : SERIF0; if (t.mono) { MX.MONO = REALMONO; } else { MX.MONO = MONO0; }
+  };
+  MX.setStyle(g.MX_THEME || 'paper');
+
+  /* ------------------------------------------------------------ tarjetas alternativas */
+  // dossier: marco completo con regla de marcas, encabezado y titulo en monoespaciada, doble filete y cajetin de datos arriba a la derecha (o.blocks: [[nombre, valor]])
+  function cardDossier(c, T, W, H, m, o) {
+    const a = o.alpha == null ? 1 : o.alpha, x0 = m + 34;
+    c.save(); c.globalAlpha = a; c.strokeStyle = MX.rgba(T.ink, 0.5); c.lineWidth = 1.5; c.strokeRect(m, m, W - 2 * m, H - 2 * m);
+    c.lineWidth = 1; c.strokeStyle = MX.rgba(T.ink, 0.28);
+    for (let x = m, i = 0; x <= W - m; x += 27, i++) { const L = i % 5 === 0 ? 15 : 7; c.beginPath(); c.moveTo(x, m); c.lineTo(x, m + L); c.moveTo(x, H - m); c.lineTo(x, H - m - L); c.stroke(); }
+    for (let y = m, i = 0; y <= H - m; y += 27, i++) { const L = i % 5 === 0 ? 15 : 7; c.beginPath(); c.moveTo(m, y); c.lineTo(m + L, y); c.moveTo(W - m, y); c.lineTo(W - m - L, y); c.stroke(); }
+    c.restore();
+    MX.text(String(o.fig || 'Fig 1').toUpperCase() + (o.kicker ? '   /   ' + String(o.kicker).toUpperCase() : ''), x0, m + 66, { size: 15, color: T.teal, font: MX.MONO, w: 600, alpha: a, spacing: 2.4 });
+    const blocks = o.blocks || [], bw = blocks.length ? 290 : 0, title = String(o.title || '').toUpperCase(), size = Math.max(22, Math.min(46, (W - 2 * x0 - bw - 30) / (Math.max(1, title.length) * 0.64)));
+    if (title) MX.text(title, x0, m + 126, { size, color: T.ink, font: MX.MONO, w: 700, alpha: a, spacing: 0.5 });
+    if (o.sub) MX.text(o.sub, x0, m + 160, { size: 16, color: T.mute, font: MX.MONO, alpha: a, w: 400 });
+    c.save(); c.globalAlpha = a * 0.8; c.strokeStyle = T.line; c.lineWidth = 1; [m + 180, m + 185].forEach((y) => { c.beginPath(); c.moveTo(x0, y); c.lineTo(W - x0, y); c.stroke(); }); c.restore();
+    if (blocks.length) {
+      const bx = W - x0 - bw, by = m + 36, rh = 25; c.save(); c.globalAlpha = a; c.strokeStyle = MX.rgba(T.ink, 0.4); c.lineWidth = 1; c.strokeRect(bx, by, bw, rh * blocks.length + 8);
+      blocks.forEach((r, i) => { const y = by + 22 + i * rh; if (i) { c.beginPath(); c.moveTo(bx, y - 17); c.lineTo(bx + bw, y - 17); c.stroke(); } MX.text(String(r[0]).toUpperCase(), bx + 12, y, { size: 12, color: T.mute, font: MX.MONO, w: 500, alpha: a, spacing: 1.6 }); MX.text(String(r[1]), bx + bw - 12, y, { size: 14, color: r[2] || T.ink, font: MX.MONO, w: 700, align: 'right', alpha: a }); });
+      c.restore();
+    }
+    if (o.hint) MX.text(String(o.hint).toUpperCase(), x0, H - m - 30, { size: 13, color: T.mute, font: MX.MONO, alpha: a, spacing: 2.2, w: 500 });
+    if (o.readout) MX.text(o.readout, W - x0, H - m - 30, { size: 17, color: T.ink, font: MX.MONO, align: 'right', alpha: a, w: 600 });
+    return { x: m, y: m, w: W - 2 * m, h: H - 2 * m };
+  }
+  // studio: sin marco; barra de acento, titulo grande en negrita, resto casi invisible
+  function cardStudio(c, T, W, H, m, o) {
+    const a = o.alpha == null ? 1 : o.alpha, x0 = m + 34, title = String(o.title || ''), size = Math.max(34, Math.min(74, (W - 2 * x0) / (Math.max(1, title.length) * 0.56)));
+    c.save(); c.globalAlpha = a; c.fillStyle = T.teal; c.fillRect(x0, m + 40, 56, 5); c.restore();
+    MX.text(String(o.fig || 'Fig 1').toUpperCase(), x0 + 76, m + 50, { size: 15, color: T.mute, w: 600, alpha: a, spacing: 3.2 });
+    if (o.kicker) MX.text(String(o.kicker).toUpperCase(), W - x0, m + 50, { size: 13, color: T.mute, align: 'right', alpha: a, spacing: 2.6, w: 500 });
+    if (title) MX.text(title, x0, m + 132, { size, color: T.ink, font: MX.SERIF, w: 800, alpha: a });
+    if (o.sub) MX.text(o.sub, x0, m + 174, { size: 21, color: T.mute, font: MX.SANS, alpha: a, w: 400 });
+    if (o.hint) MX.text(String(o.hint).toUpperCase(), x0, H - m - 30, { size: 13, color: T.mute, alpha: a, spacing: 2.8, w: 500 });
+    if (o.readout) MX.text(o.readout, W - x0, H - m - 30, { size: 20, color: T.ink, align: 'right', alpha: a, w: 700 });
+    return { x: m, y: m, w: W - 2 * m, h: H - 2 * m };
+  }
 
   /* ------------------------------------------------------------ tarjeta de figura */
   // fondo de papel, marco, numero de figura, titulo, pista y lectura. Devuelve el area util.
@@ -57,6 +107,8 @@
       const gr = c.createRadialGradient(W * 0.5, H * 0.45, H * 0.1, W * 0.5, H * 0.45, H * 0.8); gr.addColorStop(0, T.dark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.55)'); gr.addColorStop(1, 'rgba(120,115,100,0.035)');
       c.fillStyle = gr; c.fillRect(0, 0, W, H);
     }
+    if (T.card === 'dossier') return cardDossier(c, T, W, H, m, o);
+    if (T.card === 'studio') return cardStudio(c, T, W, H, m, o);
     const a = o.alpha == null ? 1 : o.alpha;
     c.save(); c.globalAlpha = a; c.strokeStyle = MX.rgba(T.ink, 0.5); c.lineWidth = 1.3;
     [[m, m, 1, 1], [W - m, m, -1, 1], [m, H - m, 1, -1], [W - m, H - m, -1, -1]].forEach(([x, y, sx, sy]) => { c.beginPath(); c.moveTo(x + sx * 28, y); c.lineTo(x, y); c.lineTo(x, y + sy * 28); c.stroke(); });      // esquinas de lamina

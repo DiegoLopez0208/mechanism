@@ -50,7 +50,7 @@
     info: info('GDDR6X package', ['12 packages: a 384-bit bus in 32-bit pieces', '2 GB each, 24 GB in all', 'Package size and position are estimated'], ['derived', 'derived', 'estimated']) }));
 
   window.SPEC = {
-    id: 'rtx4090', fig: 'Fig 10', kicker: 'REAL GRAPHICS CARD', title: 'GeForce RTX 4090', sub: 'The numbers come out of each other. Each one is checked.', orient: [0, 0, 90],
+    brand: { accent: '#76b900' }, id: 'rtx4090', fig: 'Fig 10', kicker: 'REAL GRAPHICS CARD', title: 'GeForce RTX 4090', sub: 'The numbers come out of each other. Each one is checked.', orient: [0, 0, 90],
     research: {
       sources: [
         { id: 'nvidia', title: 'GeForce RTX 4090 - NVIDIA', url: 'https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4090/', fetched: '2026-10-13', note: 'Founders Edition: 16,384 CUDA cores, boost 2.52 GHz, base 2.23 GHz, 24 GB GDDR6X on a 384-bit interface, 450 W total graphics power, 304 mm long, 137 mm wide, 3-slot (61 mm). It does NOT give the memory speed, the bandwidth, the unit counts or the die.' },

@@ -11,7 +11,7 @@ window.SPEC = (() => {
   const EN = { rotors: ['I', 'II', 'III'], reflector: 'B', rings: 'AAA', start: 'AAA' };
   const T = (id, o) => Object.assign({ id }, EN, o);
   return {
-    id: 'enigma', orient: [0, 90, 0], fig: 'Fig 7', kicker: 'ROTOR CIPHER MACHINE', title: 'Enigma I', sub: 'Three rotors, a reflector, 26 wires each. It has to reproduce the published tests.',
+    brand: { accent: '#c9a227' }, id: 'enigma', orient: [0, 90, 0], fig: 'Fig 7', kicker: 'ROTOR CIPHER MACHINE', title: 'Enigma I', sub: 'Three rotors, a reflector, 26 wires each. It has to reproduce the published tests.',
     stage: { floorY: -66, shadow: 0.14 },
     research: {
       sources: [

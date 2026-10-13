@@ -13,7 +13,7 @@ window.SPEC = (() => {
   const planets = PL.map((a, i) => ({ id: 'planet' + (i + 1), name: 'Planet gear ' + (i + 1), kind: 'gear', p: { m: M, z: ZP, width: 8, bore: 2.6 }, mat: 'steel', orbit: { center: [0, 0], r: ORBIT, a0: a, around: 'carrier' }, at: [0, 0, 0], body: 'p' + (i + 1), explode: [0, 0, 10], conf: i === 0 ? 'derived' : 'estimated', claims: i === 0 ? ['teeth'] : [], why: i === 0 ? '' : 'Same planet as planet 1; the count of four planets is not published.', info: i === 0 ? { title: 'Planet gears x4', lines: ['20 teeth, module 0.8 mm', 'zr = zs + 2 zp  ->  60 = 20 + 40', 'four planets: ESTIMATED'], conf: ['derived', 'estimated'] } : undefined, tour: i === 0 }));
   const pins = PL.map((a, i) => ({ id: 'pin' + (i + 1), name: 'Planet pin ' + (i + 1), kind: 'pin', p: { r: 2.5, len: 17 }, mat: 'chrome', orbit: { center: [0, 0], r: ORBIT, a0: a, around: 'carrier' }, at: [0, 0, 0], body: 'carrier', explode: [0, 0, 16], conf: 'estimated', why: 'Pin size is not published.', tour: false }));
   return {
-    id: 'hub', fig: 'Fig 4', kicker: 'EPICYCLIC HUB', title: 'Three-speed hub', sub: 'One planetary stage, three ratios. Sun fixed on the axle.',
+    brand: { accent: '#2f9bff' }, id: 'hub', fig: 'Fig 4', kicker: 'EPICYCLIC HUB', title: 'Three-speed hub', sub: 'One planetary stage, three ratios. Sun fixed on the axle.',
     research: {
       sources: [
         { id: 'sa-aw', title: 'Sturmey-Archer AW, product page', url: 'https://www.sturmey-archer.com/en/products/detail/aw', fetched: '2026-10-12', note: 'The page refuses automated fetch (HTTP 403); the ratios were read from the search result that quotes it.' },

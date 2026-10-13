@@ -64,7 +64,8 @@
   host.addEventListener('click', () => { if (!move) startMove(T); });
   const onScroll = () => { const r = host.getBoundingClientRect(); scrollK = clamp(1 - (r.bottom - 120) / (r.height + 160), 0, 1); }; addEventListener('scroll', onScroll, { passive: true }); onScroll();
   new IntersectionObserver((en) => { seen = en[0].isIntersecting; }, { threshold: 0 }).observe(host);
-  const setTheme = (t) => { const n = t === 'night'; renderer.toneMappingExposure = n ? 1.05 : 1; scene.environmentIntensity = n ? 0.5 : 0.75; hemi.intensity = n ? 0.2 : 0.3; key.intensity = n ? 2.2 : 2.4; hemi.groundColor.set(n ? '#1a1c24' : '#d8d3c4'); };
+  const accentL = new TH.DirectionalLight('#ffffff', 0); accentL.position.set(80, 40, -120); scene.add(accentL);
+  const setTheme = (t) => { const n = t === 'night' || t === 'dossier' || t === 'studio'; accentL.intensity = t === 'studio' ? 2.6 : t === 'dossier' ? 1.2 : 0; accentL.color.set(t === 'studio' ? '#ff6a3d' : '#7fd0ff'); renderer.toneMappingExposure = n ? 1.05 : 1; scene.environmentIntensity = n ? 0.5 : 0.75; hemi.intensity = n ? 0.2 : 0.3; key.intensity = n ? 2.2 : 2.4; hemi.groundColor.set(n ? '#1a1c24' : '#d8d3c4'); };
   window.heroTheme = setTheme; setTheme(document.documentElement.dataset.theme);
 
   /* ---------------------------------------------------------- frame */

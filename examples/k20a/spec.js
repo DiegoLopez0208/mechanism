@@ -48,7 +48,7 @@
   });
 
   window.SPEC = {
-    id: 'k20a', fig: 'Fig 8', kicker: 'REAL ENGINE', title: 'Honda K20A', sub: 'Inline four, 2.0 L. The firing order is checked against the crank.', orient: [0, 90, 0],
+    brand: { accent: '#d6202a' }, id: 'k20a', fig: 'Fig 8', kicker: 'REAL ENGINE', title: 'Honda K20A', sub: 'Inline four, 2.0 L. The firing order is checked against the crank.', orient: [0, 90, 0],
     research: {
       sources: [
         { id: 'wiki-k', title: 'Honda K engine - Wikipedia', url: 'https://en.wikipedia.org/wiki/Honda_K_engine', fetched: '2026-10-13', note: 'K20A: bore 86 mm, stroke 86 mm, 1,998 cc, DOHC with 4 valves per cylinder, deck height 212 mm. It does NOT give the connecting rod length, the firing order, the journals or the bore spacing.' },

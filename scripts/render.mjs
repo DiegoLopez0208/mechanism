@@ -41,7 +41,7 @@ const png = (d) => Buffer.from(d.split(',')[1], 'base64');
 
 try {
   await send('Page.enable');
-  await send('Page.navigate', { url: pathToFileURL(path.resolve(page)).href + '?render=1&t=0' + (opt('theme', '') ? '&theme=' + opt('theme', '') : '') + (opt('aspect', '') ? '&aspect=' + opt('aspect', '') : '') });
+  await send('Page.navigate', { url: pathToFileURL(path.resolve(page)).href + '?render=1&t=0' + (opt('style', opt('theme', '')) ? '&theme=' + opt('style', opt('theme', '')) : '') + (opt('aspect', '') ? '&aspect=' + opt('aspect', '') : '') });
   for (let i = 0; i < 100; i++) { await sleep(150); if (await evalJs('typeof window.__frame === "function"')) break; if (i === 99) throw new Error('la pagina no expuso __frame (usa MX.run)'); }
   mkdirSync(path.dirname(OUT), { recursive: true });
   if (args.includes('--info')) { console.log(JSON.stringify(await evalJs('window.__specInfo ? window.__specInfo() : null'), null, 1)); cleanup(); process.exit(0); }

@@ -21,12 +21,14 @@
     const renderer = new TH.WebGLRenderer({ canvas: cv, antialias: false, alpha: false, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
     renderer.setPixelRatio(1); renderer.setSize(W, H, false);
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = TH.PCFSoftShadowMap;
-    renderer.toneMapping = TH.NeutralToneMapping; renderer.toneMappingExposure = o.exposure == null ? 1.0 : o.exposure;
+    renderer.toneMapping = TH.NeutralToneMapping; renderer.toneMappingExposure = o.exposure == null ? ((MX.THEME.gl && MX.THEME.gl.exposure) || 1.0) : o.exposure;
     const scene = new TH.Scene();
     // fondo: papel con un velo de luz suave (se dibuja dentro de la escena para que el posprocesado lo vea)
-    const night = g.MX_THEME === 'night';
-    const bgc = document.createElement('canvas'); bgc.width = 512; bgc.height = 640; const bx = bgc.getContext('2d'), gr = bx.createRadialGradient(256, 270, 40, 256, 300, 520);
-    gr.addColorStop(0, o.bgInner || (night ? '#2b2f3a' : '#faf9f5')); gr.addColorStop(1, o.bgOuter || (night ? '#090a0e' : '#dedbd1')); bx.fillStyle = gr; bx.fillRect(0, 0, 512, 640);
+    const TG = MX.THEME.gl || {}, night = !!MX.THEME.dark;
+    const bgc = document.createElement('canvas'); bgc.width = TG.grid ? W : 512; bgc.height = TG.grid ? H : 640; const bx = bgc.getContext('2d'), gr = bx.createRadialGradient(bgc.width / 2, 270 * bgc.height / 640, 40 * bgc.height / 640, bgc.width / 2, 300 * bgc.height / 640, 520 * bgc.height / 640);
+    gr.addColorStop(0, o.bgInner || TG.inner || (night ? '#2b2f3a' : '#faf9f5')); gr.addColorStop(1, o.bgOuter || TG.outer || (night ? '#090a0e' : '#dedbd1')); bx.fillStyle = gr; bx.fillRect(0, 0, bgc.width, bgc.height);
+    if (TG.glow) { const gc = TG.glow === 'accent' ? MX.THEME.teal : TG.glow, rg = bx.createRadialGradient(bgc.width * 0.5, bgc.height * 0.46, 10, bgc.width * 0.5, bgc.height * 0.46, bgc.height * 0.46); rg.addColorStop(0, MX.rgba(gc, TG.glowA || 0.34)); rg.addColorStop(1, MX.rgba(gc, 0)); bx.fillStyle = rg; bx.fillRect(0, 0, bgc.width, bgc.height); }
+    if (TG.grid) { const gp = TG.grid.px, n = TG.grid.every || 5; for (let i = 0, x = 0; x <= bgc.width; x += gp, i++) { bx.strokeStyle = i % n ? TG.grid.minor : TG.grid.major; bx.lineWidth = i % n ? 1 : 1.4; bx.beginPath(); bx.moveTo(x + 0.5, 0); bx.lineTo(x + 0.5, bgc.height); bx.stroke(); } for (let j = 0, y = 0; y <= bgc.height; y += gp, j++) { bx.strokeStyle = j % n ? TG.grid.minor : TG.grid.major; bx.lineWidth = j % n ? 1 : 1.4; bx.beginPath(); bx.moveTo(0, y + 0.5); bx.lineTo(bgc.width, y + 0.5); bx.stroke(); } }
     const bgt = new TH.CanvasTexture(bgc); bgt.colorSpace = TH.SRGBColorSpace; scene.background = bgt;
     const pm = new TH.PMREMGenerator(renderer); scene.environment = pm.fromScene(new TH.RoomEnvironment(), 0.04).texture; pm.dispose();
     scene.environmentIntensity = o.envIntensity == null ? 0.6 : o.envIntensity;
@@ -37,7 +39,8 @@
     Object.assign(key.shadow.camera, { left: -140, right: 140, top: 140, bottom: -140, near: 1, far: 700 }); scene.add(key);
     const fill = new TH.DirectionalLight('#cfe0ff', 0.3); fill.position.set(90, 50, -70); scene.add(fill);
     const rim = new TH.DirectionalLight('#ffffff', 0.3); rim.position.set(30, 60, -160); scene.add(rim);
-    const floor = new TH.Mesh(new TH.PlaneGeometry(1200, 1200), new TH.ShadowMaterial({ opacity: (o.shadow == null ? 0.2 : o.shadow) * (night ? 3.2 : 1), color: night ? '#000000' : '#2a2418' }));
+    if (TG.rimColor) { rim.color.set(TG.rimColor === 'accent' ? MX.THEME.teal : TG.rimColor); rim.intensity = TG.rimK || 1.2; }
+    const floor = new TH.Mesh(new TH.PlaneGeometry(1200, 1200), new TH.ShadowMaterial({ opacity: (o.shadow == null ? 0.2 : o.shadow) * (TG.floorK || (night ? 3.2 : 1)), color: TG.floor || (night ? '#000000' : '#2a2418') }));
     floor.rotation.x = -Math.PI / 2; floor.position.y = o.floorY == null ? -14 : o.floorY; floor.receiveShadow = true; scene.add(floor);
 
     // posprocesado: render con MSAA en HalfFloat -> GTAO -> Bokeh (opcional) -> Bloom -> OutputPass (tone mapping + sRGB)
@@ -48,7 +51,7 @@
     ao.updateGtaoMaterial({ radius: 7, distanceExponent: 1.4, thickness: 4, scale: 2.2, samples: 24, distanceFallOff: 1.2, screenSpaceRadius: false });
     ao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 12 }); composer.addPass(ao);
     const bokeh = new TH.BokehPass(scene, camera, { focus: 600, aperture: 0, maxblur: 0.01 }); bokeh.enabled = false; composer.addPass(bokeh);
-    const bloom = new TH.UnrealBloomPass(new TH.Vector2(W, H), o.bloom == null ? (night ? 0.035 : 0.12) : o.bloom, 0.45, night ? 0.985 : 0.92); composer.addPass(bloom);
+    const bloom = new TH.UnrealBloomPass(new TH.Vector2(W, H), o.bloom == null ? (TG.bloom != null ? TG.bloom : (night ? 0.035 : 0.12)) : o.bloom, 0.45, TG.thr || (night ? 0.985 : 0.92)); composer.addPass(bloom);
     composer.addPass(new TH.OutputPass());
     const st = { renderer, scene, camera, composer, canvas: cv, floor, key, fill, rim, ao, bokeh, bloom, view: null, W, H, fov: FOV, aoSkip: [] };
 

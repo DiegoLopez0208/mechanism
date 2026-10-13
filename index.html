@@ -17,6 +17,9 @@
 @font-face { font-family:'Inter'; src:url('kit/fonts/inter.woff2') format('woff2'); font-weight:100 900; font-display:swap; }
 @font-face { font-family:'Cormorant Garamond'; src:url('kit/fonts/cormorant.woff2') format('woff2'); font-weight:300 700; font-display:swap; }
 :root { --bg:#f6f5f0; --bg2:#efeee7; --ink:#23221f; --mute:#85827a; --line:rgba(35,34,31,.14); --teal:#0b7285; --ember:#c8542a; --card:#fbfaf6; --shadow:0 30px 60px -30px rgba(40,36,24,.35); --grid:rgba(35,34,31,.06); --term:#16181d; --termink:#d7d9de; }
+:root { --head:var(--head), Georgia, serif; --headw:500; --headtt:none; --headls:-.005em; }
+:root[data-theme="dossier"] { --bg:#0a1828; --bg2:#0e2136; --ink:#d6e6f5; --mute:#7894ae; --line:rgba(110,180,230,.26); --teal:#4fd1ff; --ember:#ffb347; --card:#10253b; --shadow:0 30px 70px -30px rgba(0,0,0,.8); --grid:rgba(110,180,255,.09); --term:#06101c; --termink:#d7e6f4; --head:ui-monospace,'Cascadia Mono',Consolas,monospace; --headw:700; --headtt:uppercase; --headls:.01em; }
+:root[data-theme="studio"] { --bg:#08080b; --bg2:#0e0e13; --ink:#f4f2ee; --mute:#8a8892; --line:rgba(244,242,238,.14); --teal:#ff6a3d; --ember:#ffb347; --card:#15151b; --shadow:0 30px 70px -30px rgba(0,0,0,.9); --grid:rgba(244,242,238,.03); --term:#050507; --termink:#e7e5e0; --head:'Inter',system-ui,sans-serif; --headw:800; --headtt:none; --headls:-.035em; }
 :root[data-theme="night"] { --bg:#0b0d12; --bg2:#10131a; --ink:#ecebe6; --mute:#9094a0; --line:rgba(236,235,230,.14); --teal:#5ad1d8; --ember:#ff9a62; --card:#141720; --shadow:0 30px 70px -30px rgba(0,0,0,.85); --grid:rgba(236,235,230,.05); --term:#0a0b0f; --termink:#d7d9de; }
 * { box-sizing:border-box; }
 html { scroll-behavior:smooth; scroll-padding-top:76px; }
@@ -24,12 +27,15 @@ body { margin:0; background:var(--bg); color:var(--ink); font:400 17px/1.6 'Inte
 a { color:inherit; text-decoration:none; }
 a:focus-visible, button:focus-visible { outline:2px solid var(--teal); outline-offset:3px; border-radius:4px; }
 .wrap { max-width:1180px; margin:0 auto; padding:0 28px; }
-h1,h2,h3 { font-family:'Cormorant Garamond', Georgia, serif; font-weight:500; margin:0; letter-spacing:-.005em; }
+h1,h2,h3 { font-family:var(--head); font-weight:var(--headw); margin:0; letter-spacing:var(--headls); text-transform:var(--headtt); }
+:root[data-theme="dossier"] h1 { font-size:clamp(34px, 4.8vw, 70px); line-height:1.04; } :root[data-theme="dossier"] .head h2, :root[data-theme="dossier"] .gate h2, :root[data-theme="dossier"] .live3d h2 { font-size:clamp(26px, 3.4vw, 44px); }
+:root[data-theme="studio"] h1 { font-size:clamp(44px, 6.4vw, 100px); line-height:.94; }
+.looks { display:flex; border:1px solid var(--line); border-radius:999px; overflow:hidden; } .looks button { font:600 11px 'Inter'; letter-spacing:.12em; text-transform:uppercase; padding:8px 12px; border:0; background:transparent; color:var(--mute); cursor:pointer; transition:.2s; } .looks button:hover { color:var(--ink); } .looks button.on { background:var(--ink); color:var(--bg); }
 .eyebrow { font:600 12px 'Inter'; letter-spacing:.26em; text-transform:uppercase; color:var(--teal); }
 
 nav { position:sticky; top:0; z-index:30; backdrop-filter:blur(16px) saturate(1.2); background:color-mix(in srgb, var(--bg) 78%, transparent); border-bottom:1px solid var(--line); }
 nav .wrap { display:flex; align-items:center; gap:28px; height:64px; }
-.mark { font:500 28px/1 'Cormorant Garamond', Georgia, serif; letter-spacing:.02em; margin-right:auto; }
+.mark { font:500 28px/1 var(--head), Georgia, serif; letter-spacing:.02em; margin-right:auto; }
 .mark i { color:var(--teal); font-style:normal; }
 nav ul { display:flex; gap:26px; list-style:none; margin:0; padding:0; font-size:12.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--mute); }
 nav ul a:hover { color:var(--ink); }
@@ -50,7 +56,7 @@ nav ul a:hover { color:var(--ink); }
 .btn:hover { transform:translateY(-2px); border-color:var(--teal); }
 .btn.fill:hover { background:var(--teal); color:var(--bg); }
 .facts { display:flex; gap:34px; margin-top:44px; flex-wrap:wrap; }
-.facts div b { display:block; font:500 40px/1 'Cormorant Garamond', serif; color:var(--ink); }
+.facts div b { display:block; font:500 40px/1 var(--head), serif; color:var(--ink); }
 .facts div span { font-size:12.5px; color:var(--mute); letter-spacing:.06em; }
 .stage3d { position:relative; aspect-ratio:1/1.08; min-height:440px; cursor:grab; touch-action:pan-y; }
 .stage3d canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
@@ -71,7 +77,7 @@ nav ul a:hover { color:var(--ink); }
 .proof .wrap { display:grid; grid-template-columns:repeat(3,1fr); }
 .proof div.item { padding:30px 28px 30px 0; }
 .proof div.item + div.item { padding-left:28px; border-left:1px solid var(--line); }
-.proof b { display:block; font:500 26px 'Cormorant Garamond', serif; margin-bottom:4px; }
+.proof b { display:block; font:500 26px var(--head), serif; margin-bottom:4px; }
 .proof span { color:var(--mute); font-size:15px; }
 
 section { padding:100px 0; }
@@ -130,7 +136,7 @@ section + section { border-top:1px solid var(--line); }
 
 .steps { display:grid; grid-template-columns:repeat(4,1fr); counter-reset:s; margin-bottom:56px; }
 .step { padding:26px 24px 8px 0; border-top:1px solid var(--line); counter-increment:s; }
-.step::before { content:'0' counter(s); font:500 50px/1 'Cormorant Garamond', serif; color:var(--teal); display:block; margin-bottom:12px; }
+.step::before { content:'0' counter(s); font:500 50px/1 var(--head), serif; color:var(--teal); display:block; margin-bottom:12px; }
 .step h3 { font:600 15px 'Inter'; margin-bottom:6px; }
 .step p { margin:0; color:var(--mute); font-size:15px; line-height:1.55; }
 .two { display:grid; grid-template-columns:1fr 1fr; gap:28px; }
@@ -164,12 +170,12 @@ footer a { border-bottom:1px solid var(--line); }
   <a class="mark" href="#top">mechanism<i>.</i></a>
   <ul><li><a href="#gate">The gate</a></li><li><a href="#examples">Films</a></li><li><a href="#touch">Touch it</a></li><li><a href="#how">How it works</a></li><li><a href="#install">Install</a></li></ul>
   <a class="pill" href="https://github.com/DiegoLopez0208/mechanism" target="_blank" rel="noopener">GitHub</a>
-  <button class="pill" id="theme" aria-label="Switch theme">Night</button>
+  <div class="looks" id="looks" role="group" aria-label="Look"><button data-look="paper">Paper</button><button data-look="night">Night</button><button data-look="dossier">Dossier</button><button data-look="studio">Studio</button></div>
 </div></nav>
 
 <header class="hero" id="top"><div class="wrap hero-grid">
   <div>
-    <div class="eyebrow">A skill for coding agents</div>
+    <div class="eyebrow">A skill for coding agents &middot; four looks, one spec</div>
     <h1>Model it <em>exactly.</em><br>Take it apart.<br>Film it.</h1>
     <p class="lead">Give it a real object. It looks the numbers up, writes a spec where every number says where it came from, and renders a film, a viewer and a 3D model. If the numbers do not add up, it does not render.</p>
     <div class="btns"><a class="btn fill" href="#examples">Watch the films</a><a class="btn" href="examples/enigma/index.html?explore" target="_blank">Type on the Enigma</a><a class="btn" href="#install">Install</a></div>
@@ -207,19 +213,19 @@ footer a { border-bottom:1px solid var(--line); }
 <section id="examples"><div class="wrap">
   <div class="head rv"><h2>The check is on the card.</h2><p>Each one carries what its model had to reproduce, and says plainly what it could not source.</p></div>
   <div class="grid">
-    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-enigma.jpg" data-paper="out/enigma.mp4" data-night="out/enigma-night.mp4"></video><div class="shine"></div></div>
+    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-enigma.jpg" data-paper="out/enigma.mp4" data-night="out/enigma-night.mp4" data-dossier="out/enigma-dossier.mp4" data-studio="out/enigma-studio.mp4"></video><div class="shine"></div></div>
       <h3>Enigma I</h3><span class="chip ok">AAAAA to BDZGO, reproduced</span>
       <p>Wiring, notches and stepping are simulated and must match the published tests, including the middle rotor's double step. In the viewer you type on your keyboard.</p>
       <div class="dl"><a href="examples/enigma/index.html?explore" target="_blank">Viewer (type!)</a><a href="https://github.com/DiegoLopez0208/mechanism/releases/download/v0.1.0/enigma.glb">GLB</a><a href="examples/enigma/spec.js" target="_blank">spec.js</a></div></article>
-    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-rubik.jpg" data-paper="out/rubik.mp4" data-night="out/rubik-night.mp4"></video><div class="shine"></div></div>
+    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-rubik.jpg" data-paper="out/rubik.mp4" data-night="out/rubik-night.mp4" data-dossier="out/rubik-dossier.mp4" data-studio="out/rubik-studio.mp4"></video><div class="shine"></div></div>
       <h3>Rubik's Cube</h3><span class="chip ok">20-move superflip, reproduced</span>
       <p>26 pieces that really turn, no tables. The model flips all 12 edges in the published 20 moves, comes back after 1,260 repeats of the longest sequence, and counts 43,252,003,274,489,856,000 positions.</p>
       <div class="dl"><a href="examples/rubik/index.html?explore" target="_blank">Viewer</a><a href="https://github.com/DiegoLopez0208/mechanism/releases/download/v0.1.0/rubik.glb">GLB</a><a href="examples/rubik/spec.js" target="_blank">spec.js</a></div></article>
-    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-k20a.jpg" data-paper="out/k20a.mp4" data-night="out/k20a-night.mp4"></video><div class="shine"></div></div>
+    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-k20a.jpg" data-paper="out/k20a.mp4" data-night="out/k20a-night.mp4" data-dossier="out/k20a-dossier.mp4" data-studio="out/k20a-studio.mp4"></video><div class="shine"></div></div>
       <h3>Honda K20A</h3><span class="chip warn">1,998 cc and 1-3-4-2, checked; rod is a guess</span>
       <p>A real crank-slider: 16 valves, cams placed from the valve windows. Displacement is computed from bore and stroke, and the published firing order must be possible with the crank. Honda does not publish the rod, so it is dashed.</p>
       <div class="dl"><a href="examples/k20a/index.html?explore" target="_blank">Viewer</a><a href="https://github.com/DiegoLopez0208/mechanism/releases/download/v0.1.0/k20a.glb">GLB</a><a href="examples/k20a/spec.js" target="_blank">spec.js</a></div></article>
-    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-rtx4090.jpg" data-paper="out/rtx4090.mp4" data-night="out/rtx4090-night.mp4"></video><div class="shine"></div></div>
+    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-rtx4090.jpg" data-paper="out/rtx4090.mp4" data-night="out/rtx4090-night.mp4" data-dossier="out/rtx4090-dossier.mp4" data-studio="out/rtx4090-studio.mp4"></video><div class="shine"></div></div>
       <h3>GeForce RTX 4090</h3><span class="chip warn">6 figures checked; the inside is a guess</span>
       <p>82.58 TFLOPS, 1,290 Gtex/s, 1,008 GB/s and 24 GB are each computed from the published cores, clocks, bus and data rate. Every variable carries its source, so the estimated memory packages show in another colour. The inside of the card is not published and is dashed.</p>
       <div class="dl"><a href="examples/rtx4090/index.html?explore" target="_blank">Viewer</a><a href="https://github.com/DiegoLopez0208/mechanism/releases/download/v0.1.0/rtx4090.glb">GLB</a><a href="examples/rtx4090/spec.js" target="_blank">spec.js</a></div></article>
@@ -331,11 +337,11 @@ node scripts/render.mjs examples/my-object/index.html</div>
 <script src="docs/hero.js" defer></script>
 <script>
 (function () {
-  const root = document.documentElement, btn = document.getElementById('theme'), file = location.protocol === 'file:';
+  const root = document.documentElement, file = location.protocol === 'file:', LOOKS = ['paper', 'night', 'dossier', 'studio'];
   const vurl = (p) => (file ? p : 'docs/media/video/' + p.split('/').pop());      // from disk: the full renders in out/; on the web: 720p copies
-  const setVideo = (v) => { const src = vurl(v.dataset[root.dataset.theme] || v.dataset.paper), was = v.currentTime, playing = !v.paused; if (!v.src.endsWith(src)) { v.src = src; v.addEventListener('loadedmetadata', function f() { v.currentTime = was || 0; if (playing) v.play().catch(() => {}); v.removeEventListener('loadedmetadata', f); }); } };
-  const apply = (t) => { root.dataset.theme = t; btn.textContent = t === 'night' ? 'Paper' : 'Night'; try { localStorage.setItem('mx-theme', t); } catch (e) {} document.querySelectorAll('video[data-paper]').forEach(setVideo); if (window.heroTheme) window.heroTheme(t); loadViewer(false); };
-  btn.addEventListener('click', () => apply(root.dataset.theme === 'night' ? 'paper' : 'night'));
+  const setVideo = (v) => { const th = root.dataset.theme, src = vurl(v.dataset[th] || (th === 'paper' ? v.dataset.paper : v.dataset.night || v.dataset.paper)), was = v.currentTime, playing = !v.paused; if (!v.src.endsWith(src)) { v.src = src; v.addEventListener('loadedmetadata', function f() { v.currentTime = was || 0; if (playing) v.play().catch(() => {}); v.removeEventListener('loadedmetadata', f); }); } };
+  const apply = (t) => { if (!LOOKS.includes(t)) t = 'paper'; root.dataset.theme = t; document.querySelectorAll('#looks button').forEach((b) => b.classList.toggle('on', b.dataset.look === t)); try { localStorage.setItem('mx-theme', t); } catch (e) {} document.querySelectorAll('video[data-paper]').forEach(setVideo); if (window.heroTheme) window.heroTheme(t); loadViewer(false); };
+  document.querySelectorAll('#looks button').forEach((b) => b.addEventListener('click', () => apply(b.dataset.look)));
   document.querySelectorAll('.copy').forEach((b) => b.addEventListener('click', () => { navigator.clipboard.writeText(b.dataset.copy).then(() => { b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy'; }, 1400); }).catch(() => {}); }));
 
   // reveal on scroll

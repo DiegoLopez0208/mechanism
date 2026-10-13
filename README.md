@@ -110,7 +110,7 @@ node scripts/new.mjs my-object --title "My object"          # a spec that alread
 node scripts/check-spec.mjs examples/my-object/spec.js      # the gate
 node scripts/probe.mjs "examples/my-object/index.html?explore" out/probe   # mouse-driven check of the viewer
 node scripts/render.mjs examples/my-object/index.html --blur 3 --out out/my-object.mp4
-node scripts/render.mjs examples/my-object/index.html --theme night --aspect 9:16 --out out/my-object-916.mp4
+node scripts/render.mjs examples/my-object/index.html --style dossier --aspect 9:16 --out out/my-object-916.mp4    # paper | night | dossier | studio
 node scripts/render.mjs examples/my-object/index.html --from 13 --to 21 --out out/clip.mp4      # a clip
 node scripts/render.mjs examples/my-object/index.html --export glb --e 1 --out out/my-object.mp4   # also: --export stl
 node scripts/render.mjs examples/my-object/index.html --remux out/my-object.mp4                  # redo only the sound, in seconds
@@ -144,6 +144,19 @@ A part, with the evidence it stands on:
 | Calculated figures | `mechanism.calc` | every published figure that comes out of others, from variables that each name their source |
 
 The director builds the film by itself: staggered assembly, a cutaway while the mechanism runs, one mode at a time with its published number, the exploded view, a tour with a callout per part, re-assembly, and an evidence table with the sources.
+
+### Four looks
+
+The same spec renders in four visual styles, chosen with `--style` (or `?style=` in the viewers):
+
+| Style | Look |
+|---|---|
+| `paper` | Light paper, serif titles, corner-marked card. The original. |
+| `night` | The same card in the dark. |
+| `dossier` | Blue engineering drawing: grid, ruler ticks, monospaced type and a data block counting SPEC, DERIVED and ESTIMATED. |
+| `studio` | Black product-film set: big bold title and a glow, a rim light and an accent taken from the maker's colour (`brand: { accent }` in the spec). |
+
+Each style sets the palette, the title font, the card layout and the 3D stage (background, grid, shadow, bloom, rim light) in one table, `MX.styles` in `kit/core.js`, so a new look is one more entry.
 
 ### Brand identity
 

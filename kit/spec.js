@@ -53,15 +53,17 @@
   S.run = (spec) => {
     const q = new URLSearchParams(location.search), asp = q.get('aspect') || spec.aspect || '4:5', [W, H] = SIZES[asp] || SIZES['4:5'], FPS = 30;
     const V = S.validate(spec), an = V.analysis, explore = q.has('explore');
+    { const want = q.get('style') || q.get('theme') || spec.style || MX.THEME.name; MX.setStyle(want, spec.brand && spec.brand.accent); }      // el estilo por URL manda; si no, el del spec; la marca da el acento de los estilos que lo usan
     V.errors.forEach((e) => console.error('SPEC: ' + e)); V.warnings.forEach((w) => console.warn('SPEC: ' + w));
     if (V.errors.length && !explore) { document.title = 'SPEC ERROR'; throw new Error('el spec no pasa la validacion:\n' + V.errors.join('\n')); }
     const M = spec.mechanism || null, drive = (M && M.drive) || { modes: [], rpm: 30 }, modes = drive.modes || [], dir = spec.director || {}, PRESS = !!(M && M.press), ENIG = !!(M && M.enigma), ENGN = !!(M && M.engine), CUBE = !!(M && M.cube), CALC = !!(M && M.calc), RAD = Math.PI / 180, UP = spec.up === 'z', ORI = spec.orient || (UP ? [-90, 0, 0] : null);
+    const claimsOf = (k) => ((spec.research && spec.research.claims) || []).filter((c) => c.conf === k).length;
     const claims = (spec.research && spec.research.claims) || [], sources = (spec.research && spec.research.sources) || [], claimBy = Object.fromEntries(claims.map((c) => [c.id, c]));
 
     /* ---------------------------------------------------------- figura y piezas */
     let beforeHook = null;
     const F = MX.figure({ beforeRender: (s) => { if (beforeHook) beforeHook(s); }, w: W, h: H, axes: 'three', fps: FPS, stage: Object.assign({ shadow: 0.14, floorY: spec.up === 'z' ? -0.3 : -70 }, spec.stage || {}),
-      card: (s) => ({ fig: spec.fig || 'Fig 1', kicker: spec.kicker, title: spec.title, sub: s.sub || spec.sub, hint: s.hint || '', readout: s.readout || (F.parts.length + ' parts') }) });
+      card: (s) => ({ fig: spec.fig || 'Fig 1', kicker: spec.kicker, title: spec.title, sub: s.sub || spec.sub, hint: s.hint || '', readout: s.readout || (F.parts.length + ' parts'), blocks: [['parts', F.parts.length], ['spec', claimsOf('spec'), T.teal], ['derived', claimsOf('derived')], ['estimated', claimsOf('estimated'), T.ember]] }) });
     const st = F.st, H2 = F.hud, byBodyPhi = an.phi || {};
     // Enigma: el cableado que se dibuja en cada rotor sale de la MISMA tabla que usa la simulacion
     const ENC = ENIG ? M.enigma : null, EN = ENIG ? MX.enigma : null;
@@ -316,7 +318,7 @@
           c.save(); c.globalAlpha = ai; c.strokeStyle = T.line; c.beginPath(); c.moveTo(86, y - 74); c.lineTo(W - 86, y - 74); c.stroke(); c.restore();
           MX.A = ai; MX.text(m.label, 86, y, { size: 54, font: MX.SERIF, w: 500 }); MX.text(m.formula || '', 86, y + 36, { size: 21, font: MX.SANS, color: T.mute }); MX.text(m.note || '', 86, y + 66, { size: 19, font: MX.SANS, color: T.mute });
           MX.text(ENIG ? r.text : ENGN || CUBE || CALC ? r.text + (m.unit ? ' ' + m.unit : '') : PRESS ? r.ratio.toFixed(2) + ' ' + (M.press.unit || 'mm') : r.ratio.toFixed(4), W - 86, y, { size: 58, font: MX.SERIF, w: 500, align: 'right' });
-          if (m.publish) { const cl = claimBy[m.publish.claim]; c.save(); c.globalAlpha = ai; tagPill(c, W - 86 - 330, y + 52, cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + ' ' + m.publish.text + (r.ok ? '  OK' : '  MISMATCH')); c.restore(); }
+          if (m.publish) { const cl = claimBy[m.publish.claim]; c.save(); c.globalAlpha = ai; tagPill(c, W - 86 - 330, y + 52, cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + ' ' + (m.publish.text != null ? m.publish.text : m.publish.value != null ? m.publish.value : m.publish.length + ' moves') + (r.ok ? '  OK' : '  MISMATCH')); c.restore(); }
           MX.A = a;
         });
         H2.endPanel(); return;

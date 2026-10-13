@@ -7,7 +7,7 @@
  */
 window.SPEC = (() => {
   return {
-    id: 'switch', up: 'z', fig: 'Fig 5', kicker: 'KEY SWITCH', title: 'Cherry MX2A Red', sub: 'A linear switch: 2 mm to actuate, 4 mm to bottom out.',
+    brand: { accent: '#d0102a' }, id: 'switch', up: 'z', fig: 'Fig 5', kicker: 'KEY SWITCH', title: 'Cherry MX2A Red', sub: 'A linear switch: 2 mm to actuate, 4 mm to bottom out.',
     research: {
       sources: [
         { id: 'cherry-ds', title: 'CHERRY MX2A RED datasheet (EN)', url: 'https://cdn.sparkfun.com/assets/a/9/b/6/2/MX2A_RED-Datasheet-EN_US.pdf', fetched: '2026-10-12', note: 'A table of numbers, no mechanical drawing. Read page by page from the PDF (data/switch/ref/mx2a-red.txt).' },
