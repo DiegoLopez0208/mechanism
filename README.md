@@ -96,10 +96,12 @@ Every example is a film, a live viewer (`examples/<name>/index.html?explore`, ad
 As a Claude Code skill:
 
 ```bash
-# macOS / Linux
-git clone --depth 1 https://github.com/DiegoLopez0208/mechanism ~/.claude/skills/mechanism
+# macOS / Linux: a partial clone, 4 MB (the repo also holds the films, the site and a long history, 85 MB or more, which you do not need to use the skill)
+git clone --depth 1 --filter=blob:none --sparse https://github.com/DiegoLopez0208/mechanism ~/.claude/skills/mechanism
+git -C ~/.claude/skills/mechanism sparse-checkout set kit scripts examples data tools tests
 # Windows (PowerShell)
-git clone --depth 1 https://github.com/DiegoLopez0208/mechanism $env:USERPROFILE\.claude\skills\mechanism
+git clone --depth 1 --filter=blob:none --sparse https://github.com/DiegoLopez0208/mechanism $env:USERPROFILE\.claude\skills\mechanism
+git -C $env:USERPROFILE\.claude\skills\mechanism sparse-checkout set kit scripts examples data tools tests
 ```
 
 The skill can also be found with `npx skills add DiegoLopez0208/mechanism --list` (checked: it lists it). The kit, the scripts and the examples are plain files in this repo, so a clone is the safe way to get all of them.
