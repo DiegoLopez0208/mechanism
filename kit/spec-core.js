@@ -108,6 +108,9 @@
     out.calc = { vars: V };
     ((M.drive && M.drive.modes) || []).forEach((m) => {
       let val = null; try { val = new Function(...names, 'return (' + m.expr + ');')(...vals); } catch (e) { out.problems.push('phase ' + m.label + ': cannot evaluate ' + m.expr + ' (' + e.message + ')'); }
+      if (val == null || (typeof val === 'number' && !isFinite(val))) out.problems.push('phase ' + m.label + ': the expression gives ' + String(val) + ', not a finite number or text');
+      if (m.publish && !(m.publish.text != null || (typeof m.publish.value === 'number' && isFinite(m.publish.value)))) out.problems.push('phase ' + m.label + ': the published figure has neither a text nor a finite value');
+      if (m.publish && m.publish.tol != null && !(typeof m.publish.tol === 'number' && isFinite(m.publish.tol) && m.publish.tol >= 0)) out.problems.push('phase ' + m.label + ': invalid tolerance (' + m.publish.tol + ')');
       const d = m.digits == null ? 2 : m.digits, pub = m.publish, isS = typeof val === 'string', text = val == null ? '' : isS ? val : val.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
       const ok = !pub || val == null ? null : isS ? val === pub.text : Math.abs(val - pub.value) <= (pub.tol == null ? Math.abs(pub.value) * 0.005 : pub.tol);
       out.modes.push({ id: m.id, label: m.label, ratio: val, text, publish: pub || null, ok, used: (m.expr.match(/[A-Za-z_][A-Za-z0-9_]*/g) || []).filter((k, i, a) => k in V && a.indexOf(k) === i) });
@@ -154,12 +157,18 @@
   };
 
   // validacion de evidencia + mecanismo; devuelve { errors, warnings, lines }
+  // texto de relleno: lo que deja una plantilla sin completar
+  const PH = /\b(todo|tbd|fixme|lorem ipsum|placeholder|changeme|xxx+)\b/i, PH_URL = /^https?:\/\/(www\.)?(example\.(com|org|net)|localhost|127\.0\.0\.1|test\.com|foo\.bar)(\/|:|$)/i;
+  const DIMS = ['w', 'h', 'd', 'r', 'ro', 'ri', 'm', 'len', 'length', 'width', 'height', 'depth', 'thick', 'thickness', 't', 'rad', 'radius', 'teeth', 'z', 'n'];
   S.validate = (spec) => {
     const errors = [], warnings = [], R = spec.research || { sources: [], claims: [] }, src = {}, cl = {}, ids = new Set();
-    (R.sources || []).forEach((s) => { if (!s.id || !s.title || !/^https?:\/\//.test(s.url || '')) errors.push('incomplete source: ' + JSON.stringify(s).slice(0, 80)); if (!s.fetched) warnings.push('source ' + s.id + ' has no fetch date'); src[s.id] = s; });
+    if (!Array.isArray(spec.parts) || !spec.parts.length) { errors.push('the spec has no parts: there is nothing to model'); spec = Object.assign({}, spec, { parts: [] }); }
+    if (!(R.claims || []).length) errors.push('the spec has no claims: nothing says where any number comes from');
+    if (!(R.sources || []).length) errors.push('the spec has no sources');
+    (R.sources || []).forEach((s) => { if (!s.id || !s.title || !/^https?:\/\//.test(s.url || '')) errors.push('incomplete source: ' + JSON.stringify(s).slice(0, 80)); if (!s.fetched) warnings.push('source ' + s.id + ' has no fetch date'); if (PH_URL.test(s.url || '') || PH.test(s.title || '') || PH.test(s.note || '')) errors.push('source ' + s.id + ' is placeholder text or an example URL (' + String(s.url).slice(0, 40) + '): replace it with the page you really opened'); src[s.id] = s; });
     (R.claims || []).forEach((c) => {
       cl[c.id] = c; if (!CONFS.includes(c.conf)) errors.push('claim ' + c.id + ': invalid conf (' + c.conf + ')');
-      if (!c.text) errors.push('claim ' + c.id + ' has no text');
+      if (!c.text) errors.push('claim ' + c.id + ' has no text'); else if (PH.test(c.text) || PH.test(c.why || '')) errors.push('claim ' + c.id + ' is placeholder text (TODO / TBD): write the real claim');
       if (c.conf !== 'estimated') { if (!c.src || !c.src.length) errors.push('claim ' + c.id + ' (' + c.conf + ') names no source'); (c.src || []).forEach((s) => { if (!src[s]) errors.push('claim ' + c.id + ' cites a source that does not exist: ' + s); }); }
       if (c.conf === 'derived' && !c.cross) errors.push('claim ' + c.id + ' is DERIVED and has no cross-check against a second published number');
       if (c.conf === 'measured' && !c.error) errors.push('claim ' + c.id + ' is MEASURED and does not state its error');
@@ -171,8 +180,13 @@
       if (!CONFS.includes(d.conf)) errors.push('part ' + d.id + ': missing conf (spec | measured | derived | estimated)');
       if (!d.at && !d.orbit) errors.push('part ' + d.id + ': missing at or orbit');
       if (d.conf && d.conf !== 'estimated' && !d.decor) { if (!d.claims || !d.claims.length) errors.push('part ' + d.id + ' es ' + d.conf.toUpperCase() + ' and cites no claim'); (d.claims || []).forEach((c) => { if (!cl[c]) errors.push('part ' + d.id + ' cites a claim that does not exist: ' + c); }); }
-      if (d.conf === 'estimated' && !(d.claims || []).length && !d.why) warnings.push('part ' + d.id + ' is ESTIMATED without saying why');
+      if (d.conf === 'estimated' && !(d.claims || []).length && !d.why) errors.push('part ' + d.id + ' is ESTIMATED without saying why (give it an estimated claim or a why)');
+      if (PH.test(d.name || '') || PH.test((d.info && d.info.title) || '') || ((d.info && d.info.lines) || []).some((l) => PH.test(String(l)))) errors.push('part ' + d.id + ' still has placeholder text (TODO / TBD)');
+      const bad = (o, label) => Object.keys(o || {}).forEach((k) => { const v = o[k]; if (typeof v === 'number' && !isFinite(v)) errors.push('part ' + d.id + ': ' + label + '.' + k + ' is not finite'); else if (label === 'p' && typeof v === 'number' && DIMS.includes(k) && v <= 0) errors.push('part ' + d.id + ': dimension ' + k + ' = ' + v + ' must be positive'); });
+      bad(d.p, 'p'); [d.at, d.explode].forEach((a, i) => (a || []).forEach((v) => { if (typeof v !== 'number' || !isFinite(v)) errors.push('part ' + d.id + ': ' + (i ? 'explode' : 'at') + ' has a value that is not a finite number'); }));
     });
+    const cv = (spec.mechanism && spec.mechanism.calc && spec.mechanism.calc.vars) || {};
+    Object.keys(cv).forEach((k) => { const o = cv[k], v = o !== null && typeof o === 'object' ? o.v : o, c = o !== null && typeof o === 'object' ? o.claim : null; if (!c) errors.push('variable ' + k + ' has no claim: a number nobody can trace'); else if (!cl[c]) errors.push('variable ' + k + ' cites a claim that does not exist: ' + c); if (v === undefined || v === null || (typeof v === 'number' && !isFinite(v))) errors.push('variable ' + k + ' has no usable value (' + String(v) + ')'); });
     const an = S.analyze(spec); an.problems.forEach((p) => errors.push(p));
     ((spec.mechanism && spec.mechanism.drive && spec.mechanism.drive.modes) || []).forEach((m) => { if (m.publish && m.publish.claim && !cl[m.publish.claim]) errors.push('mode ' + m.label + ' cites a claim that does not exist: ' + m.publish.claim); });
     const lines = []; lines.push('parts: ' + spec.parts.length + '   claims: ' + (R.claims || []).length + '   sources: ' + (R.sources || []).length);
@@ -181,8 +195,12 @@
     if (an.engine) { const e = an.engine; lines.push('engine: ' + e.n + ' cylinders, displacement ' + e.displacement.toFixed(1) + ' cc, relacion biela/radio ' + e.rodRatio.toFixed(2) + (e.ch != null ? ', implied compression height ' + e.ch.toFixed(2) + ' mm' : '') + ', order ' + e.firing); an.modes.forEach((m) => lines.push('  phase ' + m.label + ': ' + m.text + (m.publish ? '  published ' + (m.publish.text || m.publish.value) + (m.ok ? '  ok' : '  MISMATCH') : ''))); }
     if (an.cube) { lines.push('cube: ' + an.cube.pieces + ' cubies'); an.modes.forEach((m, i) => lines.push('  phase ' + m.label + ': ' + m.text + ' (' + an.cubeRuns[i].moves.length + ' turns)' + (m.publish ? '  published ' + (m.publish.text || m.publish.value || m.publish.length + ' moves') + (m.ok ? '  ok' : '  MISMATCH') : ''))); }
     if (an.calc) { lines.push('calc: ' + Object.keys(an.calc.vars).length + ' variables'); an.modes.forEach((m) => lines.push('  phase ' + m.label + ': ' + m.text + (m.publish ? '  published ' + (m.publish.text != null ? m.publish.text : m.publish.value) + (m.ok ? '  ok' : '  MISMATCH') : ''))); }
-    if (an.press) { lines.push('press: travel ' + an.press.travel + ' mm, actuation ' + an.press.actuation + ' mm' + (an.press.predictedFinal ? '; a linear spring would give ' + an.press.predictedFinal.toFixed(1) + ' at the end, published ' + an.press.publishedFinal + (an.press.consistent ? '  ok' : '  DOES NOT ADD UP (explained)') : '')); an.modes.forEach((m) => lines.push('  phase ' + m.label + ': ' + m.ratio + (m.publish ? '  published ' + m.publish.value + (m.ok ? '  ok' : '  MISMATCH') : ''))); }
+    if (an.press) { lines.push('press: travel ' + an.press.travel + ' mm, actuation ' + an.press.actuation + ' mm' + (an.press.predictedFinal ? '; a linear spring would give ' + an.press.predictedFinal.toFixed(1) + ' at the end, published ' + an.press.publishedFinal + (an.press.consistent ? '  ok' : '  NOT LINEAR (the spec states its own reading of why; it is not a claim by the maker)') : '')); an.modes.forEach((m) => lines.push('  phase ' + m.label + ': ' + m.ratio + (m.publish ? '  published ' + m.publish.value + (m.ok ? '  ok' : '  MISMATCH') : ''))); }
     if (an.K) { lines.push('mechanism: residual ' + an.K.residual.toExponential(1)); an.centers.forEach((c) => lines.push('  centres ' + c.a + '-' + c.b + ': ' + c.dist.toFixed(3) + ' mm (required ' + c.need.toFixed(3) + ')  ' + (c.ok ? 'ok' : 'MISMATCH'))); an.modes.forEach((m) => lines.push('  mode ' + m.label + ': ' + m.ratio.toFixed(4) + (m.publish ? '  published ' + m.publish.value + (m.ok ? '  ok' : '  MISMATCH') : ''))); }
-    return { errors, warnings, lines, analysis: an };
+    const rowsV = (an.enigmaTests || []).length ? an.enigmaTests.map((t) => t.ok) : an.modes.filter((m) => m.publish).map((m) => m.ok), checked = rowsV.filter((o) => o === true).length, failed = rowsV.filter((o) => o === false).length, pending = rowsV.filter((o) => o !== true && o !== false).length;
+    const estimated = (R.claims || []).filter((c) => c.conf === 'estimated').length, verdict = { state: errors.length ? 'DOES NOT PASS' : !checked ? 'NOTHING CHECKED' : pending ? 'INCOMPLETE' : 'VERIFIED', checked, failed, pending, estimated, claims: (R.claims || []).length, sources: (R.sources || []).length, parts: spec.parts.length };
+    if (!errors.length && !checked) warnings.push('no published figure is compared with the model: this is a description, not a verification');
+    lines.push('verdict: ' + verdict.state + '   ' + checked + ' reproduced, ' + estimated + ' estimated, ' + pending + ' unchecked');
+    return { errors, warnings, lines, analysis: an, verdict };
   };
 })(typeof window !== 'undefined' ? window : globalThis);

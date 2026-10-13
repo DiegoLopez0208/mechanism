@@ -1,9 +1,9 @@
 /*
  * spec.js - WinRAR, taken apart: not the program, the thing it writes. A RAR5 archive of one tiny file is 87 bytes, and every one of them is explained.
- * The bytes are the real ones: Rar.exe (WinRAR 7.23) wrote them (scripts/make-winrar-sample.mjs, evidence in data.js). The model is kit/rar5.js, written from the
+ * The bytes are the real ones: Rar.exe (WinRAR 7.23) wrote them (scripts/make-rar5-sample.mjs, evidence in data.js). The model is kit/rar5.js, written from the
  * published format description. The gate asks the model for the numbers WinRAR itself wrote: the four CRC-32 values, the sizes, the archive length, and it
  * asks it to rebuild the whole file: the bytes must be identical, and the real UnRAR has to accept and extract what the model built.
- * Run "node scripts/check-spec.mjs examples/winrar/spec.js".
+ * Run "node scripts/check-spec.mjs examples/rar5/spec.js".
  *
  * Frame: one cube per byte, laid out as the format's diagram does: a row per block (signature, main header, file header in two rows, data, end of archive).
  */
@@ -36,12 +36,12 @@
   const rebuilt = R.build({ name: 'hello.txt', data: R.ascii(S.content), mtime }), same = Array.from(rebuilt).filter((v, i) => v === bytes[i]).length;
 
   window.SPEC = {
-    id: 'winrar', brand: { accent: '#3b82f6' }, fig: 'Fig 12', kicker: 'REAL SOFTWARE', title: 'WinRAR archive', sub: 'The bytes WinRAR writes, and a model that has to write the same ones.',
+    id: 'rar5', brand: { accent: '#3b82f6' }, fig: 'Fig 12', kicker: 'REAL SOFTWARE', title: 'RAR5 archive', sub: 'The bytes WinRAR writes, and a model that has to write the same ones.',
     research: {
       sources: [
         { id: 'technote', title: 'RAR 5.0 archive format - rarlab.com', url: 'https://www.rarlab.com/technote.htm', fetched: '2026-10-13', note: 'Signature, vint, the generic block header (CRC32, size, type, flags, extra and data sizes), the main, file and end-of-archive headers and their flags. It does NOT give the CRC-32 variant, only that the unrar source does.' },
         { id: 'reveng', title: 'CRC RevEng catalogue of parametrised CRC algorithms (17-32 bit)', url: 'https://reveng.sourceforge.io/crc-catalogue/17plus.htm', fetched: '2026-10-13', note: 'CRC-32/ISO-HDLC: poly 0x04c11db7, init 0xffffffff, reflected in and out, xorout 0xffffffff, check 0xcbf43926 (for the ASCII string 123456789).' },
-        { id: 'winrar', title: 'WinRAR 7.23: Rar.exe and UnRAR.exe, the copy installed on this machine', url: 'https://www.rarlab.com/download.htm', fetched: S.generated, note: S.version + '. Rar.exe wrote the archive and UnRAR.exe tested and extracted the one the model built. Reproduce it with node scripts/make-winrar-sample.mjs.' },
+        { id: 'winrar', title: 'WinRAR 7.23: Rar.exe and UnRAR.exe, the copy installed on this machine', url: 'https://www.rarlab.com/download.htm', fetched: S.generated, note: S.version + '. Rar.exe wrote the archive and UnRAR.exe tested and extracted the one the model built. Reproduce it with node scripts/make-rar5-sample.mjs.' },
       ],
       claims: [
         { id: 'technote', conf: 'spec', text: 'A RAR5 archive is the signature followed by blocks: header CRC32, header size, type, flags, then the type\'s own fields and an optional data area. Type 1 is the main header, 2 a file, 5 the end of the archive.', src: ['technote'] },
@@ -51,7 +51,7 @@
         { id: 'stored', conf: 'spec', text: 'Compression method 0 is stored: the data is the file as it is.', src: ['technote'] },
         { id: 'crccheck', conf: 'spec', text: 'CRC-32/ISO-HDLC gives 0xcbf43926 for the ASCII string 123456789.', src: ['reveng'] },
         { id: 'crcvariant', conf: 'derived', text: 'RAR uses CRC-32/ISO-HDLC for its header and data CRCs.', src: ['reveng', 'winrar'], cross: 'The format description does not name the variant. With ISO-HDLC the model reproduces the four CRC-32 values WinRAR wrote in the sample (three headers and the data), and its check value is the catalogue\'s 0xcbf43926.' },
-        { id: 'sample', conf: 'measured', text: 'The 87 bytes are what Rar.exe 7.23 wrote for hello.txt (14 bytes, method stored).', src: ['winrar'], error: 'Exact: they are the bytes of the file. The command and the run are in data.js and reproducible with scripts/make-winrar-sample.mjs.' },
+        { id: 'sample', conf: 'measured', text: 'The 87 bytes are what Rar.exe 7.23 wrote for hello.txt (14 bytes, method stored).', src: ['winrar'], error: 'Exact: they are the bytes of the file. The command and the run are in data.js and reproducible with scripts/make-rar5-sample.mjs.' },
         { id: 'unrar', conf: 'measured', text: 'UnRAR.exe 7.23 tests the archive the model built, extracts it, and gives back hello.txt unchanged.', src: ['winrar'], error: 'Exit codes 0 and 0, extracted file compared byte for byte with the original, recorded in data.js.' },
       ],
     },

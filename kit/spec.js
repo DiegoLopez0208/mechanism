@@ -56,7 +56,7 @@
     { const want = q.get('style') || q.get('theme') || spec.style || MX.THEME.name; MX.setStyle(want, spec.brand && spec.brand.accent); }      // el estilo por URL manda; si no, el del spec; la marca da el acento de los estilos que lo usan
     V.errors.forEach((e) => console.error('SPEC: ' + e)); V.warnings.forEach((w) => console.warn('SPEC: ' + w));
     if (V.errors.length && !explore) { document.title = 'SPEC ERROR'; throw new Error('el spec no pasa la validacion:\n' + V.errors.join('\n')); }
-    const M = spec.mechanism || null, drive = (M && M.drive) || { modes: [], rpm: 30 }, modes = drive.modes || [], dir = spec.director || {}, PRESS = !!(M && M.press), ENIG = !!(M && M.enigma), ENGN = !!(M && M.engine), CUBE = !!(M && M.cube), CALC = !!(M && M.calc), RAD = Math.PI / 180, UP = spec.up === 'z', ORI = spec.orient || (UP ? [-90, 0, 0] : null);
+    const M = spec.mechanism || null, drive = (M && M.drive) || { modes: [], rpm: 30 }, modes = drive.modes || [], dir = spec.director || {}, PRESS = !!(M && M.press), ENIG = !!(M && M.enigma), ENGN = !!(M && M.engine), CUBE = !!(M && M.cube), CALC = !!(M && M.calc), STEPS = !!(M && M.steps), RAD = Math.PI / 180, UP = spec.up === 'z', ORI = spec.orient || (UP ? [-90, 0, 0] : null);
     const claimsOf = (k) => ((spec.research && spec.research.claims) || []).filter((c) => c.conf === k).length;
     const claims = (spec.research && spec.research.claims) || [], sources = (spec.research && spec.research.sources) || [], claimBy = Object.fromEntries(claims.map((c) => [c.id, c]));
 
@@ -128,6 +128,10 @@
         const m = s.mech, pr = m && m.press ? m.press : 0;
         if (d.rot) { p.group.rotation.x += d.rot[0] * RAD; p.group.rotation.y += d.rot[1] * RAD; p.group.rotation.z += d.rot[2] * RAD; }
         if (d.spin) p.group.rotation.z += d.spin * (s.t == null ? performance.now() / 1000 : Math.max(0, s.t));
+        if (d.motion && m) {      // movimiento declarado por la pieza como funcion del paso actual: { pos: [dx, dy, dz], scale: k | [kx, ky, kz], rot: [rx, ry, rz] }
+          const mo = d.motion(m.step || 0, s.t == null ? 0 : s.t);
+          if (mo) { if (mo.pos) { p.group.position.x += mo.pos[0]; p.group.position.y += mo.pos[1]; p.group.position.z += mo.pos[2]; } if (mo.scale != null) { const sc = Array.isArray(mo.scale) ? mo.scale : [mo.scale, mo.scale, mo.scale]; p.group.scale.set(sc[0], sc[1], sc[2]); } if (mo.rot) { p.group.rotation.x += mo.rot[0]; p.group.rotation.y += mo.rot[1]; p.group.rotation.z += mo.rot[2]; } }
+        }
         if (d.engine && m && m.eng) { engPose(d, p, m.eng); return; }
         if (d.cubie && m && m.cube) { cubePose(d, p, m.cube); return; }
         if (d.slide) p.group.position[d.slide.axis || 'z'] += d.slide.k * pr;
@@ -165,9 +169,11 @@
       (an.enigmaTests || []).forEach((t, i) => { const T0 = (M && M.enigma && M.enigma.tests[i]) || {}; r.push({ label: t.id, pub: t.expect || (T0.windows || []).join(' '), got: t.expect ? t.got : (T0.windows || []).join(' '), ok: t.ok }); });
       if (!r.length) an.modes.forEach((m) => { if (m.publish) r.push({ label: m.label, pub: String(m.publish.text != null ? m.publish.text : m.publish.value != null ? m.publish.value : m.publish.length + ' moves'), got: m.text != null && m.text !== '' ? String(m.text) : m.ratio != null ? String(Math.round(m.ratio * 10000) / 10000) : '', ok: m.ok }); });
       return r;
-    })(), VOK = VROWS.every((r) => r.ok !== false);
+    })(), VOK = VROWS.every((r) => r.ok !== false), VPEND = VROWS.filter((r) => r.ok == null).length, VSTAMP = !VOK ? 'DOES NOT PASS' : !VROWS.length ? 'NOTHING CHECKED' : VPEND ? 'INCOMPLETE' : 'VERIFIED';
     const MQ = (CUBE && M.cube.quarter) || 0.34, MH = (CUBE && M.cube.half) || 0.5, MG = 0.05, cubeDur = (r) => r.moves.reduce((s2, mv) => s2 + (mv.q === 2 ? MH : MQ) + MG, 0);
-    const mD = modes.map((m, k) => (CUBE ? Math.max(4.5, 1.0 + cubeDur(an.cubeRuns[k]) + 1.5) : ENIG ? 1.1 + (runs[k] ? runs[k].events.length : 1) * KD + 0.6 : MD)), mS = []; { let acc = tM0; mD.forEach((d) => { mS.push(acc); acc += d; }); }
+    const mD = modes.map((m, k) => (STEPS && m.steps ? Math.max(4.5, 1.2 + M.steps.count / M.steps.rate + 1.6) : CUBE ? Math.max(4.5, 1.0 + cubeDur(an.cubeRuns[k]) + 1.5) : ENIG ? 1.1 + (runs[k] ? runs[k].events.length : 1) * KD + 0.6 : MD)), mS = []; { let acc = tM0; mD.forEach((d) => { mS.push(acc); acc += d; }); }
+    // pasos: el reloj de un proceso que ocurre ficha por ficha; vale 0 antes de la fase y count despues
+    const sMode = STEPS ? modes.findIndex((m) => m.steps) : -1, stepIdx = (t) => (sMode < 0 ? 0 : clamp((t - mS[sMode] - 1.0) * M.steps.rate, 0, M.steps.count));
     // cubo: la lista de giros con su tiempo, y el estado entero del cubo antes de cada uno
     const CEV = [], CST = [];
     if (CUBE) { const cur = CB.create(); an.cubeRuns.forEach((run, k) => { let t = mS[k] + 1.0; run.moves.forEach((mv) => { const d = mv.q === 2 ? MH : MQ; CST.push(CB.clone(cur)); CEV.push({ t0: t, t1: t + d, mv, k }); CB.turn(cur, mv); t += d + MG; }); }); CST.push(CB.clone(cur)); }
@@ -211,7 +217,7 @@
     const thetaAt = (t) => { const x = clamp(t * 60, 0, EGT.length - 2), i = Math.floor(x); return lerp(EGT[i], EGT[i + 1], x - i); };
     const crankDeg = (th) => ((th / RAD) % 720 + 720) % 720;
     const enig = ENIG ? makeEnigma() : null;
-    const mechAt = (t) => (ENIG ? enig.mech(t) : CUBE ? { ang: () => 0, press: 0, cube: cubeFrame(t) } : ENGN ? { ang: () => 0, press: 0, eng: { theta: thetaAt(t) } } : TL ? Object.assign(TL.view(t), { press: pressAt(t) }) : { ang: () => 0, press: pressAt(t) });
+    const mechAt = (t) => (ENIG ? enig.mech(t) : CUBE ? { ang: () => 0, press: 0, cube: cubeFrame(t) } : ENGN ? { ang: () => 0, press: 0, eng: { theta: thetaAt(t) } } : TL ? Object.assign(TL.view(t), { press: pressAt(t) }) : { ang: () => 0, press: pressAt(t), step: stepIdx(t) });
 
     // camara por claves
     const keys = [[0, Object.assign({}, VW.iso, { zoom: VW.iso.zoom * 0.5, yaw: -62, pitch: 30 })], [ASM_END, VW.iso, [0.3, 0, 0.2, 1]]];
@@ -235,7 +241,7 @@
         focus: tr ? tr.id : null, focusA: tr ? tr.a : 0, dimTo: 0.012, light: { az: -38 + 26 * Math.sin(t * 0.23), el: 54 },
         mech: mechAt(t), hint: t < COLD ? 'THE QUESTION' : t < ASM_END ? 'ASSEMBLY' : t < tE0 ? (PRESS ? 'KEY PRESS' : ENIG ? 'ENCIPHERING' : CALC ? 'THE NUMBERS' : CUBE ? 'FACE TURNS' : ENGN ? 'FOUR-STROKE CYCLE' : 'POWER PATH') : t < tT0 ? 'EXPLODED VIEW' : t < tR0 ? 'PART ' + ((tr ? tr.j : tourIds.length - 1) + 1) + ' OF ' + tourIds.length : t < tP0 ? 'RE-ASSEMBLY' : 'EVIDENCE',
         readout: md && t >= tM0 && t < tR0 ? md.label + '  -  ' + (PRESS ? pressAt(t).toFixed(2) + ' mm' : ENIG ? ((mechAt(t).enigma || {}).window || '') : CALC ? an.modes[modeIdx(t)].text + (md.unit ? ' ' + md.unit : '') : CUBE ? cubeDone(t) + ' turns' : ENGN ? Math.round(crankDeg(mechAt(t).eng.theta)) + ' / 720 deg' : an.modes[modeIdx(t)].ratio.toFixed(3) + ' : 1') : parts.length + ' parts', infoAt: [64, H - 360] };
-      s.modeA = md && t >= tM0 && t < tE0 ? Math.min(ramp(t, tM0, tM0 + 0.6), 1 - ramp(t, tE0 - 0.5, tE0 - 0.1)) : 0; s.mode = md; s.modeI = modeIdx(t); s.speed = speedAt(t);
+      s.modeA = md && t >= tM0 && t < tE0 ? Math.min(ramp(t, tM0, tM0 + 0.6), 1 - ramp(t, tE0 - 0.5, tE0 - 0.1)) : 0; s.mode = md; s.modeI = modeIdx(t); s.speed = speedAt(t); s.step = stepIdx(t);
       if (CALC && md && md.show && s.modeA > 0.01) { s.focusSet = md.show; s.focusA = s.modeA * 0.9; s.dimTo = md.dim == null ? 0.55 : md.dim; }
       return s;
     };
@@ -289,12 +295,17 @@
     };
     // cuentas: la cifra de la fase, su formula, y las variables que usa con la confianza de cada una
     const drawCalc = (c, s) => {
-      const a = s.modeA; if (!(a > 0.01)) return; const mi = s.modeI, m = modes[mi], r = an.modes[mi], x = 78, y = H - 318, V = M.calc.vars, big = (r.text + (m.unit ? ' ' + m.unit : '')).length > 11;
+      const a = s.modeA; if (!(a > 0.01)) return; const mi = s.modeI, m0 = modes[mi], SL = m0.steps ? M.steps.label(Math.min(M.steps.count - 1, Math.floor(s.step || 0))) : null, m = SL ? Object.assign({}, m0, { label: SL.title, formula: SL.formula, publish: null, unit: '' }) : m0, r = SL ? Object.assign({}, an.modes[mi], { text: SL.value }) : an.modes[mi], x = 78, y = H - 318, V = M.calc.vars, big = (r.text + (m.unit ? ' ' + m.unit : '')).length > 11;
       c.save(); c.globalAlpha = a; c.fillStyle = MX.rgba(T.paper, T.dark ? 0.86 : 0.9); c.fillRect(x - 24, y - 70, W - 2 * x + 48, 262); c.fillStyle = T.teal; c.fillRect(x - 24, y - 70, 4, 262);
       MX.A = 1; const fit = (str, size, wfont, maxW) => { c.save(); c.font = wfont + ' ' + size + 'px ' + MX.SERIF; const w0 = c.measureText(str).width; c.restore(); return w0 > maxW ? size * maxW / w0 : size; }, valTxt = r.text + (m.unit ? ' ' + m.unit : ''), vs = fit(valTxt, big ? 46 : 64, 500, (W - 2 * x) * 0.5), ls = fit(m.label, 56, 500, (W - 2 * x) - vs * 0.62 * valTxt.length - 40);
       MX.text(m.label, x, y, { size: Math.max(26, ls), font: MX.SERIF, w: 500, color: T.ink }); MX.text(m.formula || '', x, y + 42, { size: 21, font: MX.SANS, color: T.mute });
       MX.text(valTxt, W - x, y - 2, { size: vs, font: MX.SERIF, w: 500, color: T.ink, align: 'right' });
       if (m.publish) { const cl = claimBy[m.publish.claim], w = 190, pt = String(m.publish.text || m.publish.value); tagPill(c, W - x - w - 4, y + 44, cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + (pt.length > 14 ? '' : ' ' + pt)); MX.text(r.ok ? 'matches the model' : 'MISMATCH', W - x - w - 18, y + 44, { size: 19, font: MX.SANS, color: r.ok ? T.teal : T.ember, align: 'right', w: 500 }); }
+      if (SL) {      // fase por pasos: las fichas del paso actual y una barra de avance
+        let cx = x, cy = y + 112; c.font = '600 17px ' + MX.MONO;
+        (SL.chips || []).forEach((q) => { const txt = typeof q === 'string' ? q : q.text, col = (q && q.color) || T.teal, w = c.measureText(txt).width + 28; if (cx + w > W - x) { cx = x; cy += 42; } c.fillStyle = MX.rgba(col, 0.1); c.fillRect(cx, cy - 22, w, 32); c.strokeStyle = MX.rgba(col, 0.5); c.lineWidth = 1; c.strokeRect(cx + 0.5, cy - 21.5, w - 1, 31); MX.text(txt, cx + 14, cy, { size: 17, font: MX.MONO, w: 600, color: col }); cx += w + 12; });
+        const pw = W - 2 * x; c.fillStyle = MX.rgba(T.ink, 0.12); c.fillRect(x, y + 168, pw, 5); c.fillStyle = T.teal; c.fillRect(x, y + 168, pw * clamp((s.step || 0) / M.steps.count, 0, 1), 5); c.restore(); return;
+      }
       let cx = x, cy = y + 112; c.font = '600 17px ' + MX.SANS;
       r.used.forEach((k) => {
         const v = V[k], isO = v !== null && typeof v === 'object', val = isO ? v.v : v, cl = isO && v.claim ? claimBy[v.claim] : null, col = !cl ? T.ink : cl.conf === 'estimated' ? T.ember : cl.conf === 'derived' ? T.ink : T.teal;
@@ -359,10 +370,10 @@
           MX.A = ai; MX.text(String(r.label).slice(0, 34), 86, y, { size: 22, font: MX.MONO, color: T.mute }); MX.text(r.pub, W - 380, y, { size: (r.pub.length > 16 ? 15 : r.pub.length > 8 ? 22 : 28), font: MX.MONO, w: 600, color: T.ink, align: 'right' }); MX.text(r.got, W - 130, y, { size: (r.got.length > 16 ? 15 : r.got.length > 8 ? 22 : 28), font: MX.MONO, w: 600, color: col, align: 'right' }); MX.text(r.ok === false ? 'X' : 'OK', W - 86, y, { size: 22, font: MX.MONO, w: 700, color: col, align: 'right' }); MX.A = a;
         });
         MX.A = a * ramp(t, pn.t0 + 0.3, pn.t0 + 0.7); MX.text('PUBLISHED', W - 380, 470, { size: 13, font: MX.MONO, color: T.mute, align: 'right', spacing: 2.4 }); MX.text('MODEL', W - 130, 470, { size: 13, font: MX.MONO, color: T.mute, align: 'right', spacing: 2.4 }); MX.A = a;
-        const sy = 520 + rows.length * 70 + 60, as = a * ramp(t, pn.t0 + 0.8 + rows.length * 0.28, pn.t0 + 1.4 + rows.length * 0.28), sc = 1 + 0.35 * (1 - ramp(t, pn.t0 + 0.8 + rows.length * 0.28, pn.t0 + 1.3 + rows.length * 0.28)), stamp = VOK ? 'VERIFIED' : 'DOES NOT PASS', scol = VOK ? T.teal : T.ember;
+        const sy = 520 + rows.length * 70 + 60, as = a * ramp(t, pn.t0 + 0.8 + rows.length * 0.28, pn.t0 + 1.4 + rows.length * 0.28), sc = 1 + 0.35 * (1 - ramp(t, pn.t0 + 0.8 + rows.length * 0.28, pn.t0 + 1.3 + rows.length * 0.28)), stamp = VSTAMP, scol = stamp === 'VERIFIED' ? T.teal : stamp === 'DOES NOT PASS' ? T.ember : T.gold || T.mute;
         c.save(); c.globalAlpha = as; c.translate(W / 2, sy + 30); c.rotate(-0.07); c.scale(sc, sc); c.strokeStyle = scol; c.lineWidth = 5; c.strokeRect(-250, -52, 500, 104); c.lineWidth = 1.5; c.strokeRect(-258, -60, 516, 120); c.restore();
         MX.A = as; c.save(); c.translate(W / 2, sy + 30); c.rotate(-0.07); c.scale(sc, sc); MX.text(stamp, 0, 20, { size: 64, font: MX.MONO, w: 800, color: scol, align: 'center', spacing: 4 }); c.restore();
-        MX.A = a * ramp(t, pn.t0 + 2.4, pn.t0 + 3.2); MX.text(rows.filter((r) => r.ok !== false).length + ' of ' + rows.length + ' published figures reproduced   -   ' + nSpec + ' published claims', 86, sy + 140, { size: 18, font: MX.MONO, color: T.mute }); MX.text(nEst + ' estimated, drawn dashed   -   ' + sources.length + ' sources opened', 86, sy + 174, { size: 18, font: MX.MONO, color: T.mute }); MX.A = a;
+        MX.A = a * ramp(t, pn.t0 + 2.4, pn.t0 + 3.2); MX.text(rows.filter((r) => r.ok === true).length + ' of ' + rows.length + ' published figures reproduced' + (VPEND ? ', ' + VPEND + ' unchecked' : '') + '   -   ' + nSpec + ' published claims', 86, sy + 140, { size: 18, font: MX.MONO, color: T.mute }); MX.text(nEst + ' estimated, drawn dashed   -   ' + sources.length + ' sources opened', 86, sy + 174, { size: 18, font: MX.MONO, color: T.mute }); MX.A = a;
         H2.endPanel(); return;
       }
       if (pn.kind === 'claims') {
@@ -400,7 +411,7 @@
         MX.A = fade * ramp(t, t1, t1 + 0.4); MX.text(String(r.label).slice(0, 26), 86, y, { size: 21, font: MX.MONO, color: T.mute }); MX.text(r.pub, W - 360, y, { size: (r.pub.length > 16 ? 15 : r.pub.length > 8 ? 22 : 32), font: MX.MONO, w: 700, color: T.ink, align: 'right' });
         MX.A = fade * (done ? ramp(t, t2, t2 + 0.3) : 0.5 + 0.4 * Math.sin(t * 7 + i)); MX.text(done ? r.got + '  ' + (r.ok === false ? 'X' : 'OK') : 'checking...', W - 86, y, { size: done ? (r.got.length > 16 ? 15 : r.got.length > 8 ? 22 : 32) : 20, font: MX.MONO, w: 700, color: done ? col : T.mute, align: 'right' });
       });
-      MX.A = fade * ramp(t, COLD - 1.2, COLD - 0.6); MX.text(rows.filter((r) => r.ok !== false).length + ' of ' + rows.length + ' reproduced by a model built from the published numbers. Now, how it is built.', 86, y0 + 60 + rows.length * 78 + 24, { size: 19, font: MX.SANS, color: T.mute });
+      MX.A = fade * ramp(t, COLD - 1.2, COLD - 0.6); MX.text(rows.filter((r) => r.ok === true).length + ' of ' + rows.length + ' reproduced by a model built from the published numbers. Now, how it is built.', 86, y0 + 60 + rows.length * 78 + 24, { size: 19, font: MX.SANS, color: T.mute });
       MX.A = 1; c.restore();
     };
     F.overlay((ctx, s) => { if (s.t == null) return; drawMode(ctx, s); drawCold(ctx, s); panels.forEach((pn) => { if (s.t >= pn.t0 - 0.01 && s.t <= pn.t1 + 0.01) drawPanel(ctx, pn, s.t); }); });
@@ -446,6 +457,7 @@
         for (let i = 0; i < 8; i++) ev.push({ t: e.te + 0.15 + i * 0.07, v: 'tick', f: 1800 + i * 160, vel: 0.28, pan: -0.5 + i * 0.14, send: 0.2 });
         ev.push({ t: e.te + 0.64, v: 'tone', f: SND.note(57, 'major', (e.out.charCodeAt(0) - 65) % 14), timbre: 'bell', d: 0.9, gain: 0.22, pan: 0.15 }, { t: e.te + 0.64, v: 'tick', f: 3200, vel: 0.5, pan: 0.15 });
       }));
+      if (STEPS && sMode >= 0) for (let i = 0; i < M.steps.count; i++) { const tt = mS[sMode] + 1.0 + i / M.steps.rate; ev.push({ t: tt, v: 'tick', f: 1500 + (i % 7) * 140, vel: 0.5, pan: -0.15 }); if (M.steps.kind && M.steps.kind(i) === 'match') ev.push({ t: tt + 0.05, v: 'detent', f: 700, vel: 0.8, pan: 0.2, send: 0.2 }); }
       if (COLD) { VROWS.slice(0, 5).forEach((r, i) => { ev.push({ t: 2.3 + i * 0.4, v: 'tick', f: 1800 + i * 150, vel: 0.6, pan: -0.2 }, { t: COLD - 3.0 + i * 0.4, v: 'detent', f: 700 + i * 90, vel: 0.85, pan: 0.2, send: 0.2 }); }); ev.push({ t: COLD - 0.5, v: 'boom', gain: 0.5 }); }
       panels.forEach((pn) => { if (pn.kind === 'verdict') ev.push({ t: pn.t0 + 0.9 + Math.min(7, VROWS.length) * 0.28, v: 'boom', gain: 0.8 }, { t: pn.t0 + 0.9 + Math.min(7, VROWS.length) * 0.28, v: 'impact', mat: 'steel', size: 60, vel: 0.9, hard: 0.9 }); });
       ev.push({ t: tE0 - 0.1, v: 'whoosh', d: 1.5, f0: 220, f1: 3400, gain: 0.8, skew: 0.8 }, { t: tE0 + ED - 0.5, v: 'boom', gain: 0.7 });
@@ -554,7 +566,7 @@
         extra: (Sx) => {
           const now = performance.now(), dt = Math.min(0.05, (now - live.last) / 1000); live.last = now; if (an.K) it.step(dt, live.mode, live.spin ? 1 : 0); if (live.spin) live.t = (live.t || 0) + dt; const r = live.mode ? an.modes[modes.indexOf(live.mode)].ratio : null, px = PRESS ? (1 - Math.cos((live.t || 0) * 2.2)) / 2 * M.press.travel : 0;
           const eth = ENGN ? (live.t || 0) * (drive.rpm || 40) * 6 * RAD : 0;
-          return { mech: { ang: (b) => (an.K ? it.ang(b) : 0), press: px, eng: ENGN ? { theta: eth } : undefined, cube: CUBE ? cubeFrame(tM0 + (live.t || 0) % (tMend - tM0)) : undefined }, light: { az: -38, el: 54 }, dimTo: 0.1, readout: (CUBE ? 'FACE TURNS  -  ' : ENGN ? Math.round(crankDeg(eth)) + ' / 720 deg  -  ' : PRESS ? px.toFixed(2) + ' mm  ' + Math.round(forceAt(px)) + ' ' + (M.press.forceUnit || 'cN') + '  -  ' : live.mode && !ENGN && !CUBE && !CALC ? live.mode.label + '  ' + r.toFixed(3) + ' : 1  -  ' : '') + 'EXPLODE ' + Math.round(Sx.e * 100) + '%' };
+          return { mech: { ang: (b) => (an.K ? it.ang(b) : 0), press: px, eng: ENGN ? { theta: eth } : undefined, cube: CUBE ? cubeFrame(tM0 + (live.t || 0) % (tMend - tM0)) : undefined, step: STEPS ? ((live.t || 0) * M.steps.rate) % (M.steps.count + 6) : undefined }, light: { az: -38, el: 54 }, dimTo: 0.1, readout: (CUBE ? 'FACE TURNS  -  ' : ENGN ? Math.round(crankDeg(eth)) + ' / 720 deg  -  ' : PRESS ? px.toFixed(2) + ' mm  ' + Math.round(forceAt(px)) + ' ' + (M.press.forceUnit || 'cN') + '  -  ' : live.mode && !ENGN && !CUBE && !CALC ? live.mode.label + '  ' + r.toFixed(3) + ' : 1  -  ' : '') + 'EXPLODE ' + Math.round(Sx.e * 100) + '%' };
         } });
     } else F.run({ duration: DUR, keys, script, audio, poster: tM0 + MD * 0.5, blurAt: (t) => (t >= tP0 - 0.2 ? 1 : 99) });      // las paginas de evidencia no se mueven: un solo render por frame
     return { F, an, DUR };

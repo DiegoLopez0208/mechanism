@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// new.mjs - crea examples/<nombre>/ con una pagina, run.js y un spec.js minimo que YA pasa el chequeo, para editarlo a partir de la investigacion.
+// new.mjs - crea examples/<nombre>/ con una pagina, run.js y un spec.js minimo que NO pasa el chequeo hasta que reemplaces cada TODO por lo investigado (nace como borrador: un TODO o example.com es un error).
 //
 //   node scripts/new.mjs rubik --title "Rubik's cube"
 //   node scripts/check-spec.mjs examples/rubik/spec.js
@@ -20,7 +20,7 @@ const hub = fs.readFileSync(path.join(root, 'examples/hub/index.html'), 'utf8');
 fs.writeFileSync(path.join(dir, 'index.html'), hub.replace(/<title>[^<]*<\/title>/, '<title>' + fig + ' - ' + title.replace(/[<>&]/g, '') + '</title>'));
 fs.copyFileSync(path.join(root, 'examples/hub/run.js'), path.join(dir, 'run.js'));
 fs.writeFileSync(path.join(dir, 'spec.js'), `/*
- * spec.js - ${title}. Plantilla minima: ya pasa "node scripts/check-spec.mjs examples/${name}/spec.js".
+ * spec.js - ${title}. Plantilla minima, BORRADOR: "node scripts/check-spec.mjs examples/${name}/spec.js" falla hasta que cada TODO y example.com se reemplacen por lo que investigaste.
  * Reemplaza las fuentes, las afirmaciones y las piezas por lo que investigaste. Reglas: todo numero SPEC / MEASURED / DERIVED nombra su fuente
  * (DERIVED trae su cruce, MEASURED su error, ESTIMATED su motivo). Ver SKILL.md y examples/hub, examples/switch, examples/enigma.
  */
