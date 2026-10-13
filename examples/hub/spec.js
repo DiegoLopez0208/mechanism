@@ -59,7 +59,7 @@ window.SPEC = (() => {
         ],
       },
     },
-    director: { modeDur: 4.8, tourDur: 3.4 },
+    director: { what: "A bicycle wheel hub with a gearbox inside. One planetary gear set gives three speeds; watch which part turns the wheel.", modeDur: 4.8, tourDur: 3.4 },
   };
 })();
   // what makes it read as a bicycle wheel hub: spokes from the flanges to a (shortened) rim. Decoration, not data: the real wheel has 32-36 spokes and a rim near 300 mm radius.

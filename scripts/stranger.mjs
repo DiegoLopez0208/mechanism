@@ -24,7 +24,7 @@ await send('Page.enable'); await send('Emulation.setDeviceMetricsOverride', { wi
 const out = path.join(root, 'out', 'stranger'); mkdirSync(out, { recursive: true });
 const shot = async (n) => { const r = await send('Page.captureScreenshot', { format: 'png' }); writeFileSync(path.join(out, n + '.png'), Buffer.from(r.data, 'base64')); console.log('still', n); };
 for (const n of names) {
-  await send('Page.navigate', { url: pathToFileURL(path.join(root, 'examples', n, 'index.html')).href + '?explore&bare' }); await sleep(4500);
-  await shot(n + '-assembled');
+  await send('Page.navigate', { url: pathToFileURL(path.join(root, 'examples', n, 'index.html')).href + '?' + (process.env.STRANGER_QUERY || 'explore&bare') }); await sleep(4500);
+  await shot(n + '-' + (process.env.STRANGER_TAG || 'assembled'));
 }
 try { ws.close(); } catch {} proc.kill(); try { rmSync(profile, { recursive: true, force: true }); } catch {}

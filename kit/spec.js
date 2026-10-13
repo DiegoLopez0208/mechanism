@@ -564,15 +564,25 @@
     /* ---------------------------------------------------------- arranque */
     if (explore && ENIG) startEnigmaExplore();
     else if (explore) {
-      const it = new Integrator(an, drive.rpm), live = { mode: modes[0] || null, spin: true, last: performance.now() };
-      const tg = [{ label: PRESS ? 'PRESS' : 'SPIN', get: () => live.spin, set: (v) => { live.spin = v; } }].concat(PRESS || ENGN || CUBE || CALC ? [] : modes.map((m) => ({ label: m.label.toUpperCase().replace('GEAR ', 'G'), get: () => live.mode === m, set: () => { live.mode = m; } })));
+      const it = new Integrator(an, drive.rpm), live = { mode: modes[0] || null, spin: true, last: performance.now(), est: q.has('est'), on: q.has('break') };      // ?est and ?break open the viewer with those tools on
+      // questioning the model: what is only estimated, and what the gate says when a published number is wrong
+      const estIds = parts.filter((p) => p.spec.conf === 'estimated').map((p) => p.id), mi0 = ((M && M.drive && M.drive.modes) || []).findIndex((m) => m.publish && (m.publish.value != null || m.publish.text != null));
+      const breakIt = () => {
+        if (live.brk) return live.brk; const m0 = M.drive.modes[mi0], pub = m0.publish, was = pub.value != null ? pub.value : pub.text, now = pub.value != null ? Math.round(pub.value * 105) / 100 + (pub.value === 0 ? 1 : 0) : String(pub.text).slice(0, -1) + (String(pub.text).slice(-1) === '0' ? '1' : '0');
+        const mut = Object.assign({}, spec, { mechanism: Object.assign({}, M, { drive: Object.assign({}, M.drive, { modes: M.drive.modes.map((m, i) => (i === mi0 ? Object.assign({}, m, { publish: Object.assign({}, pub, pub.value != null ? { value: now } : { text: now }) }) : m)) }) }) }), r = S.validate(mut);
+        return (live.brk = { label: m0.label, was, now, msg: r.errors[0] || 'the gate did not notice', state: r.verdict ? r.verdict.state : 'DOES NOT PASS' });
+      };
+      const tg = [{ label: PRESS ? 'PRESS' : 'SPIN', get: () => live.spin, set: (v) => { live.spin = v; } }].concat(estIds.length ? [{ label: 'GUESSES', get: () => !!live.est, set: (v) => { live.est = v; } }] : [], mi0 >= 0 ? [{ label: 'BREAK IT', get: () => !!live.on, set: (v) => { live.on = v; } }] : [], PRESS || ENGN || CUBE || CALC ? [] : modes.map((m) => ({ label: m.label.toUpperCase().replace('GEAR ', 'G'), get: () => live.mode === m, set: () => { live.mode = m; } })));
       const HOME = UP ? Object.assign({}, VW.iso, { zoom: VW.expl.zoom * 1.3 }) : VW.iso;
       F.explore({ views: [['FRONT', VW.front], ['ISO', HOME], ['SIDE', VW.side]], home: HOME, start: HOME, toggleW: 100, toggles: tg, minZoom: 3, maxZoom: 400,
         reset: () => { live.mode = modes[0] || null; live.spin = true; },
         extra: (Sx) => {
           const now = performance.now(), dt = Math.min(0.05, (now - live.last) / 1000); live.last = now; if (an.K) it.step(dt, live.mode, live.spin ? 1 : 0); if (live.spin) live.t = (live.t || 0) + dt; const r = live.mode ? an.modes[modes.indexOf(live.mode)].ratio : null, px = PRESS ? (1 - Math.cos((live.t || 0) * 2.2)) / 2 * M.press.travel : 0;
           const eth = ENGN ? (live.t || 0) * (drive.rpm || 40) * 6 * RAD : 0;
-          return { mech: { ang: (b) => (an.K ? it.ang(b) : 0), press: px, eng: ENGN ? { theta: eth } : undefined, cube: CUBE ? cubeFrame(tM0 + (live.t || 0) % (tMend - tM0)) : undefined, step: STEPS ? ((live.t || 0) * M.steps.rate) % (M.steps.count + 6) : undefined }, light: { az: -38, el: 54 }, dimTo: 0.1, readout: (CUBE ? 'FACE TURNS  -  ' : ENGN ? Math.round(crankDeg(eth)) + ' / 720 deg  -  ' : PRESS ? px.toFixed(2) + ' mm  ' + Math.round(forceAt(px)) + ' ' + (M.press.forceUnit || 'cN') + '  -  ' : live.mode && !ENGN && !CUBE && !CALC ? live.mode.label + '  ' + r.toFixed(3) + ' : 1  -  ' : '') + 'EXPLODE ' + Math.round(Sx.e * 100) + '%' };
+          return { mech: { ang: (b) => (an.K ? it.ang(b) : 0), press: px, eng: ENGN ? { theta: eth } : undefined, cube: CUBE ? cubeFrame(tM0 + (live.t || 0) % (tMend - tM0)) : undefined, step: STEPS ? ((live.t || 0) * M.steps.rate) % (M.steps.count + 6) : undefined }, light: { az: -38, el: 54 }, dimTo: live.est ? 0.16 : 0.1, ...(live.est ? { focusSet: estIds, focusA: 0.9 } : {}), ...(live.on ? { ui: (c) => {
+            const b = breakIt(), x = 64, w = W - 128, ln = wrap(b.msg, '500 22px ' + MX.SANS, w - 48); c.save(); c.fillStyle = MX.rgba(T.paper, 0.92); c.fillRect(x - 14, 232, w + 28, 152 + ln.length * 30); c.strokeStyle = T.ember; c.lineWidth = 2; c.strokeRect(x - 14, 232, w + 28, 152 + ln.length * 30);
+            MX.text('WHAT IF A PUBLISHED NUMBER WERE WRONG?', x, 262, { size: 14, font: MX.MONO, color: T.ember, spacing: 2.4, w: 700 }); MX.text('we changed "' + b.label + '" from ' + b.was + ' to ' + b.now, x, 300, { size: 24, font: MX.MONO, color: T.ink, w: 600 });
+            ln.forEach((l, i) => MX.text(l, x, 336 + i * 30, { size: 22, font: MX.SANS, color: T.mute })); MX.text(b.state, x, 360 + ln.length * 30, { size: 30, font: MX.MONO, w: 800, color: T.ember, spacing: 3 }); c.restore(); } } : {}), readout: (CUBE ? 'FACE TURNS  -  ' : ENGN ? Math.round(crankDeg(eth)) + ' / 720 deg  -  ' : PRESS ? px.toFixed(2) + ' mm  ' + Math.round(forceAt(px)) + ' ' + (M.press.forceUnit || 'cN') + '  -  ' : live.mode && !ENGN && !CUBE && !CALC ? live.mode.label + '  ' + r.toFixed(3) + ' : 1  -  ' : '') + 'EXPLODE ' + Math.round(Sx.e * 100) + '%' };
         } });
     } else F.run({ duration: DUR, keys, script, audio, poster: tM0 + MD * 0.5, blurAt: (t) => (t >= tP0 - 0.2 ? 1 : 99) });      // las paginas de evidencia no se mueven: un solo render por frame
     return { F, an, DUR };

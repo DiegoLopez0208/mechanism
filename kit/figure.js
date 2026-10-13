@@ -149,7 +149,8 @@
       const btn = (x, y, w, label, on, fn) => ({ x, y, w, h: 44, label, on, fn });
       const btns = () => {
         const out = []; o.views.forEach(([n, v], i) => out.push(btn(560 + i * 110, H - 220, 100, n, false, () => { S.goal = Object.assign({ cx: W / 2 }, v); })));
-        let x = 78; const tw = o.toggleW || 130; (o.toggles || []).forEach((t) => { out.push(btn(x, H - 154, tw, t.label, !!t.get(), () => t.set(!t.get()))); x += tw + 10; });
+        let x = 78; const tw = o.toggleW || 130; const nT = (o.toggles || []).length, tw2 = Math.max(70, Math.min(tw, Math.floor((470 - 10 * (nT - 1)) / Math.max(1, nT))));      // many toggles share the room left of MEASURE
+        (o.toggles || []).forEach((t) => { out.push(btn(x, H - 154, tw2, t.label, !!t.get(), () => t.set(!t.get()))); x += tw2 + 10; });
         if (o.measure !== false) out.push(btn(560, H - 154, 210, S.measure ? 'MEASURING' : 'MEASURE', S.measure, () => { S.measure = !S.measure; S.pts = []; }));
         out.push(btn(780, H - 154, 210, 'RESET', false, () => { S.eT = 0; S.sel = null; S.pts = []; S.measure = false; S.goal = Object.assign({ cx: W / 2 }, o.home || o.views[0][1]); if (o.reset) o.reset(); }));
         return out;
@@ -176,10 +177,12 @@
         if (S.goal) ['yaw', 'pitch', 'zoom', 'tx', 'ty', 'tz', 'cx', 'cy'].forEach((q) => { if (S.goal[q] != null) S.view[q] += (S.goal[q] - S.view[q]) * k; });
         const focus = S.sel || S.hov;
         const s = Object.assign({ e: E.sm(S.e), focus, focusA: focus ? 1 : 0, view: S.view, assemble: o.assemble ? o.assemble(t) : null, infoAt: o.infoAt || [64, 250], hint: S.measure ? 'MEASURE: TAP TWO POINTS ON THE MODEL' : 'DRAG TO ORBIT - WHEEL TO ZOOM - TAP A PART', readout: 'EXPLODE ' + Math.round(S.e * 100) + '%' }, o.extra ? o.extra(S, t) : {});
+        const extraUi = s.ui;      // a tool from extra() (for example the BREAK IT panel) draws first
         s.ui = (c) => {
+          if (extraUi) extraUi(c);
           MX.text('EXPLODE', 78, SL.y + 8, { size: 22, color: T.mute, spacing: 1.5 });
           c.save(); c.strokeStyle = 'rgba(42,41,37,0.4)'; c.lineWidth = 3; c.beginPath(); c.moveTo(SL.x0, SL.y); c.lineTo(SL.x1, SL.y); c.stroke(); c.strokeStyle = T.ember; c.beginPath(); c.moveTo(SL.x0, SL.y); c.lineTo(SL.x0 + (SL.x1 - SL.x0) * S.eT, SL.y); c.stroke(); c.beginPath(); c.arc(SL.x0 + (SL.x1 - SL.x0) * S.eT, SL.y, 13, 0, 6.2832); c.fillStyle = T.paper; c.fill(); c.stroke();
-          btns().forEach((b) => { c.fillStyle = b.on ? T.ink : T.paper; c.fillRect(b.x, b.y, b.w, b.h); c.strokeStyle = T.ink; c.lineWidth = 1.5; c.strokeRect(b.x, b.y, b.w, b.h); MX.text(b.label, b.x + b.w / 2, b.y + 29, { size: 20, align: 'center', w: 600, spacing: 1, color: b.on ? T.paper : T.ink }); });
+          btns().forEach((b) => { c.fillStyle = b.on ? T.ink : T.paper; c.fillRect(b.x, b.y, b.w, b.h); c.strokeStyle = T.ink; c.lineWidth = 1.5; c.strokeRect(b.x, b.y, b.w, b.h); MX.text(b.label, b.x + b.w / 2, b.y + 29, { size: b.w < 104 ? 15 : 20, align: 'center', w: 600, spacing: 1, color: b.on ? T.paper : T.ink }); });
           if (S.pts.length) { const P = S.pts.map((q) => F.P(q[0], q[1], q[2])); c.strokeStyle = T.ember; c.fillStyle = T.ember; c.lineWidth = 2.5; P.forEach((q) => { c.beginPath(); c.arc(q[0], q[1], 7, 0, 6.2832); c.fill(); }); if (P.length === 2) { c.beginPath(); c.moveTo(P[0][0], P[0][1]); c.lineTo(P[1][0], P[1][1]); c.stroke(); const dd = Math.hypot(S.pts[0][0] - S.pts[1][0], S.pts[0][1] - S.pts[1][1], S.pts[0][2] - S.pts[1][2]), mx = (P[0][0] + P[1][0]) / 2, my = (P[0][1] + P[1][1]) / 2, lbl = dd.toFixed(2) + ' mm'; c.font = '700 28px ' + MX.MONO; const tw = c.measureText(lbl).width; c.fillStyle = T.paper; c.fillRect(mx - tw / 2 - 8, my - 22, tw + 16, 38); c.fillStyle = T.ember; c.textAlign = 'center'; c.fillText(lbl, mx, my + 7); } }
           c.restore();
         };
