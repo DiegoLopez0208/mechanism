@@ -8,6 +8,7 @@
 window.SPEC = (() => {
   return {
     brand: { accent: '#d0102a' }, id: 'switch', up: 'z', fig: 'Fig 5', kicker: 'KEY SWITCH', title: 'Cherry MX2A Red', sub: 'A linear switch: 2 mm to actuate, 4 mm to bottom out.',
+    recognize: {"object":"Cherry MX2A Red key switch","iconic":[{"text":"red stem with the cross","parts":["stemBody","stemCap"]},{"text":"clear upper housing","parts":["top"]},{"text":"coil return spring","parts":["spring"]},{"text":"two metal pins under the base","parts":["pinA","pinB"]}],"blind":{"answer":"Cherry MX-style linear switch, red stem (Cherry MX Red likely)","judge":"a fresh model with no context, shown a label-free still (scripts/stranger.mjs)","date":"2026-10-13","ok":true}},
     research: {
       sources: [
         { id: 'cherry-ds', title: 'CHERRY MX2A RED datasheet (EN)', url: 'https://cdn.sparkfun.com/assets/a/9/b/6/2/MX2A_RED-Datasheet-EN_US.pdf', fetched: '2026-10-12', note: 'A table of numbers, no mechanical drawing. Read page by page from the PDF (data/switch/ref/mx2a-red.txt).' },

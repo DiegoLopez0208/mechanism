@@ -14,6 +14,7 @@ window.SPEC = (() => {
   const pins = PL.map((a, i) => ({ id: 'pin' + (i + 1), name: 'Planet pin ' + (i + 1), kind: 'pin', p: { r: 2.5, len: 17 }, mat: 'chrome', orbit: { center: [0, 0], r: ORBIT, a0: a, around: 'carrier' }, at: [0, 0, 0], body: 'carrier', explode: [0, 0, 16], conf: 'estimated', why: 'Pin size is not published.', tour: false }));
   return {
     brand: { accent: '#2f9bff' }, id: 'hub', fig: 'Fig 4', kicker: 'EPICYCLIC HUB', title: 'Three-speed hub', sub: 'One planetary stage, three ratios. Sun fixed on the axle.',
+    recognize: {"object":"Three-speed bicycle hub (planetary gear hub)","iconic":[{"text":"hub shell with two spoke flanges","parts":["shell","flangeL","flangeR"]},{"text":"chain sprocket","parts":["sprocket"]},{"text":"sun gear, four planets and a ring gear","parts":["sun","planet1","planet2","planet3","planet4","ring"]},{"text":"axle with lock nuts","parts":["axle","nutL","nutR"]}],"blind":{"answer":"Chain-driven drum or hub with sprocket, brand unknown (confidence 25)","judge":"a fresh model with no context, shown a label-free still (scripts/stranger.mjs)","date":"2026-10-13","ok":false}},
     research: {
       sources: [
         { id: 'sa-aw', title: 'Sturmey-Archer AW, product page', url: 'https://www.sturmey-archer.com/en/products/detail/aw', fetched: '2026-10-12', note: 'The page refuses automated fetch (HTTP 403); the ratios were read from the search result that quotes it.' },

@@ -126,9 +126,12 @@
     };
 
     /* ---------------------------------------------------------- cuadro */
+    const BARE = typeof location !== 'undefined' && new URLSearchParams(location.search).has('bare');
     F.overlay = (fn) => { F.overlays.push(fn); };
     F.frame = (ctx, s) => {
-      F.apply(s); st.blit(ctx); MX.card(W, H, Object.assign({ overlay: true }, cfg.card(s)));
+      F.apply(s); st.blit(ctx);
+      if (BARE) return;      // ?bare: only the 3D object, no title, labels or panels (the stranger test shows this to someone who knows nothing)
+      MX.card(W, H, Object.assign({ overlay: true }, cfg.card(s)));
       F.overlays.forEach((fn) => fn(ctx, s)); H2.info(s); if (s.ui) s.ui(ctx);
     };
     F.run = (o) => {

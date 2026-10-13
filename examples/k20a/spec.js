@@ -49,6 +49,7 @@
 
   window.SPEC = {
     brand: { accent: '#d6202a' }, id: 'k20a', fig: 'Fig 8', kicker: 'REAL ENGINE', title: 'Honda K20A', sub: 'Inline four, 2.0 L. The firing order is checked against the crank.', orient: [0, 90, 0],
+    recognize: {"object":"Honda K20A inline-four engine","iconic":[{"text":"red cam cover","parts":["cover"]},{"text":"four pistons and rods","parts":["piston1","piston2","piston3","piston4","rod1","rod2","rod3","rod4"]},{"text":"two camshafts and sixteen valves","parts":["cam-in","cam-ex"]},{"text":"crankshaft and flywheel","parts":["crank","flywheel"]}],"blind":{"answer":"Honda engine block with red DOHC cam cover","judge":"a fresh model with no context, shown a label-free still (scripts/stranger.mjs)","date":"2026-10-13","ok":true}},
     research: {
       sources: [
         { id: 'wiki-k', title: 'Honda K engine - Wikipedia', url: 'https://en.wikipedia.org/wiki/Honda_K_engine', fetched: '2026-10-13', note: 'K20A: bore 86 mm, stroke 86 mm, 1,998 cc, DOHC with 4 valves per cylinder, deck height 212 mm. It does NOT give the connecting rod length, the firing order, the journals or the bore spacing.' },

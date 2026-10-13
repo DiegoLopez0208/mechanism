@@ -99,6 +99,21 @@ test('nothing compared is NOT verified', () => {
   assert.ok(r.warnings.some((w) => /not a verification/.test(w)));
 });
 
+test('recognize: features must be built from parts that exist', () => {
+  const ok = mutate((s) => { s.recognize = { object: 'A plate', iconic: [{ text: 'a flat plate', parts: ['a'] }, { text: 'its corner radius', partsPrefix: 'a' }] }; });
+  assert.equal(ok.errors.length, 0, ok.errors.join('; '));
+  assert.equal(ok.verdict.recognition.features, 2);
+  assert.ok(mutate((s) => { s.recognize = { object: 'A plate', iconic: [{ text: 'a flat plate', parts: ['a'] }, { text: 'a ghost', parts: ['nope'] }] }; }).errors.some((e) => /part that does not exist/.test(e)));
+  assert.ok(mutate((s) => { s.recognize = { object: 'A plate', iconic: [{ text: 'only one', parts: ['a'] }] }; }).errors.some((e) => /at least 2 features/.test(e)));
+  assert.ok(mutate((s) => { s.recognize = { object: 'TODO', iconic: [{ text: 'x', parts: ['a'] }, { text: 'y', parts: ['a'] }] }; }).errors.some((e) => /placeholder/.test(e)));
+});
+
+test('recognize: a failed blind test is reported, not hidden', () => {
+  const r = mutate((s) => { s.recognize = { object: 'A plate', iconic: [{ text: 'p', parts: ['a'] }, { text: 'q', parts: ['a'] }], blind: { answer: 'a coaster', judge: 'a fresh model', date: '2026-10-13', ok: false } }; });
+  assert.equal(r.verdict.recognition.blind, 'not recognised');
+  assert.ok(r.warnings.some((w) => /not recognisable yet/.test(w)));
+});
+
 test('the shipped examples keep passing with an honest verdict', () => {
   for (const name of ['hub', 'switch', 'enigma', 'k20a', 'rubik', 'rtx4090', 'mos6502', 'rar5']) {
     const r = validateExample(name);

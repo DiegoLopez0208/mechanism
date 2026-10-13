@@ -51,6 +51,7 @@
 
   window.SPEC = {
     brand: { accent: '#76b900' }, id: 'rtx4090', fig: 'Fig 10', kicker: 'REAL GRAPHICS CARD', title: 'GeForce RTX 4090', sub: 'The numbers come out of each other. Each one is checked.', orient: [0, 0, 90],
+    recognize: {"object":"NVIDIA GeForce RTX 4090 graphics card","iconic":[{"text":"two large fans","parts":["fanA","fanB"]},{"text":"black shroud","parts":["shroud"]},{"text":"heat pipes","parts":["pipe1","pipe2"]},{"text":"PCIe edge connector","parts":["fingers"]}],"blind":{"answer":"NVIDIA GeForce RTX graphics card","judge":"a fresh model with no context, shown a label-free still (scripts/stranger.mjs)","date":"2026-10-13","ok":true}},
     research: {
       sources: [
         { id: 'nvidia', title: 'GeForce RTX 4090 - NVIDIA', url: 'https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4090/', fetched: '2026-10-13', note: 'Founders Edition: 16,384 CUDA cores, boost 2.52 GHz, base 2.23 GHz, 24 GB GDDR6X on a 384-bit interface, 450 W total graphics power, 304 mm long, 137 mm wide, 3-slot (61 mm). It does NOT give the memory speed, the bandwidth, the unit counts or the die.' },

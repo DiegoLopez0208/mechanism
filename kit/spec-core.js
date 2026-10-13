@@ -185,6 +185,22 @@
       const bad = (o, label) => Object.keys(o || {}).forEach((k) => { const v = o[k]; if (typeof v === 'number' && !isFinite(v)) errors.push('part ' + d.id + ': ' + label + '.' + k + ' is not finite'); else if (label === 'p' && typeof v === 'number' && DIMS.includes(k) && v <= 0) errors.push('part ' + d.id + ': dimension ' + k + ' = ' + v + ' must be positive'); });
       bad(d.p, 'p'); [d.at, d.explode].forEach((a, i) => (a || []).forEach((v) => { if (typeof v !== 'number' || !isFinite(v)) errors.push('part ' + d.id + ': ' + (i ? 'explode' : 'at') + ' has a value that is not a finite number'); }));
     });
+    // reconocible: que deberia decir alguien que ve el objeto sin leyenda, y los rasgos que lo hacen ese objeto (cada uno atado a piezas que existen)
+    const RC = spec.recognize, recog = { declared: !!RC, features: 0, blind: RC && RC.blind ? (RC.blind.ok === true ? 'recognised' : RC.blind.ok === false ? 'not recognised' : 'pending') : 'untested' };
+    if (!RC) warnings.push('no recognize block: say what the object is called and which features make it recognisable (recognize: { object, iconic: [{ text, parts }] })');
+    else {
+      if (!RC.object || PH.test(RC.object)) errors.push('recognize.object is empty or placeholder: what should a stranger call this?');
+      if (!Array.isArray(RC.iconic) || RC.iconic.length < 2) errors.push('recognize.iconic needs at least 2 features that make the object recognisable');
+      (RC.iconic || []).forEach((f, i) => {
+        if (!f.text || PH.test(f.text)) errors.push('recognize.iconic[' + i + '] has no text');
+        const want = (f.parts || []).concat([].concat(f.partsPrefix || []));
+        if (!want.length) errors.push('recognize.iconic[' + i + '] (' + (f.text || '?') + ') names no parts: a feature that is not built is not a feature');
+        (f.parts || []).forEach((p) => { if (!ids.has(p)) errors.push('recognize.iconic[' + i + '] (' + f.text + ') cites a part that does not exist: ' + p); });
+        [].concat(f.partsPrefix || []).forEach((p) => { if (!spec.parts.some((d) => d.id.indexOf(p) === 0)) errors.push('recognize.iconic[' + i + '] (' + f.text + ') matches no part with prefix ' + p); });
+        if (want.length) recog.features++;
+      });
+      if (RC.blind) { if (!RC.blind.answer || !RC.blind.judge || !RC.blind.date) errors.push('recognize.blind needs answer, judge and date'); else if (RC.blind.ok === false) warnings.push('blind test: a stranger said ' + JSON.stringify(RC.blind.answer) + ' instead of ' + RC.object + ': the model is not recognisable yet'); }
+    }
     const cv = (spec.mechanism && spec.mechanism.calc && spec.mechanism.calc.vars) || {};
     Object.keys(cv).forEach((k) => { const o = cv[k], v = o !== null && typeof o === 'object' ? o.v : o, c = o !== null && typeof o === 'object' ? o.claim : null; if (!c) errors.push('variable ' + k + ' has no claim: a number nobody can trace'); else if (!cl[c]) errors.push('variable ' + k + ' cites a claim that does not exist: ' + c); if (v === undefined || v === null || (typeof v === 'number' && !isFinite(v))) errors.push('variable ' + k + ' has no usable value (' + String(v) + ')'); });
     const an = S.analyze(spec); an.problems.forEach((p) => errors.push(p));
@@ -198,8 +214,9 @@
     if (an.press) { lines.push('press: travel ' + an.press.travel + ' mm, actuation ' + an.press.actuation + ' mm' + (an.press.predictedFinal ? '; a linear spring would give ' + an.press.predictedFinal.toFixed(1) + ' at the end, published ' + an.press.publishedFinal + (an.press.consistent ? '  ok' : '  NOT LINEAR (the spec states its own reading of why; it is not a claim by the maker)') : '')); an.modes.forEach((m) => lines.push('  phase ' + m.label + ': ' + m.ratio + (m.publish ? '  published ' + m.publish.value + (m.ok ? '  ok' : '  MISMATCH') : ''))); }
     if (an.K) { lines.push('mechanism: residual ' + an.K.residual.toExponential(1)); an.centers.forEach((c) => lines.push('  centres ' + c.a + '-' + c.b + ': ' + c.dist.toFixed(3) + ' mm (required ' + c.need.toFixed(3) + ')  ' + (c.ok ? 'ok' : 'MISMATCH'))); an.modes.forEach((m) => lines.push('  mode ' + m.label + ': ' + m.ratio.toFixed(4) + (m.publish ? '  published ' + m.publish.value + (m.ok ? '  ok' : '  MISMATCH') : ''))); }
     const rowsV = (an.enigmaTests || []).length ? an.enigmaTests.map((t) => t.ok) : an.modes.filter((m) => m.publish).map((m) => m.ok), checked = rowsV.filter((o) => o === true).length, failed = rowsV.filter((o) => o === false).length, pending = rowsV.filter((o) => o !== true && o !== false).length;
-    const estimated = (R.claims || []).filter((c) => c.conf === 'estimated').length, verdict = { state: errors.length ? 'DOES NOT PASS' : !checked ? 'NOTHING CHECKED' : pending ? 'INCOMPLETE' : 'VERIFIED', checked, failed, pending, estimated, claims: (R.claims || []).length, sources: (R.sources || []).length, parts: spec.parts.length };
+    const estimated = (R.claims || []).filter((c) => c.conf === 'estimated').length, verdict = { state: errors.length ? 'DOES NOT PASS' : !checked ? 'NOTHING CHECKED' : pending ? 'INCOMPLETE' : 'VERIFIED', checked, failed, pending, estimated, recognition: recog, claims: (R.claims || []).length, sources: (R.sources || []).length, parts: spec.parts.length };
     if (!errors.length && !checked) warnings.push('no published figure is compared with the model: this is a description, not a verification');
+    lines.push('recognisable: ' + (recog.declared ? recog.features + ' iconic features built, blind test ' + recog.blind : 'not declared'));
     lines.push('verdict: ' + verdict.state + '   ' + checked + ' reproduced, ' + estimated + ' estimated, ' + pending + ' unchecked');
     return { errors, warnings, lines, analysis: an, verdict };
   };

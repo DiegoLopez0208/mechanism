@@ -13,6 +13,7 @@ window.SPEC = (() => {
   return {
     brand: { accent: '#c9a227' }, id: 'enigma', orient: [0, 90, 0], fig: 'Fig 7', kicker: 'ROTOR CIPHER MACHINE', title: 'Enigma I', sub: 'Three rotors, a reflector, 26 wires each. It has to reproduce the published tests.',
     stage: { floorY: -66, shadow: 0.14 },
+    recognize: {"object":"Enigma I rotor cipher machine (the rotor core)","iconic":[{"text":"three lettered rotors","parts":["rotorL","rotorM","rotorR"]},{"text":"reflector","parts":["ukw"]},{"text":"ratchet wheels and pawls","parts":["ratchetL","ratchetM","ratchetR","pawlL","pawlM","pawlR"]},{"text":"glass end plates","parts":["wallL","wallR"]}],"blind":{"answer":"Enigma-style rotor stack (three alphabet rings, wiring, glass plates)","judge":"a fresh model with no context, shown a label-free still (scripts/stranger.mjs)","date":"2026-10-13","ok":true}},
     research: {
       sources: [
         { id: 'wiki-rotors', title: 'Wikipedia, Enigma rotor details', url: 'https://en.wikipedia.org/wiki/Enigma_rotor_details', fetched: '2026-10-13', note: 'Opened. Wiring tables, notches, the double-stepping sequence and the AAAAA > BDZGO test (the page marks that one "citation needed"; the simulation reproduces it).' },

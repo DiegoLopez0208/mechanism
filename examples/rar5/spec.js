@@ -37,6 +37,7 @@
 
   window.SPEC = {
     id: 'rar5', brand: { accent: '#3b82f6' }, fig: 'Fig 12', kicker: 'REAL SOFTWARE', title: 'RAR5 archive', sub: 'The bytes WinRAR writes, and a model that has to write the same ones.',
+    recognize: {"object":"WinRAR archive file (87 bytes)","iconic":[{"text":"the Rar! signature at the start","parts":["b0","b1","b2","b3"]},{"text":"one cube per byte of the archive","partsPrefix":"b"}],"blind":{"answer":"Not a physical object: hex byte values rendered as 3D blocks","judge":"a fresh model with no context, shown a label-free still (scripts/stranger.mjs)","date":"2026-10-13","ok":false}},
     research: {
       sources: [
         { id: 'technote', title: 'RAR 5.0 archive format - rarlab.com', url: 'https://www.rarlab.com/technote.htm', fetched: '2026-10-13', note: 'Signature, vint, the generic block header (CRC32, size, type, flags, extra and data sizes), the main, file and end-of-archive headers and their flags. It does NOT give the CRC-32 variant, only that the unrar source does.' },
