@@ -173,7 +173,7 @@ footer a { border-bottom:1px solid var(--line); }
     <h1>Model it <em>exactly.</em><br>Take it apart.<br>Film it.</h1>
     <p class="lead">Give it a real object. It looks the numbers up, writes a spec where every number says where it came from, and renders a film, a viewer and a 3D model. If the numbers do not add up, it does not render.</p>
     <div class="btns"><a class="btn fill" href="#examples">Watch the films</a><a class="btn" href="examples/enigma/index.html?explore" target="_blank">Type on the Enigma</a><a class="btn" href="#install">Install</a></div>
-    <div class="facts"><div><b>9</b><span>real objects</span></div><div><b>4</b><span>kinds of mechanism</span></div><div><b>1</b><span>gate that says no</span></div></div>
+    <div class="facts"><div><b>10</b><span>real objects</span></div><div><b>6</b><span>kinds of mechanism</span></div><div><b>1</b><span>gate that says no</span></div></div>
   </div>
   <div class="stage3d" id="stage3d">
     <div class="ring"></div><div class="ring b"></div>
@@ -199,7 +199,7 @@ footer a { border-bottom:1px solid var(--line); }
   </div>
   <div class="term rv" id="term">
     <div class="bar"><i></i><i></i><i></i><span>mechanism</span></div>
-    <div class="tabs"><button class="on" data-t="rubik">rubik</button><button data-t="k20a">k20a</button><button data-t="hub">hub</button><button data-t="bad">k20a, 1-2-3-4</button></div>
+    <div class="tabs"><button class="on" data-t="rubik">rubik</button><button data-t="k20a">k20a</button><button data-t="hub">hub</button><button data-t="rtx">rtx4090</button><button data-t="bad">k20a, 1-2-3-4</button></div>
     <pre id="termout"></pre>
   </div>
 </div></section>
@@ -219,6 +219,10 @@ footer a { border-bottom:1px solid var(--line); }
       <h3>Honda K20A</h3><span class="chip warn">1,998 cc and 1-3-4-2, checked; rod is a guess</span>
       <p>A real crank-slider: 16 valves, cams placed from the valve windows. Displacement is computed from bore and stroke, and the published firing order must be possible with the crank. Honda does not publish the rod, so it is dashed.</p>
       <div class="dl"><a href="examples/k20a/index.html?explore" target="_blank">Viewer</a><a href="https://github.com/DiegoLopez0208/mechanism/releases/download/v0.1.0/k20a.glb">GLB</a><a href="examples/k20a/spec.js" target="_blank">spec.js</a></div></article>
+    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-rtx4090.jpg" data-paper="out/rtx4090.mp4" data-night="out/rtx4090-night.mp4"></video><div class="shine"></div></div>
+      <h3>GeForce RTX 4090</h3><span class="chip warn">6 figures checked; the inside is a guess</span>
+      <p>82.58 TFLOPS, 1,290 Gtex/s, 1,008 GB/s and 24 GB are each computed from the published cores, clocks, bus and data rate. Every variable carries its source, so the estimated memory packages show in another colour. The inside of the card is not published and is dashed.</p>
+      <div class="dl"><a href="examples/rtx4090/index.html?explore" target="_blank">Viewer</a><a href="https://github.com/DiegoLopez0208/mechanism/releases/download/v0.1.0/rtx4090.glb">GLB</a><a href="examples/rtx4090/spec.js" target="_blank">spec.js</a></div></article>
     <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-hub.jpg" data-paper="out/hub.mp4" data-night="out/hub-night.mp4"></video><div class="shine"></div></div>
       <h3>Three-speed hub</h3><span class="chip ok">0.75 / 1.00 / 1.333, matches</span>
       <p>A planetary stage with the sun fixed. The running model gives the ratios the maker publishes as 75, 100 and 133 %. Tooth counts are derived; sizes are estimated and dashed.</p>
@@ -308,7 +312,7 @@ node scripts/render.mjs examples/my-object/index.html</div>
 
 <section id="next"><div class="wrap">
   <div class="head rv"><h2>On the bench.</h2><p>Objects whose numbers can be computed and checked against what is published.</p></div>
-  <div class="road rv"><span class="done">Enigma I</span><span class="done">Rubik's cube, 20-move superflip</span><span class="done">4-cylinder engine, firing order and sound</span><span class="done">Three-speed hub</span><span class="done">Key switch</span><span>MOS 6502, cycle-exact</span><span>RTX 4090, cores x clock = TFLOPS</span><span>Pin-tumbler lock, 6^5 keys</span><span>Bicycle drivetrain</span></div>
+  <div class="road rv"><span class="done">Enigma I</span><span class="done">Rubik's cube, 20-move superflip</span><span class="done">4-cylinder engine, firing order and sound</span><span class="done">Three-speed hub</span><span class="done">Key switch</span><span class="done">RTX 4090, cores x clock = TFLOPS</span><span>MOS 6502, cycle-exact</span><span>Pin-tumbler lock, 6^5 keys</span><span>Bicycle drivetrain</span></div>
 </div></section>
 
 <footer><div class="wrap"><span>mechanism, MIT. three.js. Sound from CC0 recordings (see THIRD_PARTY.md).</span><span><a href="https://github.com/DiegoLopez0208/mechanism" target="_blank" rel="noopener">github.com/DiegoLopez0208/mechanism</a></span></div></footer>
@@ -345,6 +349,7 @@ node scripts/render.mjs examples/my-object/index.html</div>
     rubik: ['<span class="cmd">$ node scripts/check-spec.mjs examples/rubik/spec.js</span>', "Rubik's Cube  (rubik)", 'parts: 26   claims: 9   sources: 2', 'cube: 26 cubies', "  phase R U R' U' x 6: 6 (24 turns)", '  phase Longest period: 1260 (10 turns)  published 1,260  <span class=ok>ok</span>', '  phase Superflip: 20 moves (20 turns)  published 20 moves  <span class=ok>ok</span>', '  phase Positions: 43,252,003,274,489,856,000 (0 turns)  published 43,252,003,274,489,856,000  <span class=ok>ok</span>', '', '<span class="ok">PASSES</span>'],
     k20a: ['<span class="cmd">$ node scripts/check-spec.mjs examples/k20a/spec.js</span>', 'Honda K20A  (k20a)', 'parts: 35   claims: 9   sources: 4', 'engine: 4 cylinders, displacement 1998.2 cc, rod / crank radius 3.23, implied compression height 30.02 mm, order 1-3-4-2', '  phase Displacement: 1998.2  published 1,998 cc  <span class=ok>ok</span>', '  phase Firing order: 1-3-4-2  published 1-3-4-2  <span class=ok>ok</span>', '', '<span class="ok">PASSES</span>'],
     hub: ['<span class="cmd">$ node scripts/check-spec.mjs examples/hub/spec.js</span>', 'Three-speed hub  (hub)', '  centres ring-p1: 16.000 mm (required 16.000)  <span class=ok>ok</span>', '  mode Gear 1: 0.7500  published 0.75  <span class=ok>ok</span>', '  mode Gear 2: 1.0000  published 1.0  <span class=ok>ok</span>', '  mode Gear 3: 1.3333  published 1.3333  <span class=ok>ok</span>', '', '<span class="ok">PASSES</span>'],
+    rtx: ['<span class="cmd">$ node scripts/check-spec.mjs examples/rtx4090/spec.js</span>', 'GeForce RTX 4090  (rtx4090)', 'calc: 11 variables', '  phase FP32 at boost: 82.58  published 82.58  <span class=ok>ok</span>', '  phase FP32 at base: 73.07  published 73.07  <span class=ok>ok</span>', '  phase Texture fillrate: 1,290.2  published 1290  <span class=ok>ok</span>', '  phase Pixel fillrate: 443.5  published 443.5  <span class=ok>ok</span>', '  phase Memory bandwidth: 1,008  published 1008  <span class=ok>ok</span>', '  phase Memory capacity: 24  published 24  <span class=ok>ok</span>', '', '<span class="ok">PASSES</span>'],
     bad: ['<span class="cmd">$ node scripts/check-spec.mjs examples/k20a/spec.js</span>   <span class="dim"># firing order changed to 1-2-3-4</span>', 'Honda K20A  (k20a)', '<span class="bad">ERROR</span>  firing order 1-2-3-4: cylinder 3 would have to fire at 360 degrees and its crank throw is at 180 (not possible with that crankshaft)', '<span class="bad">ERROR</span>  firing order 1-2-3-4: cylinder 4 would have to fire at 540 degrees and its crank throw is at 0 (not possible with that crankshaft)', '<span class="bad">ERROR</span>  phase Firing order: the model gives 1-2-3-4 and the published one is 1-3-4-2', '', '<span class="bad">DOES NOT PASS: 3 error(s)</span>']
   };
   const out = document.getElementById('termout'); let timer = null;

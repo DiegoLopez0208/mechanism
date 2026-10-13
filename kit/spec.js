@@ -55,7 +55,7 @@
     const V = S.validate(spec), an = V.analysis, explore = q.has('explore');
     V.errors.forEach((e) => console.error('SPEC: ' + e)); V.warnings.forEach((w) => console.warn('SPEC: ' + w));
     if (V.errors.length && !explore) { document.title = 'SPEC ERROR'; throw new Error('el spec no pasa la validacion:\n' + V.errors.join('\n')); }
-    const M = spec.mechanism || null, drive = (M && M.drive) || { modes: [], rpm: 30 }, modes = drive.modes || [], dir = spec.director || {}, PRESS = !!(M && M.press), ENIG = !!(M && M.enigma), ENGN = !!(M && M.engine), CUBE = !!(M && M.cube), RAD = Math.PI / 180, UP = spec.up === 'z', ORI = spec.orient || (UP ? [-90, 0, 0] : null);
+    const M = spec.mechanism || null, drive = (M && M.drive) || { modes: [], rpm: 30 }, modes = drive.modes || [], dir = spec.director || {}, PRESS = !!(M && M.press), ENIG = !!(M && M.enigma), ENGN = !!(M && M.engine), CUBE = !!(M && M.cube), CALC = !!(M && M.calc), RAD = Math.PI / 180, UP = spec.up === 'z', ORI = spec.orient || (UP ? [-90, 0, 0] : null);
     const claims = (spec.research && spec.research.claims) || [], sources = (spec.research && spec.research.sources) || [], claimBy = Object.fromEntries(claims.map((c) => [c.id, c]));
 
     /* ---------------------------------------------------------- figura y piezas */
@@ -102,6 +102,7 @@
       const phi = d.body && byBodyPhi[d.body] != null && S.teethOf(d) ? byBodyPhi[d.body] : 0;
       part.pose = (s, p) => {
         const m = s.mech, pr = m && m.press ? m.press : 0;
+        if (d.spin) p.group.rotation.z += d.spin * (s.t == null ? performance.now() / 1000 : Math.max(0, s.t));
         if (d.engine && m && m.eng) { engPose(d, p, m.eng); return; }
         if (d.cubie && m && m.cube) { cubePose(d, p, m.cube); return; }
         if (d.slide) p.group.position[d.slide.axis || 'z'] += d.slide.k * pr;
@@ -197,9 +198,10 @@
       const s = { t, e: eg, explodeK: (id) => { const dl = stag[id] * 0.35, a = E.sm(ramp(ex, dl, dl + 0.65)), b = E.sm(ramp(re, (1 - stag[id]) * 0.35, (1 - stag[id]) * 0.35 + 0.65)); return a * (1 - b); },
         assemble: (id) => { const k = E.outBack(ramp(t, arrive[id], arrive[id] + 0.95), 1.1); return { k: Math.min(1.04, k) > 1 ? 1 : k, alpha: ramp(t, arrive[id], arrive[id] + 0.3) * (cutSet[id] ? 1 - cutSet[id] * cut : 1) }; },
         focus: tr ? tr.id : null, focusA: tr ? tr.a : 0, dimTo: 0.012, light: { az: -38 + 26 * Math.sin(t * 0.23), el: 54 },
-        mech: mechAt(t), hint: t < ASM_END ? 'ASSEMBLY' : t < tE0 ? (PRESS ? 'KEY PRESS' : ENIG ? 'ENCIPHERING' : CUBE ? 'FACE TURNS' : ENGN ? 'FOUR-STROKE CYCLE' : 'POWER PATH') : t < tT0 ? 'EXPLODED VIEW' : t < tR0 ? 'PART ' + ((tr ? tr.j : tourIds.length - 1) + 1) + ' OF ' + tourIds.length : t < tP0 ? 'RE-ASSEMBLY' : 'EVIDENCE',
-        readout: md && t >= tM0 && t < tR0 ? md.label + '  -  ' + (PRESS ? pressAt(t).toFixed(2) + ' mm' : ENIG ? ((mechAt(t).enigma || {}).window || '') : CUBE ? cubeDone(t) + ' turns' : ENGN ? Math.round(crankDeg(mechAt(t).eng.theta)) + ' / 720 deg' : an.modes[modeIdx(t)].ratio.toFixed(3) + ' : 1') : parts.length + ' parts', infoAt: [64, H - 360] };
+        mech: mechAt(t), hint: t < ASM_END ? 'ASSEMBLY' : t < tE0 ? (PRESS ? 'KEY PRESS' : ENIG ? 'ENCIPHERING' : CALC ? 'THE NUMBERS' : CUBE ? 'FACE TURNS' : ENGN ? 'FOUR-STROKE CYCLE' : 'POWER PATH') : t < tT0 ? 'EXPLODED VIEW' : t < tR0 ? 'PART ' + ((tr ? tr.j : tourIds.length - 1) + 1) + ' OF ' + tourIds.length : t < tP0 ? 'RE-ASSEMBLY' : 'EVIDENCE',
+        readout: md && t >= tM0 && t < tR0 ? md.label + '  -  ' + (PRESS ? pressAt(t).toFixed(2) + ' mm' : ENIG ? ((mechAt(t).enigma || {}).window || '') : CALC ? an.modes[modeIdx(t)].text + (md.unit ? ' ' + md.unit : '') : CUBE ? cubeDone(t) + ' turns' : ENGN ? Math.round(crankDeg(mechAt(t).eng.theta)) + ' / 720 deg' : an.modes[modeIdx(t)].ratio.toFixed(3) + ' : 1') : parts.length + ' parts', infoAt: [64, H - 360] };
       s.modeA = md && t >= tM0 && t < tE0 ? Math.min(ramp(t, tM0, tM0 + 0.6), 1 - ramp(t, tE0 - 0.5, tE0 - 0.1)) : 0; s.mode = md; s.modeI = modeIdx(t); s.speed = speedAt(t);
+      if (CALC && md && md.show && s.modeA > 0.01) { s.focusSet = md.show; s.focusA = s.modeA * 0.9; s.dimTo = md.dim == null ? 0.55 : md.dim; }
       return s;
     };
 
@@ -250,11 +252,28 @@
       MX.text('EDGES IN PLACE ' + cl2.edgesInPlace + '/12   FLIPPED ' + cl2.edgesFlipped + '      CORNERS IN PLACE ' + cl2.cornersInPlace + '/8   TWISTED ' + cl2.cornersTwisted, x, y + 170, { size: 17, font: MX.SANS, w: 600, color: cl2.solved ? T.teal : T.ink, spacing: 1.4 });
       c.restore();
     };
+    // cuentas: la cifra de la fase, su formula, y las variables que usa con la confianza de cada una
+    const drawCalc = (c, s) => {
+      const a = s.modeA; if (!(a > 0.01)) return; const mi = s.modeI, m = modes[mi], r = an.modes[mi], x = 78, y = H - 318, V = M.calc.vars, big = (r.text + (m.unit ? ' ' + m.unit : '')).length > 11;
+      c.save(); c.globalAlpha = a; c.fillStyle = MX.rgba(T.paper, T.dark ? 0.86 : 0.9); c.fillRect(x - 24, y - 70, W - 2 * x + 48, 262); c.fillStyle = T.teal; c.fillRect(x - 24, y - 70, 4, 262);
+      MX.A = 1; MX.text(m.label, x, y, { size: 56, font: MX.SERIF, w: 500, color: T.ink }); MX.text(m.formula || '', x, y + 42, { size: 21, font: MX.SANS, color: T.mute });
+      MX.text(r.text + (m.unit ? ' ' + m.unit : ''), W - x, y - 2, { size: big ? 46 : 64, font: MX.SERIF, w: 500, color: T.ink, align: 'right' });
+      if (m.publish) { const cl = claimBy[m.publish.claim], w = 190, pt = String(m.publish.text || m.publish.value); tagPill(c, W - x - w - 4, y + 44, cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + (pt.length > 14 ? '' : ' ' + pt)); MX.text(r.ok ? 'matches the model' : 'MISMATCH', W - x - w - 18, y + 44, { size: 19, font: MX.SANS, color: r.ok ? T.teal : T.ember, align: 'right', w: 500 }); }
+      let cx = x, cy = y + 112; c.font = '600 17px ' + MX.SANS;
+      r.used.forEach((k) => {
+        const v = V[k], isO = v !== null && typeof v === 'object', val = isO ? v.v : v, cl = isO && v.claim ? claimBy[v.claim] : null, col = !cl ? T.ink : cl.conf === 'estimated' ? T.ember : cl.conf === 'derived' ? T.ink : T.teal;
+        const txt = (isO && v.label ? v.label : k) + '  ' + val.toLocaleString('en-US') + (isO && v.unit ? ' ' + v.unit : ''), w = c.measureText(txt).width + 28;
+        if (cx + w > W - x) { cx = x; cy += 42; }
+        c.fillStyle = MX.rgba(col, 0.1); c.fillRect(cx, cy - 22, w, 32); c.strokeStyle = MX.rgba(col, 0.5); c.lineWidth = 1; c.strokeRect(cx + 0.5, cy - 21.5, w - 1, 31); MX.text(txt, cx + 14, cy, { size: 17, font: MX.SANS, w: 600, color: col }); cx += w + 12;
+      });
+      c.restore();
+    };
     const drawMode = (c, s) => {
       if (PRESS) return drawPress(c, s);
       if (ENIG) return drawEnigma(c, s);
       if (ENGN) return drawEngine(c, s);
       if (CUBE) return drawCube(c, s);
+      if (CALC) return drawCalc(c, s);
       const a = s.modeA; if (!(a > 0.01)) return; const mi = s.modeI, m = modes[mi], r = an.modes[mi], x = 78, y = H - 318, ratio = r.ratio, drpm = drive.rpm * s.speed, hrpm = drpm * ratio;
       c.save(); c.globalAlpha = a; c.fillStyle = MX.rgba(T.paper, T.dark ? 0.86 : 0.9); c.fillRect(x - 24, y - 70, W - 2 * x + 48, 232); c.fillStyle = T.teal; c.fillRect(x - 24, y - 70, 4, 232);
       MX.A = 1; MX.text(m.label, x, y, { size: 64, font: MX.SERIF, w: 500, color: T.ink });
@@ -268,12 +287,12 @@
     const drawPanel = (c, pn, t) => {
       const a = Math.min(ramp(t, pn.t0, pn.t0 + 0.5), 1 - ramp(t, pn.t1 - 0.4, pn.t1)); if (a < 0.01) return;
       if (pn.kind === 'ratios') {
-        if (!H2.panel(a, spec.fig || 'Fig', ENIG ? 'Run against the published tests' : ENGN || CUBE ? 'Computed from the geometry' : 'Measured against published', (CUBE ? 'The cube is 26 pieces that really turn; every figure below is read off them and compared with what is published.' : ENGN ? 'Every figure is computed from the drawn dimensions and compared with what the maker publishes.' : PRESS ? 'Each phase is read off the running model, then compared with the number the maker publishes.' : ENIG ? 'The machine is run on every published test and compared letter by letter.' : 'Each ratio is read off the running model, then compared with the number the maker publishes.'))) return;
+        if (!H2.panel(a, spec.fig || 'Fig', ENIG ? 'Run against the published tests' : ENGN || CUBE || CALC ? 'Computed from the geometry' : 'Measured against published', (CALC ? 'Every figure is computed from the numbers on the card and compared with what is published.' : CUBE ? 'The cube is 26 pieces that really turn; every figure below is read off them and compared with what is published.' : ENGN ? 'Every figure is computed from the drawn dimensions and compared with what the maker publishes.' : PRESS ? 'Each phase is read off the running model, then compared with the number the maker publishes.' : ENIG ? 'The machine is run on every published test and compared letter by letter.' : 'Each ratio is read off the running model, then compared with the number the maker publishes.'))) return;
         an.modes.forEach((r, i) => {
           const m = modes[i], y = 540 + i * 168, ai = a * ramp(t, pn.t0 + 0.4 + i * 0.35, pn.t0 + 0.9 + i * 0.35);
           c.save(); c.globalAlpha = ai; c.strokeStyle = T.line; c.beginPath(); c.moveTo(86, y - 74); c.lineTo(W - 86, y - 74); c.stroke(); c.restore();
           MX.A = ai; MX.text(m.label, 86, y, { size: 54, font: MX.SERIF, w: 500 }); MX.text(m.formula || '', 86, y + 36, { size: 21, font: MX.SANS, color: T.mute }); MX.text(m.note || '', 86, y + 66, { size: 19, font: MX.SANS, color: T.mute });
-          MX.text(ENIG ? r.text : ENGN || CUBE ? r.text + (m.unit ? ' ' + m.unit : '') : PRESS ? r.ratio.toFixed(2) + ' ' + (M.press.unit || 'mm') : r.ratio.toFixed(4), W - 86, y, { size: 58, font: MX.SERIF, w: 500, align: 'right' });
+          MX.text(ENIG ? r.text : ENGN || CUBE || CALC ? r.text + (m.unit ? ' ' + m.unit : '') : PRESS ? r.ratio.toFixed(2) + ' ' + (M.press.unit || 'mm') : r.ratio.toFixed(4), W - 86, y, { size: 58, font: MX.SERIF, w: 500, align: 'right' });
           if (m.publish) { const cl = claimBy[m.publish.claim]; c.save(); c.globalAlpha = ai; tagPill(c, W - 86 - 330, y + 52, cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + ' ' + m.publish.text + (r.ok ? '  OK' : '  MISMATCH')); c.restore(); }
           MX.A = a;
         });
@@ -458,14 +477,14 @@
     if (explore && ENIG) startEnigmaExplore();
     else if (explore) {
       const it = new Integrator(an, drive.rpm), live = { mode: modes[0] || null, spin: true, last: performance.now() };
-      const tg = [{ label: PRESS ? 'PRESS' : 'SPIN', get: () => live.spin, set: (v) => { live.spin = v; } }].concat(PRESS || ENGN || CUBE ? [] : modes.map((m) => ({ label: m.label.toUpperCase().replace('GEAR ', 'G'), get: () => live.mode === m, set: () => { live.mode = m; } })));
+      const tg = [{ label: PRESS ? 'PRESS' : 'SPIN', get: () => live.spin, set: (v) => { live.spin = v; } }].concat(PRESS || ENGN || CUBE || CALC ? [] : modes.map((m) => ({ label: m.label.toUpperCase().replace('GEAR ', 'G'), get: () => live.mode === m, set: () => { live.mode = m; } })));
       const HOME = UP ? Object.assign({}, VW.iso, { zoom: VW.expl.zoom * 1.3 }) : VW.iso;
       F.explore({ views: [['FRONT', VW.front], ['ISO', HOME], ['SIDE', VW.side]], home: HOME, start: HOME, toggleW: 100, toggles: tg, minZoom: 3, maxZoom: 400,
         reset: () => { live.mode = modes[0] || null; live.spin = true; },
         extra: (Sx) => {
           const now = performance.now(), dt = Math.min(0.05, (now - live.last) / 1000); live.last = now; if (an.K) it.step(dt, live.mode, live.spin ? 1 : 0); if (live.spin) live.t = (live.t || 0) + dt; const r = live.mode ? an.modes[modes.indexOf(live.mode)].ratio : null, px = PRESS ? (1 - Math.cos((live.t || 0) * 2.2)) / 2 * M.press.travel : 0;
           const eth = ENGN ? (live.t || 0) * (drive.rpm || 40) * 6 * RAD : 0;
-          return { mech: { ang: (b) => (an.K ? it.ang(b) : 0), press: px, eng: ENGN ? { theta: eth } : undefined, cube: CUBE ? cubeFrame(tM0 + (live.t || 0) % (tMend - tM0)) : undefined }, light: { az: -38, el: 54 }, dimTo: 0.1, readout: (CUBE ? 'FACE TURNS  -  ' : ENGN ? Math.round(crankDeg(eth)) + ' / 720 deg  -  ' : PRESS ? px.toFixed(2) + ' mm  ' + Math.round(forceAt(px)) + ' ' + (M.press.forceUnit || 'cN') + '  -  ' : live.mode && !ENGN && !CUBE ? live.mode.label + '  ' + r.toFixed(3) + ' : 1  -  ' : '') + 'EXPLODE ' + Math.round(Sx.e * 100) + '%' };
+          return { mech: { ang: (b) => (an.K ? it.ang(b) : 0), press: px, eng: ENGN ? { theta: eth } : undefined, cube: CUBE ? cubeFrame(tM0 + (live.t || 0) % (tMend - tM0)) : undefined }, light: { az: -38, el: 54 }, dimTo: 0.1, readout: (CUBE ? 'FACE TURNS  -  ' : ENGN ? Math.round(crankDeg(eth)) + ' / 720 deg  -  ' : PRESS ? px.toFixed(2) + ' mm  ' + Math.round(forceAt(px)) + ' ' + (M.press.forceUnit || 'cN') + '  -  ' : live.mode && !ENGN && !CUBE && !CALC ? live.mode.label + '  ' + r.toFixed(3) + ' : 1  -  ' : '') + 'EXPLODE ' + Math.round(Sx.e * 100) + '%' };
         } });
     } else F.run({ duration: DUR, keys, script, audio, poster: tM0 + MD * 0.5 });
     return { F, an, DUR };

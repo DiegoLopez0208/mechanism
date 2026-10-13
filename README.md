@@ -79,6 +79,7 @@ Every example is a film, a live viewer (`examples/<name>/index.html?explore`, ad
 | [`enigma`](examples/enigma) | The Enigma I rotor stack. Wiring, notches and stepping are simulated and must match the published tests: `AAAAA` becomes `BDZGO`, with rings BBB `EWTYX`, and the middle rotor double-steps `ADU > ADV > AEW > BFX`. In the viewer you type on your keyboard. |
 | [`rubik`](examples/rubik) | 26 cubies that really turn. The 20-move superflip flips all 12 edges, the longest period is 1,260 and the positions count 43,252,003,274,489,856,000. |
 | [`k20a`](examples/k20a) | Honda K20A, inline four with 16 valves. A crank-slider with exact kinematics: displacement computed from bore and stroke (1,998 cc published) and the published firing order 1-3-4-2 must be possible with the crank. The connecting rod and valve timing are not published and are drawn dashed. |
+| [`rtx4090`](examples/rtx4090) | GeForce RTX 4090 Founders Edition. TFLOPS (82.58 at boost, 73.07 at base), fillrates, the 1,008 GB/s of bandwidth and the 24 GB are each computed from the published cores, clocks, bus and data rate and must match. Every variable carries its claim; the memory packages are an estimated assumption and are drawn as one. The inside of the card is not published and is dashed. |
 | [`hub`](examples/hub) | Three-speed planetary hub (Sturmey-Archer AW type). The running model gives 0.75, 1.00 and 1.333 against the published 75, 100 and 133 %. |
 | [`switch`](examples/switch) | Cherry MX2A Red key switch: a press, not gears. The datasheet's three force points (30, 45, 100 cN) cannot come from one linear spring, and the film plots that instead of hiding it. |
 | [`s25-vs-s26`](examples/s25-vs-s26) | Galaxy S25 Ultra against S26 Ultra at the same scale, measured on the official renders. Interiors are not drawn: no readable photo, and the film says so. |
@@ -139,6 +140,7 @@ A part, with the evidence it stands on:
 | Rotor ciphers | `mechanism.enigma` | every published test, letter by letter, and reciprocity |
 | Crank-slider engines | `mechanism.engine` | displacement, firing order possible with the crank, piston reaches the deck |
 | Puzzles | `mechanism.cube` | period of a sequence, the superflip, the number of positions |
+| Calculated figures | `mechanism.calc` | every published figure that comes out of others, from variables that each name their source |
 
 The director builds the film by itself: staggered assembly, a cutaway while the mechanism runs, one mode at a time with its published number, the exploded view, a tour with a callout per part, re-assembly, and an evidence table with the sources.
 
@@ -157,12 +159,12 @@ Real recordings, not synthesis: keys, metal, glass, plastic and rubber impacts (
 | `kit/gl.js`, `kit/figure.js` | three.js stage (physical materials, glass, depth of field, ambient occlusion, bloom) and the figure engine. |
 | `kit/sound.js`, `kit/samples.js` | Sound per material and size, from CC0 recordings. |
 | `scripts/` | `check-spec`, `render`, `probe`, `new`, and the build scripts. |
-| `examples/` | The nine objects above. |
+| `examples/` | The objects above. |
 | `docs/`, `index.html` | The landing page (its hero is the same parts running live in three.js). |
 
 ## Limits, stated plainly
 
-- Mechanisms so far: gear trains (one degree of freedom), presses and slides, rotor ciphers, crank-slider engines and the Rubik cube. No general linkages yet.
+- Mechanisms so far: gear trains (one degree of freedom), presses and slides, rotor ciphers, crank-slider engines, the Rubik cube and calculated figures. No general linkages yet.
 - The hub's power path per mode is simplified: pawls and clutch are not modelled, and the film says so.
 - Interiors need photos or drawings. Without them they are estimated and dashed.
 - A single photo gives no millimetres: it needs a published size, a ruler or a datasheet.
@@ -171,7 +173,7 @@ Real recordings, not synthesis: keys, metal, glass, plastic and rubber impacts (
 
 ## Roadmap
 
-MOS 6502 (cycle-exact), RTX 4090 (cores x clock = TFLOPS), pin-tumbler lock (6^5 keys), bicycle drivetrain. The rule is the same for all: numbers that can be computed and checked against what is published.
+MOS 6502 (cycle-exact), pin-tumbler lock (6^5 keys), bicycle drivetrain. The rule is the same for all: numbers that can be computed and checked against what is published.
 
 ## License
 

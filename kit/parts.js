@@ -20,13 +20,13 @@
     brass: ['#cda34a', { metalness: 1, roughness: 0.3 }], bronze: ['#a9743a', { metalness: 1, roughness: 0.36 }], copper: ['#c4693d', { metalness: 1, roughness: 0.3 }],
     aluminum: ['#d4d7dc', { metalness: 0.95, roughness: 0.34 }], 'aluminum-dark': ['#8e939b', { metalness: 0.95, roughness: 0.4 }],
     black: ['#1c1d20', { metalness: 0.2, roughness: 0.5 }], rubber: ['#222222', { roughness: 0.88 }], plastic: ['#ece9de', { roughness: 0.5 }], nylon: ['#e8e2cf', { roughness: 0.55 }],
-    oxide: ['#3a3d44', { metalness: 0.7, roughness: 0.5 }], 'pom-red': ['#c9302c', { roughness: 0.42 }], 'pom-black': ['#1e1f22', { roughness: 0.42 }], gold: ['#e0b94f', { metalness: 1, roughness: 0.22 }], ruby: ['#c2243b', { metalness: 0, roughness: 0.08, clearcoat: 1 }],
+    pcb: ['#1d4a38', { metalness: 0.15, roughness: 0.5 }], silicon: ['#454a57', { metalness: 0.8, roughness: 0.22 }], oxide: ['#3a3d44', { metalness: 0.7, roughness: 0.5 }], 'pom-red': ['#c9302c', { roughness: 0.42 }], 'pom-black': ['#1e1f22', { roughness: 0.42 }], gold: ['#e0b94f', { metalness: 1, roughness: 0.22 }], ruby: ['#c2243b', { metalness: 0, roughness: 0.08, clearcoat: 1 }],
   };
   const cache = {};
   P.mat = (name) => { if (name && name.isMaterial) return name; if (name === 'glass') return cache.glass || (cache.glass = G.glass('#ffffff', { thickness: 1.0, roughness: 0.12, attenuationDistance: 30 })); const k = MATS[name] ? name : 'steel'; return cache[k] || (cache[k] = G.mat(MATS[k][0], MATS[k][1])); };
   P.materials = Object.keys(MATS);
   // material de sonido (kit/sound.js) que corresponde a cada material fisico
-  P.soundMat = (name) => ({ steel: 'steel', 'steel-dark': 'steel', chrome: 'steel', brass: 'aluminum', bronze: 'aluminum', copper: 'aluminum', aluminum: 'aluminum', 'aluminum-dark': 'aluminum', black: 'plastic', rubber: 'rubber', plastic: 'plastic', nylon: 'plastic', oxide: 'steel', gold: 'aluminum', ruby: 'ceramic', 'pom-red': 'plastic', 'pom-black': 'plastic', glass: 'glass' }[name] || 'steel');
+  P.soundMat = (name) => ({ steel: 'steel', 'steel-dark': 'steel', chrome: 'steel', brass: 'aluminum', bronze: 'aluminum', copper: 'aluminum', aluminum: 'aluminum', 'aluminum-dark': 'aluminum', black: 'plastic', pcb: 'plastic', silicon: 'ceramic', rubber: 'rubber', plastic: 'plastic', nylon: 'plastic', oxide: 'steel', gold: 'aluminum', ruby: 'ceramic', 'pom-red': 'plastic', 'pom-black': 'plastic', glass: 'glass' }[name] || 'steel');
 
   /* ------------------------------------------------------------ perfil de evolvente */
   // o: { rp (radio primitivo), z, ra (radio de cabeza), rf (radio de pie), ht (semiancho angular del diente en el primitivo), alpha (grados) }
@@ -254,5 +254,24 @@
       st.rotation.set(faces[f][0], faces[f][1], faces[f][2]); const n = f[0] === '+' ? 1 : -1, ax = f[1]; st.position[ax] = n * (s / 2 + 0.05); gr.add(st);
     });
     gr.userData = { kind: 'cubie', s }; return gr;
+  };
+
+  /* ------------------------------------------------------------ placas de video y disipadores: ventilador axial y paquete de aletas */
+  // ventilador: r (punta), hub (radio del buje), blades palas con barrido sweep (grados), t espesor; el origen es el centro y gira sobre z
+  P.fan = (o) => {
+    const gr = new TH.Group(), n = o.blades || 9, sw = (o.sweep || 38) * rad, rh = o.hub, mat = o.mat || 'black', w0 = TAU / n * 0.62;
+    const hubS = new TH.Shape(); hubS.absarc(0, 0, rh, 0, TAU, false); gr.add(new TH.Mesh(extrude(hubS, o.t * 1.8, 0.3), P.mat(mat)));
+    const pts = []; for (let i = 0; i <= 6; i++) { const a = i / 6 * w0, r = rh * 0.9; pts.push([r * Math.cos(a), r * Math.sin(a)]); }
+    for (let i = 6; i >= 0; i--) { const a = sw + i / 6 * w0 * 0.7, r = o.r; pts.push([r * Math.cos(a), r * Math.sin(a)]); }
+    const geo = extrude(toShape(pts), o.t, 0.2);
+    for (let i = 0; i < n; i++) { const b = new TH.Mesh(geo, P.mat(mat)); b.rotation.z = i * TAU / n; gr.add(b); }
+    gr.userData = { kind: 'fan', r: o.r, t: o.t }; return gr;
+  };
+  // paquete de aletas: w (x), d (y), h (z), n aletas de espesor t; el origen es el centro
+  P.fins = (o) => {
+    const gr = new TH.Group(), geo = extrude(rrect(o.d, o.h, 0.6), o.t, 0.08), mt = P.mat(o.mat || 'aluminum');
+    geo.applyMatrix4(new TH.Matrix4().makeBasis(new TH.Vector3(0, 1, 0), new TH.Vector3(0, 0, 1), new TH.Vector3(1, 0, 0)));
+    for (let i = 0; i < o.n; i++) { const f = new TH.Mesh(geo, mt); f.position.x = -o.w / 2 + (i + 0.5) * o.w / o.n; gr.add(f); }
+    gr.userData = { kind: 'fins', w: o.w, d: o.d, h: o.h }; return gr;
   };
 })(typeof window !== 'undefined' ? window : globalThis);
