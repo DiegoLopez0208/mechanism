@@ -3,88 +3,108 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>mechanism</title>
-<meta name="description" content="Model a real object from the evidence, take it apart, film it. Every number says where it came from.">
+<title>mechanism - model a real object exactly, take it apart, film it</title>
+<meta name="description" content="A skill for coding agents. Every number says where it came from, and a spec that does not add up is not rendered. Films, a viewer and a 3D model of real objects, from the Enigma to a key switch.">
+<link rel="canonical" href="https://diegolopez0208.github.io/mechanism/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="mechanism - model a real object exactly, take it apart, film it">
+<meta property="og:description" content="The Enigma model has to reproduce the published test: AAAAA becomes BDZGO. A skill for agents that refuses to render numbers that do not add up.">
+<meta property="og:image" content="https://diegolopez0208.github.io/mechanism/docs/media/poster-enigma.jpg">
+<meta property="og:url" content="https://diegolopez0208.github.io/mechanism/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%99%EF%B8%8F%3C/text%3E%3C/svg%3E">
 <style>
-@font-face { font-family: 'Inter'; src: url('kit/fonts/inter.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
-@font-face { font-family: 'Cormorant Garamond'; src: url('kit/fonts/cormorant.woff2') format('woff2'); font-weight: 300 700; font-display: swap; }
-:root { --bg:#f6f5f0; --bg2:#efeee7; --ink:#23221f; --mute:#8b887d; --line:rgba(35,34,31,.14); --teal:#0b7285; --ember:#c8542a; --card:#fbfaf6; --shadow:0 30px 60px -30px rgba(40,36,24,.35); }
-:root[data-theme="night"] { --bg:#0e1015; --bg2:#13151c; --ink:#ecebe6; --mute:#8d909b; --line:rgba(236,235,230,.14); --teal:#5ad1d8; --ember:#ff9a62; --card:#161922; --shadow:0 30px 70px -30px rgba(0,0,0,.8); }
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body { margin:0; background:var(--bg); color:var(--ink); font:400 17px/1.6 'Inter', system-ui, sans-serif; -webkit-font-smoothing:antialiased; transition:background .5s, color .5s; }
+@font-face { font-family:'Inter'; src:url('kit/fonts/inter.woff2') format('woff2'); font-weight:100 900; font-display:swap; }
+@font-face { font-family:'Cormorant Garamond'; src:url('kit/fonts/cormorant.woff2') format('woff2'); font-weight:300 700; font-display:swap; }
+:root { --bg:#f6f5f0; --bg2:#efeee7; --ink:#23221f; --mute:#85827a; --line:rgba(35,34,31,.14); --teal:#0b7285; --ember:#c8542a; --card:#fbfaf6; --shadow:0 30px 60px -30px rgba(40,36,24,.35); }
+:root[data-theme="night"] { --bg:#0e1015; --bg2:#13151c; --ink:#ecebe6; --mute:#9094a0; --line:rgba(236,235,230,.14); --teal:#5ad1d8; --ember:#ff9a62; --card:#161922; --shadow:0 30px 70px -30px rgba(0,0,0,.8); }
+* { box-sizing:border-box; }
+html { scroll-behavior:smooth; scroll-padding-top:76px; }
+body { margin:0; background:var(--bg); color:var(--ink); font:400 17px/1.6 'Inter', system-ui, sans-serif; -webkit-font-smoothing:antialiased; transition:background .4s, color .4s; }
 a { color:inherit; text-decoration:none; }
-.wrap { max-width:1140px; margin:0 auto; padding:0 28px; }
-nav { position:sticky; top:0; z-index:20; backdrop-filter:blur(14px); background:color-mix(in srgb, var(--bg) 82%, transparent); border-bottom:1px solid var(--line); }
-nav .wrap { display:flex; align-items:center; justify-content:space-between; height:64px; }
-.mark { font:500 28px/1 'Cormorant Garamond', Georgia, serif; letter-spacing:.02em; }
-.mark i { color:var(--teal); font-style:normal; }
-nav ul { display:flex; gap:26px; list-style:none; margin:0; padding:0; font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--mute); }
-nav ul a:hover { color:var(--ink); }
-.toggle { border:1px solid var(--line); background:transparent; color:var(--ink); border-radius:999px; padding:7px 15px; font:500 12px 'Inter'; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; }
-.toggle:hover { border-color:var(--teal); color:var(--teal); }
-.eyebrow { font:600 12px 'Inter'; letter-spacing:.26em; text-transform:uppercase; color:var(--teal); }
+a:focus-visible, button:focus-visible { outline:2px solid var(--teal); outline-offset:3px; border-radius:4px; }
+.wrap { max-width:1160px; margin:0 auto; padding:0 28px; }
 h1,h2,h3 { font-family:'Cormorant Garamond', Georgia, serif; font-weight:500; margin:0; letter-spacing:-.005em; }
-.hero { padding:110px 0 70px; background:radial-gradient(900px 480px at 78% 12%, color-mix(in srgb, var(--teal) 10%, transparent), transparent 70%); }
-.hero h1 { font-size:clamp(54px, 8.2vw, 112px); line-height:.98; margin:22px 0 28px; max-width:900px; }
+.eyebrow { font:600 12px 'Inter'; letter-spacing:.26em; text-transform:uppercase; color:var(--teal); }
+
+nav { position:sticky; top:0; z-index:20; backdrop-filter:blur(14px); background:color-mix(in srgb, var(--bg) 84%, transparent); border-bottom:1px solid var(--line); }
+nav .wrap { display:flex; align-items:center; gap:28px; height:64px; }
+.mark { font:500 28px/1 'Cormorant Garamond', Georgia, serif; letter-spacing:.02em; margin-right:auto; }
+.mark i { color:var(--teal); font-style:normal; }
+nav ul { display:flex; gap:26px; list-style:none; margin:0; padding:0; font-size:12.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--mute); }
+nav ul a:hover { color:var(--ink); }
+.pill { border:1px solid var(--line); background:transparent; color:var(--ink); border-radius:999px; padding:7px 15px; font:500 12px 'Inter'; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; transition:.2s; }
+.pill:hover { border-color:var(--teal); color:var(--teal); }
+
+.hero { padding:96px 0 84px; background:radial-gradient(900px 480px at 78% 12%, color-mix(in srgb, var(--teal) 10%, transparent), transparent 70%); }
+.hero-grid { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr); gap:56px; align-items:center; }
+.hero h1 { font-size:clamp(44px, 6vw, 90px); line-height:.98; margin:20px 0 26px; }
 .hero h1 em { font-style:italic; color:var(--teal); }
-.hero p { max-width:620px; color:var(--mute); font-size:19px; margin:0 0 38px; }
-.btns { display:flex; gap:14px; flex-wrap:wrap; }
-.btn { display:inline-block; padding:14px 26px; border-radius:999px; font:500 13px 'Inter'; letter-spacing:.14em; text-transform:uppercase; border:1px solid var(--ink); transition:.25s; }
+.hero p { max-width:600px; color:var(--mute); font-size:19px; margin:0 0 34px; }
+.hero-media img { width:100%; display:block; border-radius:8px; box-shadow:var(--shadow); border:1px solid var(--line); }
+.btns { display:flex; gap:12px; flex-wrap:wrap; }
+.btn { display:inline-block; padding:14px 24px; border-radius:999px; font:500 13px 'Inter'; letter-spacing:.14em; text-transform:uppercase; border:1px solid var(--ink); transition:.25s; }
 .btn.fill { background:var(--ink); color:var(--bg); }
 .btn:hover { transform:translateY(-2px); border-color:var(--teal); }
 .btn.fill:hover { background:var(--teal); color:var(--bg); }
-section { padding:90px 0; border-top:1px solid var(--line); }
+
+.proof { border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:var(--bg2); }
+.proof .wrap { display:grid; grid-template-columns:repeat(3,1fr); }
+.proof div.item { padding:30px 28px 30px 0; }
+.proof div.item + div.item { padding-left:28px; border-left:1px solid var(--line); }
+.proof b { display:block; font:500 26px 'Cormorant Garamond', serif; margin-bottom:4px; }
+.proof span { color:var(--mute); font-size:15px; }
+
+section { padding:96px 0; }
+section + section { border-top:1px solid var(--line); }
 .head { display:flex; justify-content:space-between; align-items:end; gap:30px; flex-wrap:wrap; margin-bottom:46px; }
-.head h2 { font-size:clamp(38px, 5vw, 62px); line-height:1.02; max-width:640px; }
+.head h2 { font-size:clamp(36px, 4.6vw, 58px); line-height:1.03; max-width:680px; }
 .head p { max-width:420px; color:var(--mute); margin:0; }
-.feature { display:grid; grid-template-columns:minmax(300px, 460px) 1fr; gap:64px; align-items:start; }
-.stage { position:relative; aspect-ratio:4/5; width:100%; background:var(--card); border-radius:6px; overflow:hidden; box-shadow:var(--shadow); border:1px solid var(--line); }
-.stage video, .stage iframe { position:absolute; inset:0; width:100%; height:100%; border:0; object-fit:cover; background:#0d0e11; }
-.tabs { display:flex; gap:8px; margin-top:16px; }
-.tab { flex:1; border:1px solid var(--line); background:transparent; color:var(--mute); padding:10px 0; border-radius:4px; font:500 12px 'Inter'; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; transition:.2s; }
-.tab.on { color:var(--ink); border-color:var(--ink); }
-.facts { display:grid; gap:0; margin:28px 0 0; padding:0; list-style:none; }
-.facts li { display:grid; grid-template-columns:128px 1fr; gap:18px; padding:16px 0; border-top:1px solid var(--line); }
-.facts li:last-child { border-bottom:1px solid var(--line); }
-.facts b { font:600 12px 'Inter'; letter-spacing:.18em; text-transform:uppercase; color:var(--mute); padding-top:4px; }
-.facts span { font-size:16px; }
-.facts em { font-style:normal; color:var(--teal); font-weight:500; }
-.tag { display:inline-block; font:600 11px 'Inter'; letter-spacing:.16em; padding:3px 10px; border-radius:999px; border:1px solid; text-transform:uppercase; margin-right:6px; }
+
+.grid { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:48px 36px; }
+.card .stage { position:relative; aspect-ratio:4/5; background:var(--card); border-radius:6px; overflow:hidden; box-shadow:var(--shadow); border:1px solid var(--line); }
+.card .stage video, .card .stage img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; background:#0d0e11; }
+.card h3 { font-size:32px; margin:20px 0 8px; line-height:1.05; }
+.chip { display:inline-block; font:600 11px 'Inter'; letter-spacing:.14em; text-transform:uppercase; padding:4px 11px; border-radius:999px; border:1px solid; margin-bottom:10px; }
+.chip.ok { color:var(--teal); border-color:color-mix(in srgb, var(--teal) 55%, transparent); background:color-mix(in srgb, var(--teal) 11%, transparent); }
+.chip.warn { color:var(--ember); border-color:color-mix(in srgb, var(--ember) 55%, transparent); background:color-mix(in srgb, var(--ember) 11%, transparent); }
+.chip.plain { color:var(--mute); border-color:var(--line); }
+.card p { color:var(--mute); margin:0 0 14px; font-size:15px; }
+.dl { display:flex; gap:18px; flex-wrap:wrap; }
+.dl a { font:500 12px 'Inter'; letter-spacing:.16em; text-transform:uppercase; color:var(--teal); border-bottom:1px solid currentColor; padding-bottom:2px; }
+
+.steps { display:grid; grid-template-columns:repeat(4,1fr); counter-reset:s; margin-bottom:56px; }
+.step { padding:26px 24px 8px 0; border-top:1px solid var(--line); counter-increment:s; }
+.step::before { content:'0' counter(s); font:500 50px/1 'Cormorant Garamond', serif; color:var(--teal); display:block; margin-bottom:12px; }
+.step h3 { font:600 15px 'Inter'; margin-bottom:6px; }
+.step p { margin:0; color:var(--mute); font-size:15px; line-height:1.55; }
+.two { display:grid; grid-template-columns:1fr 1fr; gap:28px; }
+.code { position:relative; font:500 13.5px/1.7 ui-monospace, 'Cascadia Mono', Consolas, monospace; background:var(--bg2); border:1px solid var(--line); border-radius:6px; padding:20px 24px; overflow:auto; color:var(--ink); white-space:pre; }
+.code .c { color:var(--mute); } .code b { color:var(--teal); font-weight:600; } .code i { color:var(--ember); font-style:normal; }
+.copy { position:absolute; top:10px; right:10px; font:600 10.5px 'Inter'; letter-spacing:.14em; text-transform:uppercase; padding:5px 10px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--mute); cursor:pointer; }
+.copy:hover { color:var(--teal); border-color:var(--teal); }
+.tag { display:inline-block; font:600 11px 'Inter'; letter-spacing:.16em; padding:3px 10px; border-radius:999px; border:1px solid; text-transform:uppercase; }
 .t-spec, .t-measured { color:var(--teal); border-color:color-mix(in srgb, var(--teal) 55%, transparent); background:color-mix(in srgb, var(--teal) 12%, transparent); }
 .t-derived { color:var(--ink); border-color:color-mix(in srgb, var(--ink) 40%, transparent); background:color-mix(in srgb, var(--ink) 8%, transparent); }
 .t-estimated { color:var(--ember); border-color:color-mix(in srgb, var(--ember) 55%, transparent); background:color-mix(in srgb, var(--ember) 12%, transparent); }
-.steps { display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:0; counter-reset:s; }
-.step { padding:28px 26px 30px 0; border-top:1px solid var(--line); counter-increment:s; }
-.step::before { content:'0' counter(s); font:500 52px/1 'Cormorant Garamond', serif; color:var(--teal); display:block; margin-bottom:14px; }
-.step h3 { font:600 15px 'Inter'; letter-spacing:.02em; margin-bottom:8px; }
-.step p { margin:0; color:var(--mute); font-size:15px; line-height:1.55; }
-.grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:44px; }
-.card h3 { font-size:34px; margin:20px 0 6px; }
-.card p { color:var(--mute); margin:0 0 14px; font-size:15px; }
-.card a.more { font:500 12px 'Inter'; letter-spacing:.16em; text-transform:uppercase; color:var(--teal); border-bottom:1px solid currentColor; padding-bottom:2px; }
-.legend { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:30px; }
-.legend div { padding-top:18px; border-top:1px solid var(--line); }
-.legend p { color:var(--mute); font-size:15px; margin:12px 0 0; }
-.code { font:500 14px/1.7 ui-monospace, 'Cascadia Mono', Consolas, monospace; background:var(--bg2); border:1px solid var(--line); border-radius:6px; padding:22px 26px; overflow:auto; color:var(--ink); }
-.code span { color:var(--mute); }
-footer { padding:50px 0 80px; border-top:1px solid var(--line); color:var(--mute); font-size:14px; }
+.legend { display:grid; grid-template-columns:repeat(4,1fr); gap:28px; margin-top:44px; }
+.legend div { padding-top:16px; border-top:1px solid var(--line); }
+.legend p { color:var(--mute); font-size:14.5px; margin:10px 0 0; }
+.road { display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; }
+.road span { border:1px solid var(--line); border-radius:999px; padding:8px 16px; font-size:14px; color:var(--mute); }
+footer { padding:48px 0 70px; border-top:1px solid var(--line); color:var(--mute); font-size:14px; }
 footer .wrap { display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap; }
-.hero-grid { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr); gap:56px; align-items:center; }
-.hero h1 { font-size:clamp(44px, 6vw, 90px); }
-.hero-media img { width:100%; display:block; border-radius:8px; box-shadow:var(--shadow); border:1px solid var(--line); }
-.grid.two { grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:56px; }
-.dl { display:flex; gap:18px; flex-wrap:wrap; }
-.dl a { font:500 12px 'Inter'; letter-spacing:.16em; text-transform:uppercase; color:var(--teal); border-bottom:1px solid currentColor; padding-bottom:2px; }
-.code b { color:var(--teal); font-weight:600; } .code i { color:var(--ember); font-style:normal; }
-@media (max-width: 860px) { .hero-grid { grid-template-columns:1fr; gap:36px; } .feature { grid-template-columns:1fr; gap:36px; } nav ul { display:none; } .facts li { grid-template-columns:1fr; gap:4px; } }
+footer a { border-bottom:1px solid var(--line); }
+@media (max-width: 960px) { .grid { grid-template-columns:repeat(2, minmax(0,1fr)); } .steps { grid-template-columns:repeat(2,1fr); } .legend { grid-template-columns:repeat(2,1fr); } .two { grid-template-columns:1fr; } }
+@media (max-width: 760px) { .hero-grid { grid-template-columns:1fr; gap:36px; } nav ul { display:none; } .grid { grid-template-columns:1fr; } .proof .wrap { grid-template-columns:1fr; } .proof div.item + div.item { padding-left:0; border-left:0; border-top:1px solid var(--line); } section { padding:72px 0; } .steps { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
 <nav><div class="wrap">
   <a class="mark" href="#top">mechanism<i>.</i></a>
-  <ul><li><a href="#spec">Spec</a></li><li><a href="#phones">Phones</a></li><li><a href="#method">Method</a></li><li><a href="#more">Gallery</a></li><li><a href="#numbers">The numbers</a></li></ul>
-  <button class="toggle" id="theme">Night</button>
+  <ul><li><a href="#examples">Examples</a></li><li><a href="#how">How it works</a></li><li><a href="#install">Install</a></li></ul>
+  <a class="pill" href="https://github.com/DiegoLopez0208/mechanism" target="_blank" rel="noopener">GitHub</a>
+  <button class="pill" id="theme" aria-label="Switch theme">Night</button>
 </div></nav>
 
 <header class="hero" id="top"><div class="wrap hero-grid">
@@ -92,94 +112,117 @@ footer .wrap { display:flex; justify-content:space-between; gap:20px; flex-wrap:
     <div class="eyebrow">A skill for agents</div>
     <h1>Model it <em>exactly.</em><br>Take it apart.<br>Film it.</h1>
     <p>Give it a real object. It looks the numbers up, writes a spec where every number says where it came from, and renders a film, a viewer and a 3D model. If the numbers do not add up, it does not render. The Enigma model has to reproduce the published test: AAAAA becomes BDZGO.</p>
-    <div class="btns"><a class="btn fill" href="examples/enigma/index.html?explore" target="_blank">Type on the Enigma</a><a class="btn" href="#spec">Watch the films</a><a class="btn" href="https://github.com/DiegoLopez0208/mechanism" target="_blank">GitHub</a></div>
+    <div class="btns"><a class="btn fill" href="examples/enigma/index.html?explore" target="_blank">Type on the Enigma</a><a class="btn" href="#examples">Watch the films</a><a class="btn" href="#install">Install</a></div>
   </div>
   <div class="hero-media"><a href="examples/enigma/index.html?explore" target="_blank"><img src="docs/media/enigma.gif" alt="Enigma I: the signal travelling through the rotors, checked against the published test"></a></div>
 </div></header>
 
-<section id="spec"><div class="wrap">
-  <div class="head"><h2>One spec in. A film, a viewer and a 3D model out.</h2><p>Parts with real dimensions, the evidence behind every number, and how it moves. The engine does the rest, and refuses to render a spec whose numbers do not add up.</p></div>
-  <div class="grid two">
-    <div class="card"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-enigma.jpg" data-paper="out/enigma.mp4" data-night="out/enigma-night.mp4"></video></div>
-      <h3>Enigma I</h3><p>The wiring, the notches and the stepping are simulated and must reproduce the published tests: AAAAA becomes BDZGO, and the middle rotor double-steps ADU, ADV, AEW, BFX. In the viewer you type on your keyboard.</p>
-      <div class="dl"><a href="examples/enigma/index.html?explore" target="_blank">Viewer (type!)</a><a href="out/enigma.glb" download>GLB</a><a href="examples/enigma/spec.js" target="_blank">spec.js</a></div></div>
-    <div class="card"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-hub.jpg" data-paper="out/hub.mp4" data-night="out/hub-night.mp4"></video></div>
-      <h3>Three-speed hub</h3><p>A planetary stage with the sun fixed. The running model gives 0.75, 1.00 and 1.333; the maker publishes 75, 100 and 133 %. Tooth counts are derived and cross-checked, sizes are estimated and dashed.</p>
-      <div class="dl"><a href="examples/hub/index.html?explore" target="_blank">Viewer</a><a href="out/hub.stl" download>STL</a><a href="out/hub.glb" download>GLB</a><a href="examples/hub/spec.js" target="_blank">spec.js</a></div></div>
-    <div class="card"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-switch.jpg" data-paper="out/switch.mp4" data-night="out/switch-night.mp4"></video></div>
-      <h3>Cherry MX2A Red</h3><p>No gears here: a press. The datasheet's three force points (30, 45, 100 cN) cannot come from one linear spring, and the film plots exactly that instead of hiding it.</p>
-      <div class="dl"><a href="examples/switch/index.html?explore" target="_blank">Viewer</a><a href="out/switch.stl" download>STL</a><a href="out/switch.glb" download>GLB</a><a href="examples/switch/spec.js" target="_blank">spec.js</a></div></div>
-  </div>
-  <div style="height:56px"></div>
-  <div class="code"><span># the gate: a spec that does not add up is not rendered</span><br><b>$ node scripts/check-spec.mjs examples/hub/spec.js</b><br>mesh sun-p1: 16.000 mm (required 16.000) ok<br>mode Gear 3: 1.3333, published 1.3333 ok<br>PASSES<br><br><span># change one planet to 21 teeth and the claim to 150 %</span><br><i>ERROR</i> centre distance ring-p1: 16.400 mm, the geometry requires 15.600 mm<br><i>ERROR</i> mode Gear 3: the model gives 1.3333, published 1.5<br><i>DOES NOT PASS</i></div>
-</div></section>
+<div class="proof"><div class="wrap">
+  <div class="item"><b>Sourced</b><span>Every number is SPEC, MEASURED, DERIVED or ESTIMATED, with its source or its reason.</span></div>
+  <div class="item"><b>Gated</b><span>A spec whose gears, ratios or test vectors do not check out is not rendered.</span></div>
+  <div class="item"><b>Three outputs</b><span>A film with designed sound, an interactive viewer, and an STL / GLB of the model.</span></div>
+</div></div>
 
-<section id="phones"><div class="wrap">
-  <div class="head"><h2>Two phones, same scale, each one itself.</h2><p>POCO X8 Pro Max against Galaxy S26 Ultra. Lenses, island, buttons, corners and the POCO interior were measured on official photos.</p></div>
-  <div class="feature">
-    <div>
-      <div class="stage" id="stage-phones"><video id="vid-phones" controls loop playsinline preload="metadata" poster="docs/media/poster-phones.jpg" data-paper="out/phones.mp4" data-night="out/phones-night.mp4"></video></div>
-      <div class="tabs"><button class="tab on" data-mode="film">Film</button><button class="tab" data-mode="viewer">Interactive viewer</button></div>
-    </div>
-    <div>
-      <div class="eyebrow">What the film checks</div>
-      <ul class="facts">
-        <li><b>Measured</b><span><span class="tag t-measured">measured</span>Lens glass <em>Ø18.2 / Ø16.4 mm</em> (POCO), three lenses of <em>Ø16 mm</em> in a <em>20 × 56.5 mm</em> pill (S26 Ultra), corner radius <em>11 mm vs 7 mm</em>.</span></li>
-        <li><b>Inside</b><span><span class="tag t-measured">measured</span>POCO battery bay <em>65 × 97.5 mm</em>, board <em>67 × 41 mm</em>, SoC thermal pad <em>17.7 × 19.4 mm</em>, from the maker's own spare-parts photos. Implied cell density <em>~1093 Wh/L</em>.</span></li>
-        <li><b>Derived</b><span><span class="tag t-derived">derived</span>Pixel pitch and diagonal give the published ppi; sensor sizes from megapixels × pixel size agree with the optical format.</span></li>
-        <li><b>Displays</b><span>LTPS AMOLED with <em>3840 Hz PWM</em> against LTPO AMOLED 2X with <em>Privacy Display</em>: each one has its own layer stack.</span></li>
-        <li><b>Honest</b><span><span class="tag t-estimated">estimated</span>The S26 Ultra interior has no public photo, so it is drawn dashed and says so.</span></li>
-      </ul>
-    </div>
-  </div>
-</div></section>
-
-<section id="method"><div class="wrap">
-  <div class="head"><h2>It looks things up before it draws anything.</h2><p>The skill's job is evidence. The 3D engine and the sound are built to serve it.</p></div>
-  <div class="steps">
-    <div class="step"><h3>Search</h3><p>Spec sheets, reviews, teardowns, the maker's FAQ and spare-parts photos.</p></div>
-    <div class="step"><h3>Look</h3><p>Downloads the pictures and opens them. Photos carry what text omits.</p></div>
-    <div class="step"><h3>Measure</h3><p>Scale from the published body size, then OpenCV: silhouette, corner fit, lens circles, boards.</p></div>
-    <div class="step"><h3>Cross-check</h3><p>Every derived number is checked against a second published one.</p></div>
-    <div class="step"><h3>Build and film</h3><p>Physical materials, depth of field, staggered explode, sound that follows each part's material and size.</p></div>
-  </div>
-</div></section>
-
-<section id="more"><div class="wrap">
-  <div class="head"><h2>The same method, other subjects.</h2><p>A circuit board from its datasheet drawing. A catalog photo with the limits stated. An idea turned into a working machine.</p></div>
+<section id="examples"><div class="wrap">
+  <div class="head"><h2>The check is on the card.</h2><p>Each one carries what its model had to reproduce, and says plainly what it could not source.</p></div>
   <div class="grid">
-    <div class="card"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-s25-vs-s26.jpg" data-paper="out/s25-vs-s26.mp4" data-night="out/s25-vs-s26-night.mp4"></video></div><h3>Galaxy S25 Ultra vs S26 Ultra</h3><p>Five separate lens rings against one pill, titanium against aluminum, corners of 5.6 mm against 7 mm. Measured on the official renders; the interiors are estimated and dashed.</p><a class="more" href="examples/s25-vs-s26/index.html?explore" target="_blank">Open the viewer</a></div>
-    <div class="card"><div class="stage"><img alt="rpi4" loading="lazy" src="docs/media/poster-rpi4.jpg" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></div><h3>Raspberry Pi 4 Model B</h3><p>Every outline traced from the official datasheet drawing, pinout from its figure 3.</p><a class="more" href="examples/rpi4/index.html?explore" target="_blank">Open the viewer</a></div>
-    <div class="card"><div class="stage"><img alt="instruments" loading="lazy" src="docs/media/poster-instruments.jpg" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></div><h3>Surgical instruments</h3><p>One catalog photo becomes 3D plates. The film says what a single photo cannot give: millimetres.</p><a class="more" href="examples/instruments/index.html?explore" target="_blank">Open the viewer</a></div>
-    <div class="card"><div class="stage"><img alt="backpressure" loading="lazy" src="docs/media/poster-backpressure.jpg" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></div><h3>Backpressure</h3><p>An idea from a repo, built as a machine that works: a queue, a gate, a credit return.</p><a class="more" href="examples/backpressure/index.html" target="_blank">Open the figure</a></div>
+    <article class="card"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-enigma.jpg" data-paper="out/enigma.mp4" data-night="out/enigma-night.mp4"></video></div>
+      <h3>Enigma I</h3><span class="chip ok">AAAAA to BDZGO, reproduced</span>
+      <p>Wiring, notches and stepping are simulated and must match the published tests, including the middle rotor's double step. In the viewer you type on your keyboard.</p>
+      <div class="dl"><a href="examples/enigma/index.html?explore" target="_blank">Viewer (type!)</a><a href="https://github.com/DiegoLopez0208/mechanism/releases/download/v0.1.0/enigma.glb">GLB</a><a href="examples/enigma/spec.js" target="_blank">spec.js</a></div></article>
+    <article class="card"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-hub.jpg" data-paper="out/hub.mp4" data-night="out/hub-night.mp4"></video></div>
+      <h3>Three-speed hub</h3><span class="chip ok">0.75 / 1.00 / 1.333, matches</span>
+      <p>A planetary stage with the sun fixed. The running model gives the ratios the maker publishes as 75, 100 and 133 %. Tooth counts are derived; sizes are estimated and dashed.</p>
+      <div class="dl"><a href="examples/hub/index.html?explore" target="_blank">Viewer</a><a href="https://github.com/DiegoLopez0208/mechanism/releases/download/v0.1.0/hub.glb">GLB</a><a href="examples/hub/spec.js" target="_blank">spec.js</a></div></article>
+    <article class="card"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-switch.jpg" data-paper="out/switch.mp4" data-night="out/switch-night.mp4"></video></div>
+      <h3>Cherry MX2A Red</h3><span class="chip warn">30, 45, 100 cN do not add up</span>
+      <p>A press, not gears. The datasheet's three force points cannot come from one linear spring, and the film plots that instead of hiding it.</p>
+      <div class="dl"><a href="examples/switch/index.html?explore" target="_blank">Viewer</a><a href="https://github.com/DiegoLopez0208/mechanism/releases/download/v0.1.0/switch.glb">GLB</a><a href="examples/switch/spec.js" target="_blank">spec.js</a></div></article>
+    <article class="card"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-s25-vs-s26.jpg" data-paper="out/s25-vs-s26.mp4" data-night="out/s25-vs-s26-night.mp4"></video></div>
+      <h3>Galaxy S25 Ultra vs S26 Ultra</h3><span class="chip ok">Measured on official renders</span>
+      <p>Five separate lens rings against one pill, titanium against aluminum, corners of 5.6 against 7 mm. Interiors are not drawn: no readable photo, and the film says so.</p>
+      <div class="dl"><a href="examples/s25-vs-s26/index.html?explore" target="_blank">Viewer</a></div></article>
+    <article class="card"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-phones.jpg" data-paper="out/phones.mp4" data-night="out/phones-night.mp4"></video></div>
+      <h3>POCO X8 Pro Max vs S26 Ultra</h3><span class="chip ok">Interior measured</span>
+      <p>Lenses, island and corners measured on official photos, and the POCO's interior measured on the maker's own spare-parts photos.</p>
+      <div class="dl"><a href="examples/phones/index.html?explore" target="_blank">Viewer</a></div></article>
+    <article class="card"><div class="stage"><img alt="Raspberry Pi 4 Model B" loading="lazy" src="docs/media/poster-rpi4.jpg"></div>
+      <h3>Raspberry Pi 4 Model B</h3><span class="chip plain">Viewer</span>
+      <p>Every outline traced from the official datasheet drawing, the pinout from its figure 3.</p>
+      <div class="dl"><a href="examples/rpi4/index.html?explore" target="_blank">Open the viewer</a></div></article>
   </div>
 </div></section>
 
-<section id="numbers"><div class="wrap">
-  <div class="head"><h2>Four kinds of number. Never mixed.</h2><p>If nobody publishes it, it is dashed. If it was measured, the photo and the error are named.</p></div>
+<section id="how"><div class="wrap">
+  <div class="head"><h2>It looks things up before it draws anything.</h2><p>The skill's job is evidence. The engine and the sound are built to serve it.</p></div>
+  <div class="steps">
+    <div class="step"><h3>Research</h3><p>Spec sheets, teardowns, official photos, published test vectors. It opens the pages and the pictures.</p></div>
+    <div class="step"><h3>Spec</h3><p>Parts with real dimensions, the evidence behind each number, and how it moves.</p></div>
+    <div class="step"><h3>Gate</h3><p>Sources, cross-checks, centre distances, published ratios and test vectors. Wrong specs stop here.</p></div>
+    <div class="step"><h3>Render</h3><p>Camera, sound and panels are directed from the spec: a film, a viewer and a 3D model.</p></div>
+  </div>
+  <div class="two">
+    <div class="code"><span class="c">// a part, with the evidence it stands on</span>
+{ id: <b>'ring'</b>, kind: 'ring', p: { m: 0.8, z: 60, ro: 27.4, width: 8 },
+  conf: <b>'derived'</b>, claims: ['teeth', 'formula'] }
+
+<span class="c">// and the claim behind it</span>
+{ id: 'teeth', conf: 'derived', src: ['cyclechat', 'princeton'],
+  cross: 'zr = zs + 2 zp holds (60 = 20 + 40)' }</div>
+    <div class="code"><button class="copy" data-copy="node scripts/check-spec.mjs examples/hub/spec.js">Copy</button><span class="c"># the gate: a spec that does not add up is not rendered</span>
+<b>$ node scripts/check-spec.mjs examples/hub/spec.js</b>
+mode Gear 3: 1.3333, published 1.3333 ok
+PASSES
+
+<span class="c"># change one planet to 21 teeth, the claim to 150 %</span>
+<i>ERROR</i> centre distance ring-p1: 16.400 mm, needs 15.600 mm
+<i>ERROR</i> mode Gear 3: the model gives 1.3333, published 1.5
+<i>DOES NOT PASS</i></div>
+  </div>
   <div class="legend">
-    <div><span class="tag t-spec">spec</span><p>Published by the maker or a spec sheet, and reviewed hands-on.</p></div>
-    <div><span class="tag t-measured">measured</span><p>Measured on an official photo, with the scale from the published body size.</p></div>
+    <div><span class="tag t-spec">spec</span><p>Published by the maker or a datasheet.</p></div>
+    <div><span class="tag t-measured">measured</span><p>Measured on an official photo, scale from a published size, error stated.</p></div>
     <div><span class="tag t-derived">derived</span><p>A formula plus a cross-check against another published number.</p></div>
     <div><span class="tag t-estimated">estimated</span><p>Nobody publishes it. Drawn dashed, and said out loud.</p></div>
   </div>
-  <div style="height:56px"></div>
-  <div class="code"><span># render a figure, then check its interactive viewer</span><br>node scripts/render.mjs examples/phones/index.html --theme night --duration 62.5 --blur 3 --out out/phones-night.mp4<br>node scripts/probe.mjs "examples/phones/index.html?explore" out/probe</div>
 </div></section>
 
-<footer><div class="wrap"><span>mechanism, a skill for agents. three.js 0.186, OpenCV, no samples: all sound is synthesised.</span><span>Sources are listed inside every film.</span></div></footer>
+<section id="install"><div class="wrap">
+  <div class="head"><h2>Use it as a Claude Code skill.</h2><p>Clone it into your skills folder and ask for an exploded view of something real. Needs Node 22+, Edge or Chrome, and ffmpeg.</p></div>
+  <div class="two">
+    <div class="code"><button class="copy" data-copy="git clone https://github.com/DiegoLopez0208/mechanism ~/.claude/skills/mechanism">Copy</button><span class="c"># macOS / Linux</span>
+git clone https://github.com/DiegoLopez0208/mechanism \
+  ~/.claude/skills/mechanism
+
+<span class="c"># Windows (PowerShell)</span>
+git clone https://github.com/DiegoLopez0208/mechanism `
+  $env:USERPROFILE\.claude\skills\mechanism</div>
+    <div class="code"><span class="c"># then, in Claude Code</span>
+<b>"Use mechanism to model a mechanical keyboard switch
+ exactly, with its sources"</b>
+
+<span class="c"># or drive the toolkit yourself</span>
+node scripts/new.mjs my-object --title "My object"
+node scripts/check-spec.mjs examples/my-object/spec.js
+node scripts/render.mjs examples/my-object/index.html</div>
+  </div>
+</div></section>
+
+<section id="next"><div class="wrap">
+  <div class="head"><h2>Next on the bench.</h2><p>Objects whose numbers can be computed and checked against what is published.</p></div>
+  <div class="road"><span>4-cylinder engine, firing order and sound</span><span>Rubik's cube, 20-move superflip</span><span>MOS 6502, cycle-exact</span><span>RTX 4090, cores x clock = TFLOPS</span><span>Pin-tumbler lock, 6^5 keys</span><span>Bicycle drivetrain</span></div>
+</div></section>
+
+<footer><div class="wrap"><span>mechanism, MIT. three.js, no samples: all sound is synthesised.</span><span><a href="https://github.com/DiegoLopez0208/mechanism" target="_blank" rel="noopener">github.com/DiegoLopez0208/mechanism</a></span></div></footer>
 
 <script>
 (function () {
-  const root = document.documentElement, btn = document.getElementById('theme'), vid = document.getElementById('vid-phones'), stage = document.getElementById('stage-phones');
-  let mode = 'film'; const pv = document.getElementById('vid-phones');
+  const root = document.documentElement, btn = document.getElementById('theme');
   const vurl = (p) => (location.protocol === 'file:' ? p : 'docs/media/video/' + p.split('/').pop());      // desde el disco: los renders completos de out/; en la web: copias de 720p
-  const setVideo = (v) => { const t = root.dataset.theme, src = vurl(v.dataset[t] || v.dataset.paper), was = v.currentTime, playing = !v.paused; if (!v.src.endsWith(src)) { v.src = src; v.addEventListener('loadedmetadata', function f() { v.currentTime = was || 0; if (playing) v.play().catch(() => {}); v.removeEventListener('loadedmetadata', f); }); } };
-  const setVideos = () => document.querySelectorAll('video[data-paper]').forEach(setVideo);
-  const setStage = () => { const old = stage.querySelector('iframe'), url = 'examples/phones/index.html?explore&theme=' + root.dataset.theme; if (mode === 'viewer') { vid.pause(); vid.style.display = 'none'; if (!old) { const f = document.createElement('iframe'); f.src = url; stage.appendChild(f); } else old.src = url; } else { if (old) old.remove(); vid.style.display = ''; } };
-  const apply = (t) => { root.dataset.theme = t; btn.textContent = t === 'night' ? 'Paper' : 'Night'; try { localStorage.setItem('mx-theme', t); } catch (e) {} setVideos(); if (mode === 'viewer') setStage(); };
+  const setVideo = (v) => { const src = vurl(v.dataset[root.dataset.theme] || v.dataset.paper), was = v.currentTime, playing = !v.paused; if (!v.src.endsWith(src)) { v.src = src; v.addEventListener('loadedmetadata', function f() { v.currentTime = was || 0; if (playing) v.play().catch(() => {}); v.removeEventListener('loadedmetadata', f); }); } };
+  const apply = (t) => { root.dataset.theme = t; btn.textContent = t === 'night' ? 'Paper' : 'Night'; try { localStorage.setItem('mx-theme', t); } catch (e) {} document.querySelectorAll('video[data-paper]').forEach(setVideo); };
   btn.addEventListener('click', () => apply(root.dataset.theme === 'night' ? 'paper' : 'night'));
-  document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => { document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === b)); mode = b.dataset.mode; setStage(); }));
+  document.querySelectorAll('.copy').forEach((b) => b.addEventListener('click', () => { navigator.clipboard.writeText(b.dataset.copy).then(() => { b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy'; }, 1400); }).catch(() => {}); }));
   let saved = null; try { saved = localStorage.getItem('mx-theme'); } catch (e) {}
   apply(saved || (matchMedia('(prefers-color-scheme: dark)').matches ? 'night' : 'paper'));
 })();

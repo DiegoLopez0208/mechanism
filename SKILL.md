@@ -1,9 +1,13 @@
 ---
 name: mechanism
-description: Build an exact, beautiful 3D model of a real object (phone, board, device, instrument, machine) from the internet's own evidence, explode it into its parts, and render a narrated MP4 with designed stereo sound plus an interactive HTML viewer. The skill does the research itself: spec sheets, reviews, teardowns, official part photos, and it measures the photos. Every number on screen is tagged SPEC, MEASURED, DERIVED or ESTIMATED. Use when the user wants a teardown, comparison, explainer or launch video of a real product, or of an idea from a repo built as a working machine. Triggers on "model this exactly", "exploded view of X", "compare X and Y", "make a video of how X is built", "/mechanism".
+description: Model a real object exactly from the evidence (spec sheets, teardowns, official photos, published test vectors), take it apart, and render a film with designed sound, an interactive viewer and an STL/GLB. Every number is tagged SPEC, MEASURED, DERIVED or ESTIMATED, and a spec whose numbers do not add up is not rendered. Use for exploded views, teardowns, comparisons and explainers of real products or machines (gear trains, key switches, cipher machines, phones, boards). Triggers on "exploded view of X", "model X exactly", "compare X and Y", "make a video of how X works", "/mechanism".
 ---
 
 # Mechanism
+
+## Setup
+
+This skill is a toolkit as well as instructions, so **run everything from the folder that contains this SKILL.md**: `cd` to it first (cloned as a skill, that is `~/.claude/skills/mechanism`). It needs Node 22+, Edge or Chrome, and `ffmpeg` (plus `uv` only to measure photos). There is no install step. A new object starts with `node scripts/new.mjs <name> --title "..." --fig "Fig N"`, which creates `examples/<name>/` with a starter spec that already passes the gate.
 
 Output for one subject: an MP4 (4:5, 9:16 or 1:1, 1080 wide, 60-90 s, stereo, paper or night theme), clips cut from it, an interactive `index.html?explore`, an STL/GLB of the model, and the data files that justify every number.
 
@@ -26,7 +30,7 @@ Two routes. **The declarative route is the default**: write one `spec.js` (parts
 
 1. **Research first, into the spec.** Search, download and look at pictures, measure (rules above). Then write `examples/<name>/spec.js` as `window.SPEC = {...}`; copy `examples/hub/spec.js` (a three-speed planetary hub) as the template. Fields: `research.sources` (title, url, fetched date, note about what the page refused), `research.claims` (text, `conf`, `src`, and `cross` for DERIVED, `error` for MEASURED, `why` for ESTIMATED), `parts` (kind, real dimensions in mm, material, position, explode vector, `body`, `orbit`, `claims`, `info`, `cutaway`), `mechanism` (links between bodies, `drive.modes` with the ratio the maker publishes), `director` (optional tour order, durations, views).
 2. **Gate: `node scripts/check-spec.mjs examples/<name>/spec.js`.** It fails (exit 1) when a number has no source, a DERIVED claim has no cross-check, a MEASURED one no error, an ESTIMATED one no reason; when two meshing gears do not sit at the centre distance their module and teeth demand; when the teeth do not interleave; or when a mode of operation does not give the ratio the maker publishes. Fix the model or the claim, never the check. Do not render a spec that does not pass.
-3. **Build the page**: copy `examples/hub/index.html` and `run.js` (the script list is fixed; `spec.js` is the only thing that changes).
+3. **Build the page**: `node scripts/new.mjs <name>` creates `examples/<name>/` (page, `run.js`, starter `spec.js`); the script list is fixed and `spec.js` is the only thing you edit.
 4. **Look before rendering**: `node scripts/probe.mjs "examples/<name>/index.html?explore" out/probe-<name>` (mouse simulation) and `node scripts/render.mjs <page> --still 9 --blur 1` at the assembly, power-path, tour and panel times (`window.__specInfo().phases` lists them).
 5. **Render**: `node scripts/render.mjs examples/<name>/index.html --blur 3 --out out/<name>.mp4` (duration comes from the spec). Variants: `--theme night`, `--aspect 9:16`, a clip with `--from 13 --to 21`, and the model with `--export stl --e 1` or `--export glb` (`--e` is the explode factor, 0..1).
 

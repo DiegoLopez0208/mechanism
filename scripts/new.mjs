@@ -1,0 +1,48 @@
+#!/usr/bin/env node
+// new.mjs - crea examples/<nombre>/ con una pagina, run.js y un spec.js minimo que YA pasa el chequeo, para editarlo a partir de la investigacion.
+//
+//   node scripts/new.mjs rubik --title "Rubik's cube"
+//   node scripts/check-spec.mjs examples/rubik/spec.js
+//
+// La pagina copia los scripts de examples/hub (la lista es fija: lo unico que cambia es spec.js).
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const args = process.argv.slice(2), name = args.find((a) => !a.startsWith('--') && !(args[args.indexOf(a) - 1] || '').startsWith('--'));
+const opt = (k, d) => { const i = args.indexOf('--' + k); return i >= 0 ? args[i + 1] : d; };
+if (!name || !/^[a-z0-9][a-z0-9-]*$/.test(name)) { console.error('uso: node scripts/new.mjs <nombre-en-minusculas> [--title "Titulo"] [--fig "Fig 8"]'); process.exit(1); }
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), dir = path.join(root, 'examples', name), title = opt('title', name), fig = opt('fig', 'Fig 1');
+if (fs.existsSync(dir)) { console.error('ya existe examples/' + name); process.exit(1); }
+fs.mkdirSync(dir, { recursive: true });
+
+const hub = fs.readFileSync(path.join(root, 'examples/hub/index.html'), 'utf8');
+fs.writeFileSync(path.join(dir, 'index.html'), hub.replace(/<title>[^<]*<\/title>/, '<title>' + fig + ' - ' + title.replace(/[<>&]/g, '') + '</title>'));
+fs.copyFileSync(path.join(root, 'examples/hub/run.js'), path.join(dir, 'run.js'));
+fs.writeFileSync(path.join(dir, 'spec.js'), `/*
+ * spec.js - ${title}. Plantilla minima: ya pasa "node scripts/check-spec.mjs examples/${name}/spec.js".
+ * Reemplaza las fuentes, las afirmaciones y las piezas por lo que investigaste. Reglas: todo numero SPEC / MEASURED / DERIVED nombra su fuente
+ * (DERIVED trae su cruce, MEASURED su error, ESTIMATED su motivo). Ver SKILL.md y examples/hub, examples/switch, examples/enigma.
+ */
+window.SPEC = {
+  id: '${name}', fig: '${fig}', kicker: 'REAL OBJECT', title: ${JSON.stringify(title)}, sub: 'Every number says where it came from.',
+  research: {
+    sources: [
+      { id: 'src1', title: 'TODO: the page or datasheet you opened', url: 'https://example.com/', fetched: '${new Date().toISOString().slice(0, 10)}', note: 'What you read there, and what you could not read.' },
+    ],
+    claims: [
+      { id: 'size', conf: 'spec', text: 'TODO: a published number, quoted.', src: ['src1'] },
+      { id: 'guess', conf: 'estimated', text: 'TODO: what nobody publishes (drawn dashed).', why: 'Why no source gives it.' },
+    ],
+  },
+  parts: [
+    { id: 'base', name: 'Base', kind: 'plate', p: { w: 60, h: 40, r: 4, t: 6 }, mat: 'steel', at: [0, 0, 0], explode: [0, 0, 0], conf: 'spec', claims: ['size'], info: { title: 'Base', lines: ['TODO: what it is'], conf: ['spec'] } },
+    { id: 'cover', name: 'Cover', kind: 'plate', p: { w: 60, h: 40, r: 4, t: 3 }, mat: 'aluminum', at: [0, 0, 7], explode: [0, 0, 16], conf: 'estimated', claims: ['guess'], info: { title: 'Cover', lines: ['TODO'], conf: ['estimated'] } },
+  ],
+  // mechanism: { links: [...], free: '...', drive: { modes: [...] } }   // gear train
+  // mechanism: { press: { travel, actuation, force: [[mm, cN], ...] }, drive: { modes: [...] } }   // press
+  // mechanism: { enigma: { rotors, reflector, rings, start, tests: [...] }, drive: { modes: [...] } }   // cipher
+  director: {},
+};
+`);
+console.log('creado examples/' + name + '/ (index.html, run.js, spec.js)\nsiguiente: edita spec.js con lo investigado -> node scripts/check-spec.mjs examples/' + name + '/spec.js -> node scripts/probe.mjs "examples/' + name + '/index.html?explore" out/probe-' + name);

@@ -54,6 +54,17 @@ It fails (exit 1) when a number has no source, a DERIVED claim has no cross-chec
 | `examples/instruments` | A catalog photo turned into 3D plates, with the limits stated (a single photo gives no millimetres). |
 | `examples/backpressure` | An idea from a repo built as a working machine. |
 
+## Use it as a Claude Code skill
+
+```bash
+# macOS / Linux
+git clone https://github.com/DiegoLopez0208/mechanism ~/.claude/skills/mechanism
+# Windows (PowerShell)
+git clone https://github.com/DiegoLopez0208/mechanism $env:USERPROFILE.claudeskillsmechanism
+```
+
+Then ask your agent for an exploded view of something real ("model a mechanical keyboard switch exactly, with its sources"): it researches, writes the spec, runs the gate and renders. `node scripts/new.mjs <name>` is the starting point for a new object.
+
 ## Quickstart
 
 Needs Node 22+, Edge or Chrome, `ffmpeg`, and `uv` (only to measure photos). Nothing to install to render.
