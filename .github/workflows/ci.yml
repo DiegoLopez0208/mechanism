@@ -16,7 +16,7 @@ jobs:
         run: node --test tests/gate.test.mjs
       - name: Every shipped example passes its own gate
         run: |
-          for e in hub switch enigma k20a rubik rtx4090 mos6502 rar5; do
+          for e in hub switch enigma k20a rubik rtx4090 mos6502 rar5 winrar; do
             echo "== $e"
             node scripts/check-spec.mjs examples/$e/spec.js --json /tmp/$e.verdict.json | tail -n 3
           done

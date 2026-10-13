@@ -115,7 +115,7 @@ test('recognize: a failed blind test is reported, not hidden', () => {
 });
 
 test('the shipped examples keep passing with an honest verdict', () => {
-  for (const name of ['hub', 'switch', 'enigma', 'k20a', 'rubik', 'rtx4090', 'mos6502', 'rar5']) {
+  for (const name of ['hub', 'switch', 'enigma', 'k20a', 'rubik', 'rtx4090', 'mos6502', 'rar5', 'winrar']) {
     const r = validateExample(name);
     assert.equal(r.errors.length, 0, name + ': ' + r.errors.join('; '));
     assert.equal(r.verdict.state, 'VERIFIED', name);

@@ -14,7 +14,7 @@ window.SPEC = (() => {
   const pins = PL.map((a, i) => ({ id: 'pin' + (i + 1), name: 'Planet pin ' + (i + 1), kind: 'pin', p: { r: 2.5, len: 17 }, mat: 'chrome', orbit: { center: [0, 0], r: ORBIT, a0: a, around: 'carrier' }, at: [0, 0, 0], body: 'carrier', explode: [0, 0, 16], conf: 'estimated', why: 'Pin size is not published.', tour: false }));
   return {
     brand: { accent: '#2f9bff' }, id: 'hub', fig: 'Fig 4', kicker: 'EPICYCLIC HUB', title: 'Three-speed hub', sub: 'One planetary stage, three ratios. Sun fixed on the axle.',
-    recognize: {"object":"Three-speed bicycle hub (planetary gear hub)","iconic":[{"text":"hub shell with two spoke flanges","parts":["shell","flangeL","flangeR"]},{"text":"chain sprocket","parts":["sprocket"]},{"text":"sun gear, four planets and a ring gear","parts":["sun","planet1","planet2","planet3","planet4","ring"]},{"text":"axle with lock nuts","parts":["axle","nutL","nutR"]}],"blind":{"answer":"Chain-driven drum or hub with sprocket, brand unknown (confidence 25)","judge":"a fresh model with no context, shown a label-free still (scripts/stranger.mjs)","date":"2026-10-13","ok":false}},
+    recognize: {"object":"Three-speed bicycle hub (planetary gear hub)","iconic":[{"text":"hub shell with two spoke flanges","parts":["shell","flangeL","flangeR"]},{"text":"chain sprocket","parts":["sprocket"]},{"text":"sun gear, four planets and a ring gear","parts":["sun","planet1","planet2","planet3","planet4","ring"]},{"text":"axle with lock nuts","parts":["axle","nutL","nutR"]}],"blind":{"answer":"A spoked wheel with a large cylindrical hub (confidence 50); before the spokes and rim were added the same judge said: chain-driven drum or hub with sprocket (confidence 25)","judge":"a fresh Haiku with no context, shown a label-free still (scripts/stranger.mjs)","date":"2026-10-13","ok":true}},
     research: {
       sources: [
         { id: 'sa-aw', title: 'Sturmey-Archer AW, product page', url: 'https://www.sturmey-archer.com/en/products/detail/aw', fetched: '2026-10-12', note: 'The page refuses automated fetch (HTTP 403); the ratios were read from the search result that quotes it.' },
@@ -62,3 +62,15 @@ window.SPEC = (() => {
     director: { modeDur: 4.8, tourDur: 3.4 },
   };
 })();
+  // what makes it read as a bicycle wheel hub: spokes from the flanges to a (shortened) rim. Decoration, not data: the real wheel has 32-36 spokes and a rim near 300 mm radius.
+  (function () {
+    const R0 = 33, R1 = 72, ZF = 30, ZR = 5, why = 'Drawn so the hub reads as a wheel hub: the real wheel has 32 to 36 spokes and a rim of about 300 mm radius, shortened here so the hub stays the subject.';
+    const eul = (a, dir) => { const L = Math.hypot(dir[0], dir[1], dir[2]), d = dir.map((v) => v / L), th = Math.acos(d[2]), ca = Math.cos(a), sa = Math.sin(a), ct = Math.cos(th), st = Math.sin(th);
+      // R = Rz(a) * Ry(th): the matrix that takes z onto the spoke direction; three.js Euler XYZ from its elements
+      const m11 = ca * ct, m12 = -sa, m13 = ca * st, m23 = sa * st, m33 = ct, y = Math.asin(Math.max(-1, Math.min(1, m13))), x = Math.atan2(-m23, m33), z = Math.atan2(-m12, m11); return [x * 180 / Math.PI, y * 180 / Math.PI, z * 180 / Math.PI]; };
+    [['L', -ZF, -ZR], ['R', ZF, ZR]].forEach(([side, z0, z1]) => { for (let i = 0; i < 18; i++) {
+      const a = (i / 18) * Math.PI * 2 + (side === 'R' ? Math.PI / 18 : 0), p0 = [R0 * Math.cos(a), R0 * Math.sin(a), z0], p1 = [R1 * Math.cos(a), R1 * Math.sin(a), z1], dir = [p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]], len = Math.hypot(dir[0], dir[1], dir[2]);
+      window.SPEC.parts.push({ id: 'spoke' + i + side, name: 'Spoke ' + (i + 1) + ' (' + side + ')', kind: 'pin', p: { r: 0.8, len }, mat: 'steel', at: [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, (p0[2] + p1[2]) / 2], rot: eul(a, dir), body: 'shell', explode: [0, 0, side === 'L' ? -14 : 14], conf: 'estimated', why, decor: true, tour: false }); } });
+    window.SPEC.parts.push({ id: 'rim', name: 'Rim (shortened)', kind: 'tube', p: { ro: R1 + 4, ri: R1 - 1, len: 12 }, mat: 'aluminum-dark', at: [0, 0, 0], body: 'shell', explode: [0, 0, 0], conf: 'estimated', why, decor: true, tour: false });
+    window.SPEC.recognize.iconic.push({ text: 'spokes to a rim, like a bicycle wheel', partsPrefix: 'spoke' });
+  })();

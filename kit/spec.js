@@ -414,7 +414,13 @@
       MX.A = fade * ramp(t, COLD - 1.2, COLD - 0.6); MX.text(rows.filter((r) => r.ok === true).length + ' of ' + rows.length + ' reproduced by a model built from the published numbers. Now, how it is built.', 86, y0 + 60 + rows.length * 78 + 24, { size: 19, font: MX.SANS, color: T.mute });
       MX.A = 1; c.restore();
     };
-    F.overlay((ctx, s) => { if (s.t == null) return; drawMode(ctx, s); drawCold(ctx, s); panels.forEach((pn) => { if (s.t >= pn.t0 - 0.01 && s.t <= pn.t1 + 0.01) drawPanel(ctx, pn, s.t); }); });
+    // a plain sentence while the object assembles, and what the colours mean while the numbers run: for someone who knows nothing about it
+    const drawWhat = (c, s) => {
+      if (s.t == null || (!dir.what && !dir.legend)) return; const t = s.t;
+      if (dir.what) { const a = ramp(t, COLD + 0.6, COLD + 1.2) * (1 - ramp(t, ASM_END + 0.2, ASM_END + 0.9)); if (a > 0.01) { c.save(); MX.A = a; const ln = wrap(dir.what, '500 32px ' + MX.SERIF, W - 172); c.fillStyle = MX.rgba(T.paper, 0.78 * a); c.fillRect(34, H - 300, W - 68, 66 + ln.length * 44); MX.text('WHAT YOU ARE LOOKING AT', 86, H - 268, { size: 14, font: MX.MONO, color: T.teal, spacing: 3, w: 700 }); ln.forEach((l, i) => MX.text(l, 86, H - 224 + i * 44, { size: 32, font: MX.SERIF, w: 500, color: T.ink })); MX.A = 1; c.restore(); } }
+      if (dir.legend) { const a = ramp(t, tM0 - 0.2, tM0 + 0.4) * (1 - ramp(t, tE0 - 0.6, tE0 - 0.1)); if (a > 0.01) { c.save(); let x = 78; dir.legend.forEach((q) => { c.font = '600 15px ' + MX.MONO; const w = c.measureText(q.text).width; c.globalAlpha = a; c.fillStyle = q.color; c.fillRect(x, 236, 14, 14); MX.A = a; MX.text(q.text, x + 22, 249, { size: 15, font: MX.MONO, w: 600, color: T.ink }); x += w + 56; }); MX.A = 1; c.restore(); } }
+    };
+    F.overlay((ctx, s) => { if (s.t == null) return; drawWhat(ctx, s); drawMode(ctx, s); drawCold(ctx, s); panels.forEach((pn) => { if (s.t >= pn.t0 - 0.01 && s.t <= pn.t1 + 0.01) drawPanel(ctx, pn, s.t); }); });
 
     /* ---------------------------------------------------------- sonido */
     function audio() {

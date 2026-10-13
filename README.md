@@ -79,6 +79,7 @@ Every example is a film, a live viewer (`examples/<name>/index.html?explore`, ad
 | [`enigma`](examples/enigma) | The Enigma I rotor stack. Wiring, notches and stepping are simulated and must match the published tests: `AAAAA` becomes `BDZGO`, with rings BBB `EWTYX`, and the middle rotor double-steps `ADU > ADV > AEW > BFX`. In the viewer you type on your keyboard. |
 | [`rubik`](examples/rubik) | 26 cubies that really turn. The 20-move superflip flips all 12 edges, the longest period is 1,260 and the positions count 43,252,003,274,489,856,000. |
 | [`k20a`](examples/k20a) | Honda K20A, inline four with 16 valves. A crank-slider with exact kinematics: displacement computed from bore and stroke (1,998 cc published) and the published firing order 1-3-4-2 must be possible with the crank. The connecting rod and valve timing are not published and are drawn dashed. |
+| [`winrar`](examples/winrar) | **Software**, doing its job: the three-book icon unpacking a file. WinRAR 7.23 packed a 119-character text into 49 bytes of DEFLATE; a decoder written only from RFC 1951 reads them one token at a time (literals and copies) and writes the text back. The CRC-32 must be the one WinRAR stored in the ZIP, and Node zlib and WinRAR itself must agree. |
 | [`rar5`](examples/rar5) | **Software**, taken apart: the 87 bytes WinRAR 7.23 writes for a one-file archive, every one explained. A model written from the published RAR5 format must reproduce them byte for byte (the four CRC-32 values included), and the real `UnRAR.exe` must accept and extract the archive the model built. Change one byte and the gate fails. |
 | [`mos6502`](examples/mos6502) | The 6502 in its 40-pin DIP. The gate counts the address and data pins on the pinout and compares them with the published 16-bit and 8-bit buses, computes the 64 KB address space and the 105 undefined opcodes, and measures the drawn leads against the DIP standard (2.54 mm pitch, 15.24 mm rows). Two sources have to agree; the body is estimated. |
 | [`rtx4090`](examples/rtx4090) | GeForce RTX 4090 Founders Edition. TFLOPS (82.58 at boost, 73.07 at base), fillrates, the 1,008 GB/s of bandwidth and the 24 GB are each computed from the published cores, clocks, bus and data rate and must match. Every variable carries its claim; the memory packages are an estimated assumption and are drawn as one. The inside of the card is not published and is dashed. |
@@ -156,6 +157,23 @@ Every film is drawn as a **dossier**: a blue engineering drawing with a grid and
 | `paper` | Light paper, serif titles, corner-marked card. |
 | `night` | The paper card in the dark. |
 | `studio` | Black product-film set with a glow and rim light in the maker's colour (`brand: { accent }` in the spec). |
+
+### The verdict is three-state, never a bare "pass"
+
+The gate ends with `verdict: VERIFIED   8 reproduced, 1 estimated, 0 unchecked`. Only one thing earns VERIFIED: at least one published figure was compared with the model, all of them matched, and none is pending. A model that compares nothing says `NOTHING CHECKED` (a description, not a verification); a pending comparison says `INCOMPLETE`; any mismatch is `DOES NOT PASS`. `node scripts/check-spec.mjs <spec> --json verdict.json` writes the report (verdict, errors, spec and kit SHA-256, Node version, date).
+
+It also refuses what a template leaves behind: `example.com` and `TODO` in sources, claims or part names, non-positive or non-finite dimensions, a spec with no parts, a calculated variable with no claim, an expression that gives `undefined`/`NaN`/`Infinity`, an invalid tolerance and an ESTIMATED part with no reason. `node scripts/new.mjs` starts a draft that fails until it is filled in. Every one of those cases is a test in `tests/gate.test.mjs` (`npm test`) and runs in CI.
+
+### Recognisable, not just correct
+
+A model whose numbers all match can still look like nothing. A spec declares what a stranger should call the object and the features that make it that object, each tied to parts that exist:
+
+```js
+recognize: { object: 'Honda K20A inline-four engine',
+  iconic: [{ text: 'red cam cover', parts: ['cover'] }, { text: 'four pistons', partsPrefix: 'piston' }] }
+```
+
+The gate refuses an iconic feature that is not built. Then the stranger test: `node scripts/stranger.mjs <example>` saves a still with no title, labels or panels (`?bare`), a model with no context is asked what it is, and the answer is recorded in `recognize.blind`. A wrong answer is a warning on the verdict, not a hidden one. Run on the shipped examples it found two that were not recognisable (the hub, and the first RAR5 film that was only hex cubes).
 
 ### Software
 
