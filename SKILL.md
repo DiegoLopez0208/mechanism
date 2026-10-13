@@ -46,6 +46,8 @@ Parts library (`kit/parts.js`, real dimensions): `gear` (involute, module, teeth
 
 **Provenance per dimension.** When a part mixes sourced and estimated sizes, add `params: { w: { value, unit, conf, claim, tol }, wall: { conf: 'estimated', why } }`: the gate compares each drawn size with its source value and reports the part as mixed, and the card shows each size with its class. Run `node scripts/registry.mjs` before delivering to refresh the register and badges.
 
+**Trust.** A spec is code. Never run `check-spec.mjs`, `registry.mjs` or a render on a spec taken from the web or a pull request without reading it; write only your own specs. Keep `--out` paths under `out/`. See SECURITY.md.
+
 **Recognisable.** A correct model nobody recognises is not finished. Add `recognize: { object, iconic: [{ text, parts | partsPrefix }] }` (2 or more features, each built from parts that exist) and, before delivering, run `node scripts/stranger.mjs <example>`, show the label-free still to a model with no context ("what object is this?") and record the answer in `recognize.blind: { answer, judge, date, ok }`. If it is not recognised, fix the model (the iconic shapes, the livery, the proportions), not the caption. For software, research the real thing on the web first (logo, icon, UI) and keep the local tool as optional evidence.
 
 **Verdicts.** The gate prints VERIFIED only if a published figure was compared and none is pending; NOTHING CHECKED / INCOMPLETE / DOES NOT PASS otherwise. Templates from `scripts/new.mjs` are drafts that fail until every TODO is replaced. Never put a placeholder source, a calc variable without a claim or an ESTIMATED part without a reason in a spec. `node --test tests/gate.test.mjs` must stay green.

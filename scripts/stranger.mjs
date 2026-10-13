@@ -15,7 +15,7 @@ const names = args.includes('--all') ? readdirSync(path.join(root, 'examples')).
 if (!names.length) { console.error('usage: node scripts/stranger.mjs <example>... | --all'); process.exit(1); }
 const B = [process.env.BROWSER, 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Google/Chrome/Application/chrome.exe', '/usr/bin/google-chrome'].filter(Boolean).find((b) => existsSync(b));
 const PORT = 9360 + Math.floor(Math.random() * 30), profile = path.join(os.tmpdir(), 'mx-stranger-' + Date.now());
-const proc = spawn(B, ['--headless=new', `--remote-debugging-port=${PORT}`, `--user-data-dir=${profile}`, '--hide-scrollbars', '--mute-audio', '--enable-unsafe-swiftshader', 'about:blank'], { stdio: 'ignore' });
+const proc = spawn(B, ['--headless=new', `--remote-debugging-port=${PORT}`, `--user-data-dir=${profile}`, '--hide-scrollbars', '--mute-audio', '--force_high_performance_gpu', '--enable-unsafe-swiftshader', 'about:blank'], { stdio: 'ignore' });
 let tab; for (let i = 0; i < 80 && !tab; i++) { await sleep(250); try { tab = (await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json()).find((t) => t.type === 'page'); } catch {} }
 const ws = new WebSocket(tab.webSocketDebuggerUrl); await new Promise((r) => (ws.onopen = r)); let id = 0; const pend = new Map();
 ws.onmessage = (m) => { const d = JSON.parse(m.data); if (d.id && pend.has(d.id)) { pend.get(d.id)(d.result || d.error); pend.delete(d.id); } };

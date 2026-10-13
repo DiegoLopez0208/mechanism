@@ -17,3 +17,8 @@ data/**/*.txt
 kit/vendor/three.min.js
 examples/test.html
 data/audio/dl/
+
+# render leftovers
+*.wav
+.audio-*
+*.video-*.mp4
