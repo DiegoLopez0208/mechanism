@@ -1,0 +1,72 @@
+---
+name: mechanism
+description: Build an exact, beautiful 3D model of a real object (phone, board, device, instrument, machine) from the internet's own evidence, explode it into its parts, and render a narrated MP4 with designed stereo sound plus an interactive HTML viewer. The skill does the research itself: spec sheets, reviews, teardowns, official part photos, and it measures the photos. Every number on screen is tagged SPEC, MEASURED, DERIVED or ESTIMATED. Use when the user wants a teardown, comparison, explainer or launch video of a real product, or of an idea from a repo built as a working machine. Triggers on "model this exactly", "exploded view of X", "compare X and Y", "make a video of how X is built", "/mechanism".
+---
+
+# Mechanism
+
+Output for one subject: an MP4 (4:5, 9:16 or 1:1, 1080 wide, 60-90 s, stereo, paper or night theme), clips cut from it, an interactive `index.html?explore`, an STL/GLB of the model, and the data files that justify every number.
+
+Two routes. **The declarative route is the default**: write one `spec.js` (parts with real dimensions, evidence, mechanism) and the engine does the scene, the kinematics, the camera, the sound and the film. Use the hand-built route (`examples/phones/scene.js`) only for products that need bespoke look, such as phone back covers with measured camera islands.
+
+## Core rules
+
+1. **Search before you model. Never invent a shape you could have looked up.** The user will notice a generic model immediately. Two phones that share one template are a failure.
+2. **Look at the pictures.** `WebFetch` returns text only, but you can `curl` image files and open them with `Read`. Official sources worth checking, in this order:
+   - the maker's spare-parts site (Xiaomi: `spare-parts.mi.com/products/<model>-<part>`) for photos of the real back cover, display module with frame, boards, cameras, speakers;
+   - GSMArena `pictures` pages (`fdn2.gsmarena.com/vv/pics/<brand>/<slug>-N.jpg`: front, back and side views aligned) and review photos (`fdn.gsmarena.com/imgroot/reviews/...`);
+   - teardown articles and videos' hero photos, the maker's spec page and FAQ (battery cells, construction), phone-case fit guides.
+3. **Measure, do not eyeball.** Use the published body size as the scale (`mm per px = published size / silhouette size`), check that x and y scales agree (within ~2%), then measure with OpenCV: silhouette, corner radius fit, Hough circles for lenses, rectangles for boards. Scripts live in `data/phones/ref/measure*.py`, run with `uv run --with opencv-python-headless --with numpy python ...`.
+4. **Cross-check every derived number against a second published one.** Examples that already work: display area from diagonal + resolution aspect, checked against the published area and the ppi; sensor size from MP x pixel pitch, checked against the optical format (16 mm per inch-type for large sensors, 18 mm for small ones); entrance pupil = real focal length / f-number, real focal = 35 mm equivalent x sensor diagonal / 43.27.
+5. **Tag everything.** SPEC (published), MEASURED (measured on an official photo, say the error), DERIVED (formula plus cross-check), ESTIMATED (nobody publishes it: draw it dashed and say so). Never present an estimate as fact. Say when sources conflict and which one you used.
+6. **When two objects are compared, model each one as itself.** Corner radius, frame profile, back material, camera island, buttons, ports, display technology and interior all come from that object's own evidence. Same scale, different design.
+7. **Say what is missing.** If there is no interior photo, say so in the video and keep that interior estimated. Ask the user for a photo only after you have searched.
+
+## The declarative route (spec -> film)
+
+1. **Research first, into the spec.** Search, download and look at pictures, measure (rules above). Then write `examples/<name>/spec.js` as `window.SPEC = {...}`; copy `examples/hub/spec.js` (a three-speed planetary hub) as the template. Fields: `research.sources` (title, url, fetched date, note about what the page refused), `research.claims` (text, `conf`, `src`, and `cross` for DERIVED, `error` for MEASURED, `why` for ESTIMATED), `parts` (kind, real dimensions in mm, material, position, explode vector, `body`, `orbit`, `claims`, `info`, `cutaway`), `mechanism` (links between bodies, `drive.modes` with the ratio the maker publishes), `director` (optional tour order, durations, views).
+2. **Gate: `node scripts/check-spec.mjs examples/<name>/spec.js`.** It fails (exit 1) when a number has no source, a DERIVED claim has no cross-check, a MEASURED one no error, an ESTIMATED one no reason; when two meshing gears do not sit at the centre distance their module and teeth demand; when the teeth do not interleave; or when a mode of operation does not give the ratio the maker publishes. Fix the model or the claim, never the check. Do not render a spec that does not pass.
+3. **Build the page**: copy `examples/hub/index.html` and `run.js` (the script list is fixed; `spec.js` is the only thing that changes).
+4. **Look before rendering**: `node scripts/probe.mjs "examples/<name>/index.html?explore" out/probe-<name>` (mouse simulation) and `node scripts/render.mjs <page> --still 9 --blur 1` at the assembly, power-path, tour and panel times (`window.__specInfo().phases` lists them).
+5. **Render**: `node scripts/render.mjs examples/<name>/index.html --blur 3 --out out/<name>.mp4` (duration comes from the spec). Variants: `--theme night`, `--aspect 9:16`, a clip with `--from 13 --to 21`, and the model with `--export stl --e 1` or `--export glb` (`--e` is the explode factor, 0..1).
+
+What the director builds by itself: staggered assembly from back to front, a cutaway (parts marked `cutaway` fade) while the mechanism runs, one mode of operation at a time with its measured ratio, its published number and a live rpm readout, the exploded view, a tour with a callout per part, re-assembly, a ratios table, an evidence table with sources, and a sources panel. Sound follows the physics: each part's impact uses its material and size, and the tooth ticks are the real tooth passes of the running gears.
+
+Parts library (`kit/parts.js`, real dimensions): `gear` (involute, module, teeth, pressure angle, backlash, lightening web), `ring` (internal teeth), `sprocket` (chain pitch and roller), `shaft`, `pin`, `disc`, `flange` (spoke holes), `tube`, `plate`, `bearing` (balls and cage), `spring` (helix), `nut`, `bolt`. Also `box` (hollow housing with optional floor), `block` and `cross` (stem). Two kinds of mechanism: **gear trains** (`mechanism.links` + `drive.modes` with the published ratio) and **presses** (`mechanism.press = { travel, actuation, force: [[mm, cN], ...] }` + `drive.modes` as phases `{ from, to }`; parts take `slide: { k }` to follow the stroke and `compress: { free }` for springs; the director plots the force curve against what a linear spring through the first two points would give, and the gate demands a `press.note` when the published points do not add up). `up: 'z'` stands the object on its z axis (switches, towers). `orient: [rx, ry, rz]` (degrees) turns the whole object (the Enigma stack lies along x). **Ciphers**: `mechanism.enigma = { rotors, reflector, rings, start, plugs, tests: [...] }` runs the real machine logic (`kit/enigma.js`); every published test (`plain` -> `expect`, or the sequence of `windows`, or `decrypt: true` for reciprocity) is simulated and the spec fails if the machine disagrees. Parts of kind `rotor` take `role: 'R' | 'M' | 'L' | 'UKW' | 'ETW'` and get their wiring and notch from the machine config, so what is drawn is what is computed. `drive.modes` become typed phases (`start`, `text` or `'@prev'`, `publish: { text, windows }`); the film shows the rotor windows, the lampboard and the signal path through the contacts, and the viewer lets you type on the keyboard. `director.views` merges partial views (`{ iso: { yaw, pitch } }`) onto the defaults. Kinematics (`kit/kin.js`): one-degree-of-freedom gear trains by the Willis relations, external and internal meshes, carriers, fixed members, tooth phase solved so the teeth really interleave (residual reported), centre-distance and assembly checks.
+
+## Workflow (hand-built route)
+
+1. **Dossier** (`data/<subject>/<subject>.json`): body size, display, SoC, battery, cameras (MP, pixel pitch, format, f-number, equivalent focal length), materials, ports, buttons, sources with URLs. Keep conflicts in the file.
+2. **Reference photos** (`data/<subject>/ref/`): download, view, measure. Record the result as a `layout` block in the dossier, in a stated coordinate frame (back view: x from the left edge, y from the top), with a `conf` tag and the photo it came from.
+3. **Derive** (`scripts/derive-<subject>.mjs`): compute everything derivable and print the cross-checks. If a check fails, fix the model or say so. Generates `examples/<subject>/model.js`.
+4. **Build the scene** on `kit/figure.js`: one `part()` per physical piece, with its own `info` (title, lines, conf tags), explode offset and material. Display stacks, boards, batteries and camera modules are separate parts so they can explode.
+5. **Script the film**: `F.run({ duration, keys, script, audio })`. Camera keys `[t, view, ease]` with `dof`, per-part `arc`, `spin`, `tilt`, staggered `explodeK`, a moving key light, tour stops that focus one part and show a callout, then 2D panels (structure, interior, sensors to scale, processors, comparison, outro). Every panel shows its sources.
+6. **Design the sound** with `kit/sound.js` (see below). Never reuse another figure's cue list.
+7. **Check stills before rendering**: `node scripts/render.mjs <page> --still <t> --blur 1`. Look at the assembled view, an exploded tour stop, each panel, and compare the rear view with the real photos side by side.
+8. **Render**: `node scripts/render.mjs <page> --duration <s> --fps 30 --blur 3 --out out/<name>.mp4` (about 6 s of wall time per second of video). Verify duration, stereo, loudness, contact sheet. Test `?explore` with `scripts/probe.mjs` (simulated mouse).
+
+## The engine
+
+- `kit/vendor/three.bundle.js`: three.js 0.186 plus EffectComposer, GTAO, Bokeh, Bloom, OutputPass, RoomEnvironment. Rebuild with `scripts/build-vendor.mjs` (`tools/vendor-build`). Works from `file://`.
+- `kit/gl.js`: perspective camera (fov 22; `zoom` = px per mm at the target), managed colour, Neutral tone mapping, studio environment, soft shadows, MSAA 4x, GTAO, depth of field via `view.dof`, bloom. `G.mat` (physical material), `G.glass` (real transmission), `G.canvasTex`, `G.rbox`. Traps: `visible = null` does not hide (use booleans), `position`/`rotation` are read-only (copy), transmission needs `transparent: false`.
+- `kit/figure.js`: `MX.figure({ w, h, axes, stage, card })`, `F.add(part)`, `F.finish()`, `F.camera`, `F.shot`, `F.drift`, `F.overlay`, `F.run`, `F.explore` (orbit, wheel zoom, explode slider, view presets, layer toggles, measure between two points, tap a part). HUD helpers in `F.hud`: `dim`, `tag`, `panel`, `info`.
+- `kit/core.js`: easing (`MX.E.bezier`, `outBack`, `outElastic`, `smooth`, `snap`), `MX.card`, `MX.callout`, `MX.run` (frame-exact capture with motion blur by subframes, stereo WAV).
+- `kit/sound.js`: modal synthesis per material (glass, aluminum, steel, plastic, pcb, ceramic, pouch, rubber; pitch falls with the size of the part, decay differs by material), `click`, `whoosh`, `servo`, `charge`, `blip`, `tone`, `boom`, stereo pan per object, reverb, generative music bed with its own key and tempo. Map events to the physics: a part landing = impact of its own material and size; CPU cores = notes quantized to a scale by clock speed; each lens = a steel ring sized like the lens. `scripts/soundtest.mjs` measures that materials and sizes really sound different.
+
+## Look and feel
+
+Paper background, ink text, teal for measured and spec, ember for estimated, one accent only. Glass screens are emissive. Metals reflect the studio. Everything that is not the subject of the current shot is dimmed and defocused. Labels sit at fixed screen positions per shot. Text at 18 px or more.
+
+## Requirements
+
+Node 22+, Edge or Chrome, `ffmpeg`, `uv` (Python tools for measuring photos). No npm install is needed to render; `npm install` in `tools/vendor-build` only to rebuild the three.js bundle.
+
+## Limits
+
+- It cannot get millimetres from a single photo without a scale: use a published size, a coin or ruler in the picture, or the datasheet. A catalog collage scales every piece to fit its slot, so even ratios between objects are not real (see `examples/instruments`).
+- Interiors need photos. If none exist, the interior is estimated and says so.
+- Rendering is heavy: expect 6 minutes for a minute of video.
+
+## Examples
+
+`examples/enigma` (the Enigma I rotor stack: wiring, notches and stepping are checked against the published tests AAAAA > BDZGO, rings BBB > EWTYX and the ADU > ADV > AEW > BFX double step; type on your keyboard in the viewer), `examples/hub` (a three-speed planetary hub, fully declarative: the tooth counts are DERIVED from a forum post and cross-checked against the published 75 / 100 / 133 %, the sizes are ESTIMATED and dashed), `examples/phones` (POCO X8 Pro Max vs Galaxy S26 Ultra, measured on official photos), `examples/rpi4` (Raspberry Pi 4B from the official datasheet drawing), `examples/instruments` (a catalog photo turned into 3D plates, with the limits stated), `examples/backpressure` (the first, a 2D machine for an idea).

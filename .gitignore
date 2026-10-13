@@ -1,0 +1,18 @@
+# dependencias y salidas pesadas (los videos van como archivos de una Release)
+node_modules/
+out/
+*.log
+.frames/
+.respaldo/
+
+# fotos, datasheets y paginas de terceros usadas solo para medir: no se redistribuyen
+data/**/*.jpg
+data/**/*.jpeg
+data/**/*.png
+data/**/*.pdf
+data/**/*.html
+data/**/*.txt
+
+# restos de pruebas locales
+kit/vendor/three.min.js
+examples/test.html

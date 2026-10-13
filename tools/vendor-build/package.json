@@ -1,0 +1,1 @@
+{ "name": "mechanism-vendor-build", "private": true, "type": "module", "dependencies": { "three": "0.186.1", "esbuild": "^0.25.0" } }

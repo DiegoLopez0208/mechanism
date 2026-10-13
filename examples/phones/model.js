@@ -1,0 +1,913 @@
+// generado por scripts/derive-phones.mjs desde data/phones/phones.json (no editar a mano)
+window.PHONES = {
+ "units": "mm",
+ "frame": "x = ancho (0 = borde izquierdo), y = alto (0 = borde inferior), z = espesor (0 = tapa trasera, t = vidrio frontal)",
+ "confidence": {
+  "spec": "numero publicado por el fabricante o en la ficha de GSMArena",
+  "derived": "calculado con una formula a partir de numeros publicados (la formula esta en derive-phones.mjs y se cruza con otro dato publicado)",
+  "estimated": "ninguna ficha lo publica: tamano o disposicion ilustrativos, dibujado punteado"
+ },
+ "conventions": {
+  "opticalFormat": "1 pulgada tipo = 16 mm de diagonal de sensor (convencion de la industria): diagonal = 16 / denominador",
+  "equivFocal": "la focal equivalente de 35 mm se refiere a una diagonal de 43,27 mm: focal real = equivalente x diagonal / 43,27",
+  "entrancePupil": "diametro de la pupila de entrada = focal real / numero f",
+  "battery": "supuestos (no publicados): tension nominal 3,85 V y densidad de energia 700 Wh/L; el resultado es solo una estimacion de volumen"
+ },
+ "devices": [
+  {
+   "id": "poco",
+   "name": "POCO X8 Pro Max",
+   "model": "2602BPC18G",
+   "sources": [
+    "https://www.po.co/global/product/poco-x8-pro-max/specs/",
+    "https://www.gsmarena.com/xiaomi_poco_x8_pro_max_5g-14507.php"
+   ],
+   "body": {
+    "w": 77.9,
+    "h": 162.9,
+    "t": 8.2,
+    "weightG": 218,
+    "corner": 11,
+    "cornerConf": "measured",
+    "ip": "IP68 / IP69K (GSMArena)",
+    "sim": "nano + nano or nano + eSIM"
+   },
+   "display": {
+    "diagIn": 6.83,
+    "areaCm2": 114.5,
+    "resolution": [
+     1280,
+     2772
+    ],
+    "ppi": 447,
+    "type": "AMOLED 120 Hz, 3840 Hz PWM, Dolby Vision, HDR10+",
+    "peakNits": 3500,
+    "glass": "Gorilla Glass 7i",
+    "active": {
+     "w": 72.7,
+     "h": 157.5,
+     "method": "diag 6.83 in and the 1280 x 2772 px aspect (published)"
+    },
+    "check": {
+     "areaCm2": 114.5,
+     "areaPublished": 114.5,
+     "ppi": 447,
+     "ppiPublished": 447,
+     "pixelPitchUm": 56.8
+    },
+    "bezelSide": 2.59,
+    "bezelEnd": 2.7
+   },
+   "build": {
+    "front": "Gorilla Glass 7i",
+    "frame": "aluminum",
+    "back": "glass-fiber reinforced plastic"
+   },
+   "soc": {
+    "name": "MediaTek Dimensity 9500s",
+    "node": "3 nm",
+    "cpu": [
+     {
+      "n": 1,
+      "core": "Cortex-X925",
+      "ghz": 3.73
+     },
+     {
+      "n": 3,
+      "core": "Cortex-X4",
+      "ghz": 3.3
+     },
+     {
+      "n": 4,
+      "core": "Cortex-A720",
+      "ghz": 2.4
+     }
+    ],
+    "gpu": "Immortalis-G925 MC11",
+    "npu": "NPU 890",
+    "ram": "12 GB LPDDR5X (9600 Mbps)",
+    "storage": "256 / 512 GB UFS 4.1",
+    "size": [
+     13,
+     13,
+     1.1
+    ],
+    "sizeConf": "estimated",
+    "at": [
+     40,
+     128
+    ]
+   },
+   "battery": {
+    "mAh": 8500,
+    "chem": "Si/C Li-Ion",
+    "charge": "100 W wired, 27 W reverse",
+    "at": [
+     3.9,
+     18
+    ],
+    "energyWh": 32.9,
+    "volumeCm3": 30.1,
+    "size": [
+     63,
+     95.5,
+     5
+    ],
+    "impliedWhPerL": 1093,
+    "sizeConf": "measured bay, thickness estimated"
+   },
+   "board": {
+    "size": [
+     70,
+     40,
+     1.1
+    ],
+    "at": [
+     3.9,
+     118
+    ]
+   },
+   "cameras": [
+    {
+     "id": "main",
+     "name": "50 MP main",
+     "mp": 50,
+     "pitchUm": 0.8,
+     "format": 1.95,
+     "f": 1.5,
+     "equivMm": 26,
+     "ois": true,
+     "note": "1/1.95\", OIS, 6P lens",
+     "at": [
+      19,
+      146
+     ],
+     "sensor": {
+      "cross": {
+       "diagMm": 8.21,
+       "method": "1/1.95\" optical format (16 mm per inch-type)",
+       "deltaPct": 0.5
+      },
+      "diagMm": 8.16,
+      "w": 6.53,
+      "h": 4.9,
+      "method": "50 MP x (0.8 um)^2 at 4:3",
+      "byFormatOnly": false
+     },
+     "focalMm": 4.91,
+     "pupilMm": 3.27,
+     "equivUsed": 26
+    },
+    {
+     "id": "uw",
+     "name": "8 MP ultrawide",
+     "mp": 8,
+     "pitchUm": 1.12,
+     "format": 4,
+     "f": 2.2,
+     "equivMm": 15,
+     "ois": false,
+     "note": "1/4.0\"",
+     "at": [
+      19,
+      129
+     ],
+     "sensor": {
+      "cross": {
+       "diagMm": 4.5,
+       "method": "1/4\" optical format (18 mm per inch-type)",
+       "deltaPct": -1.6
+      },
+      "diagMm": 4.57,
+      "w": 3.66,
+      "h": 2.74,
+      "method": "8 MP x (1.12 um)^2 at 4:3",
+      "byFormatOnly": false
+     },
+     "focalMm": 1.59,
+     "pupilMm": 0.72,
+     "equivUsed": 15
+    }
+   ],
+   "selfie": {
+    "name": "20 MP selfie",
+    "mp": 20,
+    "format": 4,
+    "f": 2.2,
+    "note": "1/4\"",
+    "at": [
+     38.95,
+     157
+    ],
+    "sensor": {
+     "diagMm": 4.5,
+     "w": 3.6,
+     "h": 2.7,
+     "method": "1/4\" optical format (18 mm per inch-type)",
+     "byFormatOnly": true
+    }
+   },
+   "extras": [
+    "Ultrasonic in-display fingerprint",
+    "Symmetrical stereo speakers + Dolby Atmos",
+    "X-axis linear vibration motor",
+    "IR blaster",
+    "USB Type-C 2.0",
+    "Wi-Fi 7, Bluetooth 6.0, NFC",
+    "2-mic array"
+   ],
+   "colors": {
+    "back": "#a9cde6",
+    "frame": "#b7c9d6",
+    "metal": "#d9d3c6"
+   },
+   "design": {
+    "front": "absolutely flat; narrow but noticeable bezels; punch-hole selfie camera; ultrasonic under-display fingerprint",
+    "frontSrc": "GSMArena design review",
+    "frame": {
+     "kind": "metal middle frame, flat sides, display and back panel sunken into it",
+     "corner": 11,
+     "cornerNote": "measured from the product render (silhouette fit, 9.4-12.1 mm)",
+     "sunken": true,
+     "antennaLines": "left side is empty apart from antenna lines (GSMArena)"
+    },
+    "back": {
+     "material": "glass-fiber reinforced plastic (fiberglass), textured",
+     "note": "white unit has vertical stripes; blue and black are solid colors (GSMArena)",
+     "stripes": false
+    },
+    "island": {
+     "kind": "small slightly-raised island with a chamfered edge, upper-left, compact",
+     "lenses": 2,
+     "layout": "two lenses stacked vertically",
+     "rgbRings": {
+      "count": 2,
+      "segments": 4,
+      "note": "Dynamic RGB lights around each lens; segments cannot be set to different colors (GSMArena)"
+     },
+     "raiseMm": 0.8,
+     "raiseConf": "estimated",
+     "flash": "not mentioned by GSMArena; one review places a flash on the right (conflict) - not drawn",
+     "src": "GSMArena; Einfoldtech; Noypigeeks (iPhone 16-like layout)"
+    },
+    "buttons": {
+     "right": "volume rocker + power button (GSMArena)",
+     "left": "none (one review puts the power key on the left: conflict)"
+    },
+    "top": "secondary microphone hole, top-firing speaker grille, IR blaster (several reviews)",
+    "bottom": "second speaker grille, main microphone, SIM tray, USB-C",
+    "punch": {
+     "d": 3.6,
+     "conf": "estimated"
+    }
+   },
+   "displayTech": {
+    "family": "AMOLED",
+    "backplane": "LTPS (GSMArena)",
+    "maker": "TCL M10-based (Smartprix, secondhand)",
+    "refresh": "adaptive 30-120 Hz (Smartprix)",
+    "pwm": "3840 Hz PWM dimming, no DC dimming option (GSMArena)",
+    "hdr": "Dolby Vision, HDR10+",
+    "depth": "68B colors (12-bit class; such claims usually rely on dithering)",
+    "brightness": "2000 nits HBM, 3500 nits peak at 25% APL",
+    "flat": true,
+    "extra": []
+   },
+   "layout": {
+    "src": "GSMArena product render + review photos; Xiaomi spare-parts photos (back cover, display module with frame)",
+    "island": {
+     "shape": "stadium",
+     "w": 19.7,
+     "h": 42.6,
+     "cx": 16.7,
+     "top": 3.6,
+     "raise": 0.7,
+     "rim": "champagne metal",
+     "conf": "measured"
+    },
+    "lenses": [
+     {
+      "cam": 0,
+      "cx": 16.7,
+      "cyTop": 13.8,
+      "glassD": 18.2,
+      "conf": "measured",
+      "id": "main",
+      "idConf": "spec (50 MP main; GSMArena listing order)"
+     },
+     {
+      "cam": 1,
+      "cx": 16.7,
+      "cyTop": 36.4,
+      "glassD": 16.4,
+      "conf": "measured",
+      "id": "uw",
+      "idConf": "spec (8 MP ultrawide)"
+     }
+    ],
+    "extras": [
+     {
+      "k": "flash",
+      "cx": 33.6,
+      "cyTop": 14.8,
+      "d": 5.2,
+      "note": "upper light: warm LED (flash)"
+     },
+     {
+      "k": "led",
+      "cx": 33.6,
+      "cyTop": 36.9,
+      "d": 5.2,
+      "note": "lower light: not identified in the sources"
+     }
+    ],
+    "texts": [
+     {
+      "s": "POCO",
+      "cx": 16.4,
+      "cyBottom": 30,
+      "size": 6.4,
+      "rot": 90,
+      "w": 700,
+      "alpha": 0.55
+     },
+     {
+      "s": "OIS CAM",
+      "cx": 33.6,
+      "cyTop": 25.5,
+      "size": 1.5,
+      "rot": 0,
+      "w": 500,
+      "alpha": 0.5
+     }
+    ],
+    "buttons": [
+     {
+      "k": "volume",
+      "yTop": 52.7,
+      "len": 20.6,
+      "edge": "front-right"
+     },
+     {
+      "k": "power",
+      "yTop": 75.2,
+      "len": 11.6,
+      "edge": "front-right",
+      "accent": "#d62f2f"
+     }
+    ],
+    "edges": {
+     "top": {
+      "grille": {
+       "cxBack": 32,
+       "holes": 5
+      },
+      "mic": {
+       "cxBack": 60.7
+      }
+     },
+     "bottom": {
+      "simFront": 21,
+      "usbFront": 41.2,
+      "speakerFront": 61.5,
+      "speakerHoles": 5
+     }
+    },
+    "punch": {
+     "d": 3.1,
+     "cyTop": 6.7,
+     "conf": "measured"
+    },
+    "interior": {
+     "conf": "measured on the official Xiaomi display-module photo (frame 162.9 mm = 1053 px)",
+     "battery": {
+      "cx": 37.1,
+      "cyTop": 92.5,
+      "w": 63,
+      "h": 95.5,
+      "t": 5,
+      "tConf": "estimated",
+      "bayW": 65,
+      "bayH": 97.5,
+      "note": "dual-cell 8330 mAh rated / 8500 typical, ATL + COSMX cells (Xiaomi FAQ)"
+     },
+     "board": {
+      "cx": 36.8,
+      "cyTop": 23.3,
+      "w": 67.3,
+      "h": 41
+     },
+     "socPad": {
+      "cx": 42.2,
+      "cyTop": 29.5,
+      "w": 17.7,
+      "h": 19.4,
+      "pkg": 14
+     },
+     "can": {
+      "cx": 14.7,
+      "cyTop": 16.8,
+      "w": 13.9,
+      "h": 13.9
+     },
+     "motor": {
+      "cx": 50.3,
+      "cyTop": 9.4,
+      "w": 17,
+      "h": 13.2
+     },
+     "speaker": {
+      "cx": 62.5,
+      "cyTop": 152.4,
+      "w": 21,
+      "h": 15.5,
+      "t": 4.5,
+      "tConf": "estimated"
+     },
+     "subboard": {
+      "cx": 22,
+      "cyTop": 154.5,
+      "w": 24,
+      "h": 15.5,
+      "t": 1.2
+     }
+    }
+   }
+  },
+  {
+   "id": "s26",
+   "name": "Galaxy S26 Ultra",
+   "model": "SM-S948B",
+   "sources": [
+    "https://fo.gsmarena.com/samsung_galaxy_s26_ultra-14320.php",
+    "https://www.samsung.com/uk/smartphones/galaxy-s26-ultra/"
+   ],
+   "body": {
+    "w": 78.1,
+    "h": 163.6,
+    "t": 7.9,
+    "weightG": 214,
+    "corner": 7,
+    "cornerConf": "measured",
+    "ip": "IP68",
+    "sim": "nano + nano + eSIM (max 2 at a time)"
+   },
+   "display": {
+    "diagIn": 6.9,
+    "areaCm2": 115.9,
+    "resolution": [
+     1440,
+     3120
+    ],
+    "ppi": 500,
+    "type": "Dynamic LTPO AMOLED 2X 120 Hz, HDR10+, Privacy Display",
+    "peakNits": 2600,
+    "glass": "Gorilla Armor 2 + DX anti-reflective",
+    "active": {
+     "w": 73.4,
+     "h": 159.1,
+     "method": "diag 6.9 in and the 1440 x 3120 px aspect (published)"
+    },
+    "check": {
+     "areaCm2": 116.9,
+     "areaPublished": 115.9,
+     "ppi": 498,
+     "ppiPublished": 500,
+     "pixelPitchUm": 51
+    },
+    "bezelSide": 2.33,
+    "bezelEnd": 2.24
+   },
+   "build": {
+    "front": "Gorilla Armor 2",
+    "frame": "aluminum",
+    "back": "Gorilla Glass Victus 2"
+   },
+   "soc": {
+    "name": "Snapdragon 8 Elite Gen 5 for Galaxy",
+    "node": "3 nm",
+    "cpu": [
+     {
+      "n": 2,
+      "core": "Oryon V3 Phoenix L",
+      "ghz": 4.74
+     },
+     {
+      "n": 6,
+      "core": "Oryon V3 Phoenix M",
+      "ghz": 3.62
+     }
+    ],
+    "gpu": "Adreno 840 (1.3 GHz)",
+    "npu": "NPU +39% vs S25 Ultra (Samsung)",
+    "ram": "12 GB (256/512 GB) or 16 GB (1 TB)",
+    "storage": "256 GB / 512 GB / 1 TB UFS 4.X",
+    "size": [
+     13,
+     13,
+     1.1
+    ],
+    "sizeConf": "estimated",
+    "at": [
+     40,
+     128
+    ]
+   },
+   "battery": {
+    "mAh": 5000,
+    "chem": "Li-Ion",
+    "charge": "60 W wired, 25 W wireless (Qi2.2), 4.5 W reverse",
+    "at": [
+     5,
+     18
+    ],
+    "energyWh": 19.4,
+    "volumeCm3": 26.1,
+    "size": [
+     58,
+     90,
+     5
+    ],
+    "impliedWhPerL": 741,
+    "sizeConf": "estimated"
+   },
+   "board": {
+    "size": [
+     70,
+     40,
+     1.1
+    ],
+    "at": [
+     4,
+     118
+    ]
+   },
+   "cameras": [
+    {
+     "id": "main",
+     "name": "200 MP main",
+     "mp": 200,
+     "pitchUm": 0.6,
+     "format": 1.3,
+     "f": 1.4,
+     "equivMm": 23,
+     "ois": true,
+     "note": "1/1.3\", OIS, multi-directional PDAF",
+     "at": [
+      15,
+      148
+     ],
+     "sensor": {
+      "cross": {
+       "diagMm": 12.31,
+       "method": "1/1.3\" optical format (16 mm per inch-type)",
+       "deltaPct": 0.5
+      },
+      "diagMm": 12.25,
+      "w": 9.8,
+      "h": 7.35,
+      "method": "200 MP x (0.6 um)^2 at 4:3",
+      "byFormatOnly": false
+     },
+     "focalMm": 6.51,
+     "pupilMm": 4.65,
+     "equivUsed": 23
+    },
+    {
+     "id": "uw",
+     "name": "50 MP ultrawide",
+     "mp": 50,
+     "pitchUm": 0.7,
+     "format": 2.5,
+     "f": 1.9,
+     "fovDeg": 120,
+     "ois": false,
+     "note": "1/2.5\", 120 deg, dual pixel PDAF",
+     "at": [
+      15,
+      132
+     ],
+     "sensor": {
+      "cross": {
+       "diagMm": 7.2,
+       "method": "1/2.5\" optical format (18 mm per inch-type)",
+       "deltaPct": 0.8
+      },
+      "diagMm": 7.14,
+      "w": 5.72,
+      "h": 4.29,
+      "method": "50 MP x (0.7 um)^2 at 4:3",
+      "byFormatOnly": false
+     },
+     "equivDerived": true,
+     "focalMm": 2.06,
+     "pupilMm": 1.09,
+     "equivUsed": 12.5
+    },
+    {
+     "id": "tele3",
+     "name": "10 MP tele 3x",
+     "mp": 10,
+     "pitchUm": 1,
+     "format": 3.94,
+     "f": 2.4,
+     "equivMm": 67,
+     "ois": true,
+     "note": "1/3.94\", OIS",
+     "at": [
+      15,
+      116
+     ],
+     "sensor": {
+      "cross": {
+       "diagMm": 4.57,
+       "method": "1/3.94\" optical format (18 mm per inch-type)",
+       "deltaPct": 0.1
+      },
+      "diagMm": 4.56,
+      "w": 3.65,
+      "h": 2.74,
+      "method": "10 MP x (1 um)^2 at 4:3",
+      "byFormatOnly": false
+     },
+     "focalMm": 7.07,
+     "pupilMm": 2.94,
+     "equivUsed": 67
+    },
+    {
+     "id": "tele5",
+     "name": "50 MP periscope 5x",
+     "mp": 50,
+     "pitchUm": 0.7,
+     "format": 2.52,
+     "f": 2.9,
+     "equivMm": 111,
+     "ois": true,
+     "note": "1/2.52\", OIS, periscope",
+     "at": [
+      15,
+      100
+     ],
+     "sensor": {
+      "cross": {
+       "diagMm": 7.14,
+       "method": "1/2.52\" optical format (18 mm per inch-type)",
+       "deltaPct": 0
+      },
+      "diagMm": 7.14,
+      "w": 5.72,
+      "h": 4.29,
+      "method": "50 MP x (0.7 um)^2 at 4:3",
+      "byFormatOnly": false
+     },
+     "focalMm": 18.33,
+     "pupilMm": 6.32,
+     "equivUsed": 111
+    }
+   ],
+   "selfie": {
+    "name": "12 MP selfie",
+    "mp": 12,
+    "format": 3.2,
+    "f": 2.2,
+    "equivMm": 23,
+    "note": "1/3.2\", dual pixel PDAF",
+    "at": [
+     39.05,
+     158
+    ],
+    "sensor": {
+     "diagMm": 5.63,
+     "w": 4.5,
+     "h": 3.38,
+     "method": "1/3.2\" optical format (18 mm per inch-type)",
+     "byFormatOnly": true
+    },
+    "focalMm": 2.99,
+    "pupilMm": 1.36,
+    "equivUsed": 23
+   },
+   "extras": [
+    "Ultrasonic in-display fingerprint",
+    "Stereo speakers",
+    "Largest vapor chamber yet (size not published)",
+    "UWB",
+    "USB Type-C 3.2, DisplayPort 1.2",
+    "Wi-Fi 7 tri-band, Bluetooth 6.0, NFC",
+    "Stylus listed (S Pen size and slot not published)"
+   ],
+   "colors": {
+    "back": "#6d6bb3",
+    "backLow": "#44447f",
+    "frame": "#8a88cc",
+    "metal": "#c8c6e0"
+   },
+   "design": {
+    "front": "slim bezels; flat Ultra display; ultrasonic under-display fingerprint; Privacy Display",
+    "frontSrc": "Stuff, GSMArena",
+    "frame": {
+     "kind": "aluminium (Armor Aluminum) mid-frame, flat sides",
+     "corner": 7,
+     "cornerNote": "measured from the product render (silhouette fit, 5.5-8.3 mm)",
+     "sunken": false,
+     "antennaLines": "not described"
+    },
+    "back": {
+     "material": "matte, fingerprint-resistant glass (Gorilla Glass Victus 2)",
+     "note": "colors: Black, White, Sky Blue, Cobalt Violet, Pink Gold, Silver Shadow",
+     "stripes": false
+    },
+    "island": {
+     "kind": "unified raised vertical pill holding three of the cameras; the fourth camera, the flash and the laser AF sit apart (Stuff, Samsung community, leaks)",
+     "lenses": 3,
+     "layout": "pill with three lenses; fourth lens below; flash above the fourth lens (leaks)",
+     "rgbRings": null,
+     "raiseMm": 1.6,
+     "raiseConf": "estimated; the bump sticks out more than the S25 Ultra",
+     "flash": "separate, above the fourth camera (leaks)",
+     "laser": "separate laser AF module",
+     "ringStyle": "thin bezels: Samsung dropped the vinyl-record lens surrounds",
+     "whichThree": "the sources do not say which three lenses are in the pill: estimated",
+     "src": "Stuff review; Samsung community unboxing; GSMArena leak"
+    },
+    "buttons": {
+     "right": "volume rocker + power (not described in the sources: estimated)",
+     "left": "none"
+    },
+    "top": "earpiece tweeter (stereo)",
+    "bottom": "S Pen slot, USB-C, SIM tray, down-firing speaker (S Pen pops out of a slot in the bottom edge: Stuff)",
+    "punch": {
+     "d": 3.2,
+     "conf": "estimated"
+    },
+    "sPen": "S Pen present; size and slot position not published: estimated"
+   },
+   "displayTech": {
+    "family": "Dynamic LTPO AMOLED 2X",
+    "backplane": "LTPO (variable refresh)",
+    "maker": "Samsung Display",
+    "refresh": "LTPO, 120 Hz max",
+    "pwm": "not published",
+    "hdr": "HDR10+",
+    "depth": "n/a",
+    "brightness": "2600 nits peak (spec)",
+    "flat": true,
+    "extra": [
+     "Privacy Display: Flex Magic Pixel, wide- and narrow-angle subpixels plus a multilayer black matrix steer light toward the user (Samsung support, SamMobile)",
+     "DX anti-reflective coating (GSMArena)",
+     "resolution drops while Privacy Display is on (Stuff)"
+    ]
+   },
+   "layout": {
+    "src": "GSMArena product render + review photos (S26 Ultra vs S25 Ultra), Android Central teardown hero photo",
+    "island": {
+     "shape": "pill",
+     "w": 20,
+     "h": 56.5,
+     "cx": 16,
+     "top": 4.8,
+     "raise": 2,
+     "rim": "anodised lavender",
+     "conf": "measured",
+     "barrel": 1.7,
+     "barrelNote": "lens barrels stand out ~1.7 mm beyond the pill (side view)"
+    },
+    "lenses": [
+     {
+      "cam": 0,
+      "cx": 16.4,
+      "cyTop": 15.4,
+      "glassD": 16.6,
+      "conf": "measured",
+      "id": "200 MP main",
+      "idConf": "estimated: Samsung does not say which opening is which"
+     },
+     {
+      "cam": 2,
+      "cx": 16.1,
+      "cyTop": 33.1,
+      "glassD": 16.1,
+      "conf": "measured",
+      "id": "10 MP tele 3x",
+      "idConf": "estimated"
+     },
+     {
+      "cam": 3,
+      "cx": 15.8,
+      "cyTop": 51.5,
+      "glassD": 15.6,
+      "conf": "measured",
+      "id": "50 MP 5x (ALoP)",
+      "idConf": "estimated"
+     },
+     {
+      "cam": 1,
+      "cx": 33.6,
+      "cyTop": 15.1,
+      "glassD": 8.4,
+      "conf": "measured",
+      "id": "50 MP ultrawide",
+      "idConf": "estimated",
+      "small": true
+     }
+    ],
+    "extras": [
+     {
+      "k": "flash",
+      "cx": 33.7,
+      "cyTop": 24.1,
+      "d": 3.6
+     },
+     {
+      "k": "laser",
+      "cx": 33.6,
+      "cyTop": 33.1,
+      "d": 8.3,
+      "note": "lower small opening: laser AF (Stuff: the fifth opening is a laser AF module)"
+     }
+    ],
+    "texts": [
+     {
+      "s": "SAMSUNG",
+      "cx": 39,
+      "cyBottom": 32,
+      "size": 4.4,
+      "rot": 0,
+      "w": 600,
+      "alpha": 0.5
+     }
+    ],
+    "buttons": [
+     {
+      "k": "volume",
+      "yTop": 35,
+      "len": 25,
+      "edge": "front-right"
+     },
+     {
+      "k": "power",
+      "yTop": 63.4,
+      "len": 13.2,
+      "edge": "front-right"
+     }
+    ],
+    "edges": {
+     "bottom": {
+      "penFront": 9.4,
+      "penHole": 5.8,
+      "simFront": 24,
+      "usbFront": 41,
+      "speakerFront": 62,
+      "speakerHoles": 8
+     },
+     "top": {
+      "micCxBack": 60,
+      "earpieceFront": 39
+     }
+    },
+    "punch": {
+     "d": 3.6,
+     "cyTop": 4.2,
+     "conf": "measured"
+    },
+    "interior": {
+     "conf": "estimated: no photo of the S26 Ultra interior was available; layout follows the teardown facts (vapor chamber wider at the top, sealed S Pen chamber, two battery connectors)",
+     "battery": {
+      "cx": 44,
+      "cyTop": 97,
+      "w": 58,
+      "h": 90,
+      "t": 5,
+      "tConf": "estimated"
+     },
+     "board": {
+      "cx": 40,
+      "cyTop": 26,
+      "w": 68,
+      "h": 44
+     },
+     "socPad": {
+      "cx": 44,
+      "cyTop": 24,
+      "w": 16,
+      "h": 16,
+      "pkg": 14
+     },
+     "vapor": {
+      "cx": 40,
+      "cyTop": 32,
+      "w": 62,
+      "h": 60
+     },
+     "pen": {
+      "cxFront": 9.4,
+      "len": 104,
+      "dia": 5.6
+     }
+    }
+   }
+  }
+ ],
+ "designNote": "design = descripcion fisica leida en resenas (GSMArena design review, Stuff, Samsung); donde las fuentes se contradicen se anota. Todo lo que no se publica con medidas queda ESTIMADO.",
+ "measuredNote": "layout = medido sobre fotos oficiales (error +/- 1-1.5 mm): GSMArena (render trasero/frontal y fotos de resena), fotos de repuestos oficiales de Xiaomi (spare-parts.mi.com: tapa trasera 6.1 px/mm, modulo de pantalla con marco 6.46 px/mm). Coordenadas VISTAS DESDE ATRAS: x desde el borde izquierdo de la tapa, y desde el borde superior."
+};
