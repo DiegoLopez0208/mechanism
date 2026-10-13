@@ -20,13 +20,13 @@
     brass: ['#cda34a', { metalness: 1, roughness: 0.3 }], bronze: ['#a9743a', { metalness: 1, roughness: 0.36 }], copper: ['#c4693d', { metalness: 1, roughness: 0.3 }],
     aluminum: ['#d4d7dc', { metalness: 0.95, roughness: 0.34 }], 'aluminum-dark': ['#8e939b', { metalness: 0.95, roughness: 0.4 }],
     black: ['#1c1d20', { metalness: 0.2, roughness: 0.5 }], rubber: ['#222222', { roughness: 0.88 }], plastic: ['#ece9de', { roughness: 0.5 }], nylon: ['#e8e2cf', { roughness: 0.55 }],
-    pcb: ['#1d4a38', { metalness: 0.15, roughness: 0.5 }], silicon: ['#454a57', { metalness: 0.8, roughness: 0.22 }], oxide: ['#3a3d44', { metalness: 0.7, roughness: 0.5 }], 'pom-red': ['#c9302c', { roughness: 0.42 }], 'pom-black': ['#1e1f22', { roughness: 0.42 }], gold: ['#e0b94f', { metalness: 1, roughness: 0.22 }], ruby: ['#c2243b', { metalness: 0, roughness: 0.08, clearcoat: 1 }],
+    graphite: ['#3b3e45', { metalness: 0.85, roughness: 0.36 }], 'honda-red': ['#b3121b', { metalness: 0.25, roughness: 0.5 }], 'nv-green': ['#76b900', { metalness: 0.2, roughness: 0.45 }], 'pcb-black': ['#17181b', { metalness: 0.2, roughness: 0.5 }], pcb: ['#1d4a38', { metalness: 0.15, roughness: 0.5 }], silicon: ['#454a57', { metalness: 0.8, roughness: 0.22 }], oxide: ['#3a3d44', { metalness: 0.7, roughness: 0.5 }], 'pom-red': ['#c9302c', { roughness: 0.42 }], 'pom-black': ['#1e1f22', { roughness: 0.42 }], gold: ['#e0b94f', { metalness: 1, roughness: 0.22 }], ruby: ['#c2243b', { metalness: 0, roughness: 0.08, clearcoat: 1 }],
   };
   const cache = {};
   P.mat = (name) => { if (name && name.isMaterial) return name; if (name === 'glass') return cache.glass || (cache.glass = G.glass('#ffffff', { thickness: 1.0, roughness: 0.12, attenuationDistance: 30 })); const k = MATS[name] ? name : 'steel'; return cache[k] || (cache[k] = G.mat(MATS[k][0], MATS[k][1])); };
   P.materials = Object.keys(MATS);
   // material de sonido (kit/sound.js) que corresponde a cada material fisico
-  P.soundMat = (name) => ({ steel: 'steel', 'steel-dark': 'steel', chrome: 'steel', brass: 'aluminum', bronze: 'aluminum', copper: 'aluminum', aluminum: 'aluminum', 'aluminum-dark': 'aluminum', black: 'plastic', pcb: 'plastic', silicon: 'ceramic', rubber: 'rubber', plastic: 'plastic', nylon: 'plastic', oxide: 'steel', gold: 'aluminum', ruby: 'ceramic', 'pom-red': 'plastic', 'pom-black': 'plastic', glass: 'glass' }[name] || 'steel');
+  P.soundMat = (name) => ({ steel: 'steel', 'steel-dark': 'steel', chrome: 'steel', brass: 'aluminum', bronze: 'aluminum', copper: 'aluminum', aluminum: 'aluminum', 'aluminum-dark': 'aluminum', black: 'plastic', pcb: 'plastic', silicon: 'ceramic', graphite: 'steel', 'honda-red': 'aluminum', 'nv-green': 'plastic', 'pcb-black': 'plastic', rubber: 'rubber', plastic: 'plastic', nylon: 'plastic', oxide: 'steel', gold: 'aluminum', ruby: 'ceramic', 'pom-red': 'plastic', 'pom-black': 'plastic', glass: 'glass' }[name] || 'steel');
 
   /* ------------------------------------------------------------ perfil de evolvente */
   // o: { rp (radio primitivo), z, ra (radio de cabeza), rf (radio de pie), ht (semiancho angular del diente en el primitivo), alpha (grados) }

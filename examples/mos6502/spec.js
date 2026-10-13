@@ -16,7 +16,8 @@
   const posOf = (i) => (i < 20 ? [X1 + i * PITCH, -ROW / 2] : [X1 + (39 - i) * PITCH, ROW / 2]);
   const info = (title, lines, conf) => ({ title, lines, conf });
   const parts = [
-    { id: 'body', name: 'Plastic body', kind: 'block', p: { w: 52, d: 13.8, h: 4.4, r: 1 }, mat: 'black', at: [0, 0, 0], explode: [0, 0, 12], cutaway: 0.8, conf: 'estimated', why: 'The length, width and height of a DIP-40 body are not given by either source.', info: info('Plastic body', ['Holds the die and the leads', 'Size is estimated: the sources give the lead pitch and row spacing, not the body'], ['estimated', 'estimated']) },
+    { id: 'body', name: 'Plastic body', kind: 'block', p: { w: 52, d: 13.8, h: 4.4, r: 1 }, mat: 'black', at: [0, 0, 0], explode: [0, 0, 12], cutaway: 0.8, conf: 'estimated', claims: ['marking'], why: 'The length, width and height of a DIP-40 body are not given by either source.',
+      decals: [{ face: '+z', at: [0, 0, 2.22], w: 40, h: 11, px: 22, items: [{ t: 'text', s: 'MOS', x: -13, y: 2.6, size: 3.6, weight: 800, spacing: 0.8, color: '#d8d4c8' }, { t: 'text', s: '6502', x: 3, y: 1.6, size: 6.4, weight: 800, spacing: 0.6, color: '#d8d4c8' }, { t: 'text', s: 'MOS TECHNOLOGY', x: 0, y: -3.6, size: 1.7, weight: 600, spacing: 0.9, color: '#b9b5a8' }, { t: 'circle', x: -19, y: -3.2, r: 0.7, color: '#d8d4c8' }] }], info: info('Plastic body', ['Holds the die and the leads', 'Size is estimated: the sources give the lead pitch and row spacing, not the body'], ['estimated', 'estimated']) },
     { id: 'die', name: 'Silicon die', kind: 'plate', p: { w: 3.886, h: 4.267, r: 0.15, t: 0.3 }, mat: 'silicon', at: [0, 0, 0.2], explode: [0, 0, 6], conf: 'measured', claims: ['die'], info: info('Silicon die', ['3.9 mm x 4.3 mm: 153 x 168 mils, 16.6 mm2', 'Made in an 8 micron process', 'Position inside the body is estimated'], ['spec', 'spec', 'estimated']) },
   ];
   NAMES.forEach((n, i) => {
@@ -43,6 +44,7 @@
         { id: 'die', conf: 'measured', text: 'The die is 3.9 mm x 4.3 mm (153 x 168 mils), 16.6 mm2.', src: ['wiki-6502'], error: 'Published in mils and in mm; the two agree to 0.1 mm2. Position of the die inside the body is not published.' },
         { id: 'pinout', conf: 'spec', text: 'Pinout: A0-A15 on pins 9-20 and 22-25, D0-D7 on pins 26-33, 3 power pins, 3 clock pins, R/W, SYNC, RDY, IRQ, NMI, SO, RES and 3 not connected.', src: ['pinout'] },
         { id: 'pitch', conf: 'derived', text: 'The leads sit on a 2.54 mm pitch in two rows 15.24 mm apart, 20 per row.', src: ['wiki-dip', 'wiki-6502'], cross: 'The 600 mil DIP standard (2.54 mm pitch, 15.24 mm rows) holds 40 pins as 2 x 20, and the 6502 is a 40-pin DIP.' },
+        { id: 'marking', conf: 'estimated', text: "The top of the package is marked MOS 6502.", why: "Drawn from memory of typical parts. The opened sources do not describe the print, the logo or the date code; only type is used." },
         { id: 'transistors', conf: 'spec', text: '3,510 transistors (Wikipedia also cites 3,218).', src: ['wiki-6502'] },
       ],
     },
@@ -66,6 +68,6 @@
         { id: 'dens', label: 'Transistor density', expr: 'transistors / area', unit: 'per mm2', digits: 0, formula: '3,510 transistors / 16.6 mm2', show: ['die'] },
       ] },
     },
-    director: { zoom: 1.35, tour: ['body', 'die', 'pin9', 'pin26'] },
+    director: { hold: 3.5, zoom: 1.35, tour: ['body', 'die', 'pin9', 'pin26'] },
   };
 })();

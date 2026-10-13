@@ -36,6 +36,10 @@
         info: { title: 'Piston pin ' + n, lines: ['20 mm, estimated'], conf: ['estimated'] } },
     );
   }
+  // the red cam cover of the Type R engines, with its lettering: livery drawn from memory of product photos (ESTIMATED)
+  parts.push({ id: 'cover', name: 'Cam cover', kind: 'engblock', p: { w: 112, l: N * PITCH + 6, h: 62, r: 6 }, mat: 'honda-red', at: [0, CAM_Y + 2, 0], explode: [0, 360, 0], late: true, cutaway: 0.9, conf: 'estimated', claims: ['livery'],
+    decals: [{ face: '+y', at: [0, 31.2, 0], w: 340, h: 92, px: 5, rot: -90, items: [{ t: 'text', s: 'HONDA', x: 0, y: 16, size: 42, weight: 800, spacing: 12, color: '#f4f4f1' }, { t: 'text', s: 'i-VTEC', x: -52, y: -26, size: 25, weight: 700, spacing: 2, color: '#f4f4f1', skew: 0.18 }, { t: 'text', s: 'DOHC', x: 64, y: -26, size: 19, weight: 700, spacing: 6, color: '#f4f4f1' }, { t: 'rect', x: 0, y: -8, w: 270, h: 1.6, color: '#f4f4f1', a: 0.7 }] }],
+    info: { title: 'Cam cover', lines: ['Red wrinkle-finish cover with HONDA and i-VTEC lettering', 'Colour and lettering are estimated: none of the opened sources describes them'], conf: ['estimated', 'estimated'] } });
   [['in', XIN, 14, 'intake'], ['ex', XEX, 12, 'exhaust']].forEach(([tag, x, hr, kind]) => {
     parts.push({ id: 'cam-' + tag, name: (kind === 'intake' ? 'Intake' : 'Exhaust') + ' camshaft', kind: 'camshaft', p: { len: N * PITCH + 20, r: CAM_R, lobes: [0, 1, 2, 3].flatMap((k) => [-16, 16].map((dz) => ({ z: zk(k) + dz, cyl: k + 1, w: 9 }))) }, mat: 'steel-dark', at: [x, CAM_Y, 0], explode: [x * 0.6, 335, 0], engine: { role: 'cam', valve: kind }, conf: 'estimated', claims: ['valvetrain'],
       info: { title: (kind === 'intake' ? 'Intake' : 'Exhaust') + ' camshaft', lines: ['Turns at half the crank speed', 'Each lobe is placed so its tip pushes the valve in the window it should be open', 'Timing and lift are estimated'], conf: ['derived', 'derived', 'estimated'] } });
@@ -61,6 +65,7 @@
         { id: 'firing', conf: 'spec', text: 'Firing order 1-3-4-2.', src: ['rerev', 'wiki-fo'] },
         { id: 'throws', conf: 'derived', text: 'Crank throws at 0 / 180 / 180 / 0 degrees: cylinders 1 and 4 reach the top together, 2 and 3 together.', src: ['wiki-fo'], cross: 'A four-stroke four fires every 720 / 4 = 180 degrees (Wikipedia). The gate checks that the published order 1-3-4-2 is possible with exactly these throws, and that 1-2-3-4 would not be.' },
         { id: 'rod', conf: 'estimated', text: 'Connecting rod 138.98 mm centre to centre.', why: 'Honda does not publish it. This is the length of replacement rods sold for the K20A2; it leaves a 30.02 mm piston compression height under the 212 mm deck, a plausible number but not a published one.' },
+        { id: 'livery', conf: 'estimated', text: "Red cam cover with white HONDA and i-VTEC lettering.", why: "Drawn from memory of product photos. None of the opened sources describes the finish or the lettering; only type and colour are used." },
         { id: 'valvetrain', conf: 'estimated', text: 'Valve timing (exhaust opens 140 and closes 370 degrees after firing TDC; intake opens 350 and closes 560) and a 10 mm lift.', why: 'Honda publishes neither for the base cam, and i-VTEC changes them with revs. These are textbook values so the cams and valves move in the right order.' },
       ],
     },
@@ -72,6 +77,6 @@
         { id: 'firing', label: 'Firing order', metric: 'firing', formula: 'one power stroke every 180 degrees of crank', publish: { text: '1-3-4-2', claim: 'firing' } },
       ] },
     },
-    director: { zoom: 1.2, modeDur: 6.2, tourDur: 3.0, tour: ['block', 'crank', 'rod1', 'piston1', 'cam-in', 'v-in-1a', 'head', 'flywheel'] },
+    director: { hold: 4, zoom: 1.2, modeDur: 6.2, tourDur: 3.0, tour: ['block', 'crank', 'rod1', 'piston1', 'cam-in', 'v-in-1a', 'head', 'flywheel'] },
   };
 })();

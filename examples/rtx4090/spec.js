@@ -3,6 +3,8 @@
  * performance numbers are, and they come out of each other: TFLOPS = cores x 2 x clock, bandwidth = bus x data rate / 8, fillrate = units x clock.
  * The gate evaluates each of them from the variables on the card and compares the result with the published figure; every variable carries its claim,
  * so an estimated assumption (the memory chips) is drawn in a different colour from a published one.
+ * The livery (graphite shroud, chrome ring, white lettering with a green line) is drawn from memory of product photos: none of the opened sources
+ * describes it, so it is ESTIMATED and says so. Only type and colour are used, no logo files.
  * Run "node scripts/check-spec.mjs examples/rtx4090/spec.js".
  *
  * Frame: the card lies on the xy plane (x = length 304 mm, y = width 137 mm), z is its thickness; `orient` stands it up for the camera.
@@ -10,22 +12,41 @@
 (function () {
   const parts = [], X0 = -22;       // x of the GPU die: the board is shifted towards the bracket end
   const info = (title, lines, conf) => ({ title, lines, conf });
+  const WHITE = '#f4f5f7', GREEN = '#76b900';
+  const GFX = (x, y, rot) => ({ face: '+z', at: [x, y, 1.55], w: 80, h: 22, px: 12, rot: rot || 0, glow: '#ffffff', glowK: 0.9, items: [
+    { t: 'text', s: 'GEFORCE', x: 0, y: 5.2, size: 7.2, weight: 800, spacing: 1.6, color: WHITE }, { t: 'text', s: 'RTX', x: 0, y: -3.6, size: 11, weight: 800, spacing: 3, color: WHITE }, { t: 'rect', x: 0, y: -10.2, w: 62, h: 0.9, color: GREEN }] });
   parts.push(
-    { id: 'backplate', cutaway: 0.97, name: 'Backplate', kind: 'plate', p: { w: 268, h: 112, r: 6, t: 2.5 }, mat: 'aluminum-dark', at: [-8, 0, -3.2], explode: [0, 0, -34], conf: 'estimated', why: 'The size of the backplate is not published.', info: info('Backplate', ['Closes the back of the board', 'Size is estimated'], ['estimated', 'estimated']) },
-    { id: 'pcb', name: 'Circuit board', kind: 'plate', p: { w: 250, h: 105, r: 5, t: 1.6 }, mat: 'pcb', at: [-12, 0, 0], explode: [0, 0, 0], conf: 'estimated', why: 'Nobody publishes the board outline.', info: info('Circuit board', ['Carries the GPU, the memory and the power stages', 'Outline is estimated'], ['estimated', 'estimated']) },
-    { id: 'die', name: 'AD102 GPU die', kind: 'plate', p: { w: 24.67, h: 24.67, r: 0.4, t: 1.1 }, mat: 'silicon', at: [X0, 0, 1.4], explode: [0, 0, 18], conf: 'estimated', claims: ['die'], why: 'The area is published; the aspect ratio is not, so it is drawn square.',
+    { id: 'backplate', name: 'Backplate', kind: 'plate', p: { w: 268, h: 112, r: 6, t: 2.5 }, mat: 'graphite', at: [-8, 0, -3.2], explode: [0, 0, -34], cutaway: 0.97, conf: 'estimated', claims: ['livery'], why: 'The size of the backplate is not published.',
+      decals: [{ face: '-z', at: [10, 0, -1.28], w: 90, h: 30, px: 12, rot: 90, items: [{ t: 'text', s: 'GEFORCE RTX', x: 0, y: 5, size: 8, weight: 800, spacing: 2, color: WHITE }, { t: 'text', s: '4090', x: 0, y: -5.5, size: 11, weight: 700, spacing: 4, color: '#aab0ba' }, { t: 'rect', x: 0, y: -11.8, w: 40, h: 0.9, color: GREEN }] }],
+      info: info('Backplate', ['Closes the back of the board', 'Size and lettering are estimated'], ['estimated', 'estimated']) },
+    { id: 'bracket', name: 'I/O bracket', kind: 'plate', p: { w: 40, h: 112, r: 1.5, t: 1.6, holes: [[0, -34, 4.5], [0, -14, 4.5], [0, 6, 4.5], [0, 26, 4.5]] }, mat: 'chrome', rot: [0, 90, 0], at: [-152.8, 0, 14], explode: [-30, 0, 0], conf: 'estimated', why: 'The bracket and its openings are not drawn in the sources.', tour: false, info: info('I/O bracket', ['Holds the card in the case', 'Shape is estimated'], ['estimated']) },
+    { id: 'pcb', name: 'Circuit board', kind: 'plate', p: { w: 250, h: 105, r: 5, t: 1.6 }, mat: 'pcb-black', at: [-12, 0, 0], explode: [0, 0, 0], conf: 'estimated', why: 'Nobody publishes the board outline.', info: info('Circuit board', ['Carries the GPU, the memory and the power stages', 'Outline is estimated'], ['estimated', 'estimated']) },
+    { id: 'package', name: 'GPU package', kind: 'plate', p: { w: 50, h: 44, r: 1.2, t: 1.0 }, mat: 'pcb', at: [X0, 0, 1.1], explode: [0, 0, 9], conf: 'estimated', why: 'The package size is not published.', tour: false, info: info('GPU package', ['The substrate the die is bonded to', 'Size is estimated'], ['estimated']) },
+    { id: 'die', name: 'AD102 GPU die', kind: 'plate', p: { w: 24.67, h: 24.67, r: 0.4, t: 1.1 }, mat: 'silicon', at: [X0, 0, 2.0], explode: [0, 0, 18], conf: 'estimated', claims: ['die'], why: 'The area is published; the aspect ratio is not, so it is drawn square.',
       info: info('AD102 GPU die', ['608.5 mm2 and 76.3 billion transistors', '16,384 CUDA cores in 128 SMs', 'Drawn square: only the area is published'], ['spec', 'spec', 'estimated']) },
     { id: 'fingers', name: 'PCIe connector', kind: 'plate', p: { w: 89, h: 8, r: 0.5, t: 1.2 }, mat: 'gold', at: [-62, -56, 0], explode: [0, 0, 6], conf: 'estimated', why: 'Position along the board edge is estimated.', tour: false, info: info('PCIe x16 connector', ['Gold fingers on the board edge', 'Position is estimated'], ['estimated']) },
-    { id: 'power', name: '16-pin power connector', kind: 'block', p: { w: 24, d: 9, h: 8, r: 1 }, mat: 'black', at: [96, 56, 4.5], explode: [0, 0, 26], conf: 'estimated', claims: ['tgp'], why: 'Position and size are estimated.', info: info('Power connector', ['450 W total graphics power', 'Size and position are estimated'], ['spec', 'estimated']) },
-    { id: 'base', cutaway: 0.97, name: 'Vapor chamber', kind: 'plate', p: { w: 130, h: 108, r: 4, t: 4 }, mat: 'copper', at: [X0, 0, 4.6], explode: [0, 0, 34], conf: 'estimated', why: 'The cooler is not drawn anywhere in the sources.', info: info('Vapor chamber', ['Sits on the die and the memory', 'Size is estimated'], ['estimated', 'estimated']) },
-    { id: 'fins', cutaway: 0.97, name: 'Fin stack', kind: 'fins', p: { w: 214, d: 118, h: 26, n: 46, t: 0.6 }, mat: 'aluminum', at: [14, 0, 19.6], explode: [0, 0, 56], conf: 'estimated', why: 'The fin count and size are not published.', info: info('Fin stack', ['Air goes through it, front to back', 'Count and size are estimated'], ['estimated', 'estimated']) },
-    { id: 'shroud', cutaway: 0.97, name: 'Shroud', kind: 'plate', p: { w: 304, h: 137, r: 8, t: 3, holes: [[-62, 0, 52]] }, mat: 'oxide', at: [0, 0, 34.1], explode: [0, 0, 82], conf: 'derived', claims: ['dims'], info: info('Shroud', ['304 mm long, 137 mm wide', '3 slots thick: 61 mm with both fans', 'The opening for the front fan is estimated'], ['spec', 'spec', 'estimated']) },
-    { id: 'fanA', cutaway: 0.97, name: 'Fan, front', kind: 'fan', p: { r: 52, hub: 17, blades: 9, t: 6 }, mat: 'black', at: [-62, 0, 41], explode: [0, 0, 106], spin: 9, conf: 'estimated', why: 'The fan size and blade count are not published.', info: info('Front fan', ['Axial, pulls air through the fin stack', 'Size and blade count are estimated'], ['estimated', 'estimated']) },
-    { id: 'fanB', cutaway: 0.97, name: 'Fan, rear', kind: 'fan', p: { r: 52, hub: 17, blades: 9, t: 6 }, mat: 'black', at: [96, 0, -10], explode: [0, 0, -56], spin: -9, conf: 'estimated', why: 'Same as the front fan.', info: info('Rear fan', ['Flow-through design: the second fan is on the other side of the card', 'Estimated'], ['estimated', 'estimated']) },
+    { id: 'power', name: '16-pin power connector', kind: 'block', p: { w: 24, d: 9, h: 8, r: 1 }, mat: 'black', at: [96, 56, 4.5], explode: [0, 0, 26], conf: 'estimated', claims: ['tgp'], why: 'Position and size are estimated.',
+      decals: [{ face: '+z', at: [0, 0, 4.05], w: 22, h: 7, px: 20, items: [{ t: 'text', s: '12VHPWR', x: 0, y: 0, size: 3, weight: 700, spacing: 0.5, color: '#9aa0aa' }] }], info: info('Power connector', ['450 W total graphics power', 'Size and position are estimated'], ['spec', 'estimated']) },
+    { id: 'base', name: 'Vapor chamber', kind: 'plate', p: { w: 130, h: 108, r: 4, t: 4 }, mat: 'copper', at: [X0, 0, 4.6], explode: [0, 0, 34], cutaway: 0.97, conf: 'estimated', why: 'The cooler is not drawn anywhere in the sources.', info: info('Vapor chamber', ['Sits on the die and the memory', 'Size is estimated'], ['estimated', 'estimated']) },
+    { id: 'fins', name: 'Fin stack', kind: 'fins', p: { w: 214, d: 118, h: 26, n: 46, t: 0.6 }, mat: 'aluminum', at: [14, 0, 19.6], explode: [0, 0, 56], cutaway: 0.97, conf: 'estimated', why: 'The fin count and size are not published.', info: info('Fin stack', ['Air goes through it, front to back', 'Count and size are estimated'], ['estimated', 'estimated']) },
+    { id: 'shroud', name: 'Shroud', kind: 'plate', p: { w: 304, h: 137, r: 8, t: 3, holes: [[-62, 0, 52]] }, mat: 'graphite', at: [0, 0, 34.1], explode: [0, 0, 82], cutaway: 0.97, conf: 'derived', claims: ['dims', 'livery'],
+      decals: [GFX(92, 46, 0)], info: info('Shroud', ['304 mm long, 137 mm wide', '3 slots thick: 61 mm with both fans', 'The opening, the finish and the lettering are estimated'], ['spec', 'spec', 'estimated']) },
+    { id: 'ring', name: 'Fan ring', kind: 'tube', p: { ro: 56, ri: 52.5, len: 3.6 }, mat: 'chrome', at: [-62, 0, 35.8], explode: [0, 0, 94], cutaway: 0.97, conf: 'estimated', claims: ['livery'], tour: false, info: info('Fan ring', ['A polished ring around the fan opening', 'Estimated'], ['estimated']) },
+    { id: 'fanA', name: 'Fan, front', kind: 'fan', p: { r: 52, hub: 20, blades: 11, t: 6, sweep: 44 }, mat: 'graphite', at: [-62, 0, 41], explode: [0, 0, 106], spin: 9, cutaway: 0.97, conf: 'estimated', why: 'The fan size and blade count are not published.',
+      decals: [{ face: '+z', at: [0, 0, 5.5], w: 30, h: 30, px: 16, items: [{ t: 'circle', x: 0, y: 0, r: 13.5, color: '#14151a' }, { t: 'circle', x: 0, y: 0, r: 13.5, stroke: GREEN, lw: 0.8 }, { t: 'text', s: 'RTX', x: 0, y: 0, size: 7, weight: 800, spacing: 1, color: WHITE }] }],
+      info: info('Front fan', ['Axial, pulls air through the fin stack', 'Size and blade count are estimated'], ['estimated', 'estimated']) },
+    { id: 'fanB', name: 'Fan, rear', kind: 'fan', p: { r: 52, hub: 20, blades: 11, t: 6, sweep: 44 }, mat: 'graphite', at: [96, 0, -10], explode: [0, 0, -56], spin: -9, cutaway: 0.97, conf: 'estimated', why: 'Same as the front fan.', info: info('Rear fan', ['Flow-through design: the second fan is on the other side of the card', 'Estimated'], ['estimated', 'estimated']) },
   );
+  // five heat pipes from the vapor chamber into the fins
+  [-32, -16, 0, 16, 32].forEach((y, i) => parts.push({ id: 'pipe' + (i + 1), name: 'Heat pipe ' + (i + 1), kind: 'shaft', p: { r: 3.4, len: 186 }, mat: 'copper', rot: [0, 90, 0], at: [28, y, 9.6], explode: [0, 0, 44], cutaway: 0.97, conf: 'estimated', why: 'Number and routing of heat pipes are not published.', tour: false, info: info('Heat pipe', ['Carries heat from the vapor chamber into the fins', 'Count and routing are estimated'], ['estimated', 'estimated']) }));
+  // power stages, chokes and capacitors on the right of the board
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 6; c++) parts.push({ id: 'ps' + (r * 6 + c + 1), name: 'Power stage', kind: 'block', p: { w: 6, d: 6, h: 1.4, r: 0.4 }, mat: 'black', at: [40 + r * 11, -33 + c * 13, 1.2], explode: [0, 0, 10], conf: 'estimated', why: 'The power delivery of the board is not published.', tour: false, info: info('Power stage', ['Turns the 12 V input into the GPU voltage', 'Number and position are estimated'], ['estimated', 'estimated']) });
+  for (let c = 0; c < 6; c++) parts.push({ id: 'choke' + (c + 1), name: 'Inductor', kind: 'block', p: { w: 9, d: 9, h: 6, r: 1 }, mat: 'steel', at: [95, -33 + c * 13, 3.6], explode: [0, 0, 18], conf: 'estimated', why: 'The power delivery of the board is not published.', tour: false, info: info('Inductor', ['Smooths the current to the GPU', 'Number and position are estimated'], ['estimated', 'estimated']) });
+  for (let c = 0; c < 6; c++) parts.push({ id: 'cap' + (c + 1), name: 'Capacitor', kind: 'shaft', p: { r: 4, len: 9 }, mat: 'oxide', at: [-100, -30 + c * 12, 5], explode: [0, 0, 14], conf: 'estimated', why: 'Position is estimated.', tour: false, info: info('Capacitor', ['Position is estimated'], ['estimated']) });
   // twelve memory packages around the die: 3 above, 3 below, 3 on each side
   const memAt = [[-24, 32], [0, 32], [24, 32], [-24, -32], [0, -32], [24, -32], [-34, -20], [-34, 0], [-34, 20], [34, -20], [34, 0], [34, 20]];
   memAt.forEach(([dx, dy], i) => parts.push({ id: 'mem' + (i + 1), name: 'GDDR6X package ' + (i + 1), kind: 'block', p: { w: 14, d: 12, h: 1.1, r: 0.6 }, mat: 'black', at: [X0 + dx, dy, 1.2], explode: [0, 0, 12], conf: 'estimated', claims: ['chips'], tour: i === 0,
+    decals: [{ face: '+z', at: [0, 0, 0.57], w: 12, h: 5, px: 22, items: [{ t: 'text', s: 'GDDR6X', x: 0, y: 0, size: 2.4, weight: 700, spacing: 0.3, color: '#7d8490' }] }],
     info: info('GDDR6X package', ['12 packages: a 384-bit bus in 32-bit pieces', '2 GB each, 24 GB in all', 'Package size and position are estimated'], ['derived', 'derived', 'estimated']) }));
 
   window.SPEC = {
@@ -49,6 +70,7 @@
         { id: 'dims', conf: 'spec', text: 'Founders Edition: 304 mm long, 137 mm wide, 3 slots (61 mm).', src: ['nvidia'] },
         { id: 'chips', conf: 'derived', text: 'Twelve GDDR6X packages, 2 GB each.', src: ['nvidia'], cross: '24 GB published = 12 x 2 GB, and 384 bits = 12 x 32 bits: both published totals give the same count.' },
         { id: 'chipsize', conf: 'estimated', text: 'Each GDDR6X package has a 32-bit interface and holds 2 GB (16 Gb).', why: 'The memory maker\'s datasheet was not opened; these are the usual figures for GDDR6X.' },
+        { id: 'livery', conf: 'estimated', text: 'Graphite shroud with a chrome fan ring, white GEFORCE RTX lettering over a green line, and the same on the backplate.', why: 'Drawn from memory of product photos. None of the opened sources describes the finish or the lettering, and only type and colour are used.' },
       ],
     },
     parts,
@@ -61,15 +83,15 @@
         transistors: { v: 76.3, label: 'transistors', unit: 'billion', claim: 'die' }, die: { v: 608.5, label: 'die', unit: 'mm2', claim: 'die' },
       } },
       drive: { modes: [
-        { id: 'fp32', label: 'FP32 at boost', expr: 'cores * 2 * boost / 1000', unit: 'TFLOPS', formula: 'cores x 2 FLOPs per clock x boost clock', publish: { value: 82.58, tol: 0.01, claim: 'fp32' }, show: ['die'] },
-        { id: 'fp32b', label: 'FP32 at base', expr: 'cores * 2 * base / 1000', unit: 'TFLOPS', formula: 'cores x 2 FLOPs per clock x base clock', publish: { value: 73.07, tol: 0.01, claim: 'fp32' }, show: ['die'] },
-        { id: 'tex', label: 'Texture fillrate', expr: 'tmus * boost', unit: 'Gtex/s', digits: 1, formula: 'texture units x boost clock', publish: { value: 1290, tol: 1, claim: 'fill' }, show: ['die'] },
-        { id: 'pix', label: 'Pixel fillrate', expr: 'rops * boost', unit: 'Gpix/s', digits: 1, formula: 'ROPs x boost clock', publish: { value: 443.5, tol: 0.1, claim: 'fill' }, show: ['die'] },
-        { id: 'bw', label: 'Memory bandwidth', expr: 'bus * rate / 8', unit: 'GB/s', digits: 0, formula: 'bus width x data rate / 8 bits per byte', publish: { value: 1008, tol: 0.5, claim: 'bw' }, show: memAt.map((_, i) => 'mem' + (i + 1)) },
-        { id: 'cap', label: 'Memory capacity', expr: 'bus / bits_per_chip * gb_per_chip', unit: 'GB', digits: 0, formula: 'bus / 32 bits per package x 2 GB per package', publish: { value: 24, tol: 0.01, claim: 'mem' }, show: memAt.map((_, i) => 'mem' + (i + 1)) },
-        { id: 'dens', label: 'Transistor density', expr: 'transistors * 1000 / die', unit: 'M per mm2', digits: 1, formula: '76.3 billion / 608.5 mm2', show: ['die'] },
+        { id: 'fp32', label: 'FP32 at boost', expr: 'cores * 2 * boost / 1000', unit: 'TFLOPS', formula: 'cores x 2 FLOPs per clock x boost clock', publish: { value: 82.58, tol: 0.01, claim: 'fp32' }, show: ['die'], dim: 0.7 },
+        { id: 'fp32b', label: 'FP32 at base', expr: 'cores * 2 * base / 1000', unit: 'TFLOPS', formula: 'cores x 2 FLOPs per clock x base clock', publish: { value: 73.07, tol: 0.01, claim: 'fp32' }, show: ['die'], dim: 0.7 },
+        { id: 'tex', label: 'Texture fillrate', expr: 'tmus * boost', unit: 'Gtex/s', digits: 1, formula: 'texture units x boost clock', publish: { value: 1290, tol: 1, claim: 'fill' }, show: ['die'], dim: 0.7 },
+        { id: 'pix', label: 'Pixel fillrate', expr: 'rops * boost', unit: 'Gpix/s', digits: 1, formula: 'ROPs x boost clock', publish: { value: 443.5, tol: 0.1, claim: 'fill' }, show: ['die'], dim: 0.7 },
+        { id: 'bw', label: 'Memory bandwidth', expr: 'bus * rate / 8', unit: 'GB/s', digits: 0, formula: 'bus width x data rate / 8 bits per byte', publish: { value: 1008, tol: 0.5, claim: 'bw' }, show: memAt.map((_, i) => 'mem' + (i + 1)), dim: 0.7 },
+        { id: 'cap', label: 'Memory capacity', expr: 'bus / bits_per_chip * gb_per_chip', unit: 'GB', digits: 0, formula: 'bus / 32 bits per package x 2 GB per package', publish: { value: 24, tol: 0.01, claim: 'mem' }, show: memAt.map((_, i) => 'mem' + (i + 1)), dim: 0.7 },
+        { id: 'dens', label: 'Transistor density', expr: 'transistors * 1000 / die', unit: 'M per mm2', digits: 1, formula: '76.3 billion / 608.5 mm2', show: ['die'], dim: 0.7 },
       ] },
     },
-    director: { zoom: 1.5, tour: ['die', 'mem1', 'base', 'fins', 'fanA', 'shroud'] },
+    director: { hold: 4.5, zoom: 1.5, tour: ['die', 'mem1', 'base', 'fins', 'fanA', 'shroud'] },
   };
 })();

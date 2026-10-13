@@ -19,6 +19,7 @@ window.SPEC = (() => {
         { id: 'travel', conf: 'spec', text: 'Total travel 4 mm, pre-travel 2 mm, linear characteristic, no click.', src: ['cherry-ds'] },
         { id: 'forces', conf: 'spec', text: 'Initial force 30 cN, actuation force 45 cN, final force 100 cN.', src: ['cherry-ds'] },
         { id: 'size', conf: 'spec', text: 'Width 15.63 mm, depth 15.63 mm, total height 18.5 mm; red plunger, transparent cover.', src: ['cherry-ds'] },
+        { id: 'livery', conf: 'estimated', text: "The top of the housing carries the CHERRY wordmark.", why: "Drawn from memory of the product. The datasheet and the other opened sources do not describe the print; only type is used." },
         { id: 'cutout', conf: 'spec', text: 'Plate cutout 14.0 mm square (tolerance 0.05 mm); key pitch 19.05 mm.', src: ['deskthority'] },
         { id: 'materials', conf: 'spec', text: 'Stem in POM, spring in stainless steel, gold crosspoint contact, precision plastic upper housing.', src: ['cherry-web', 'kbd-news'] },
         { id: 'linear', conf: 'derived', text: 'F = 30 + 7.5 x gives 45 cN at 2 mm (matches) and 60 cN at 4 mm (the datasheet says 100 cN).', src: ['cherry-ds'], cross: 'Slope 7.5 cN/mm from the first two published points; the third point misses by 40 cN, so the three numbers cannot come from one linear spring.' },
@@ -34,7 +35,7 @@ window.SPEC = (() => {
       { id: 'spring', name: 'Return spring', kind: 'spring', p: { r: 3.5, wire: 0.45, turns: 9, len: 9.5 }, mat: 'steel', at: [0, 0, 9.25], explode: [0, 0, 8], slide: { k: -0.5 }, compress: { free: 9.5 }, conf: 'spec', claims: ['materials', 'internal'], info: { title: 'Return spring', lines: ['stainless steel (published)', 'diameter and turns: estimates'], conf: ['spec', 'estimated'] } },
       { id: 'stemBody', name: 'Stem body', kind: 'block', p: { w: 4.4, d: 4.4, h: 5.5, r: 0.5 }, mat: 'pom-red', at: [0, 0, 11.75], explode: [0, 0, 18], slide: { k: -1 }, conf: 'spec', claims: ['size', 'materials'], tour: false },
       { id: 'stemCap', name: 'Stem cross', kind: 'cross', p: { arm: 4.0, thick: 1.35, len: 4.0 }, mat: 'pom-red', at: [0, 0, 16.5], explode: [0, 0, 28], slide: { k: -1 }, conf: 'spec', claims: ['size', 'materials'], info: { title: 'Red stem (POM)', lines: ['slides 4 mm; the top is at 18.5 mm', 'cross arms 4.0 x 1.35: estimate'], conf: ['spec', 'estimated'] } },
-      { id: 'top', name: 'Top housing', kind: 'box', p: { w: 14.0, d: 14.0, h: 5.4, wall: 0.9, r: 0.7 }, mat: 'glass', at: [0, 0, 11.7], explode: [0, 0, 40], conf: 'spec', claims: ['cutout', 'materials'], info: { title: 'Top housing', lines: ['14.0 mm: the plate cutout', 'transparent cover (RGB)'], conf: ['spec'] } },
+      { id: 'top', name: 'Top housing', kind: 'box', p: { w: 14.0, d: 14.0, h: 5.4, wall: 0.9, r: 0.7 }, mat: 'glass', at: [0, 0, 11.7], explode: [0, 0, 40], conf: 'spec', claims: ['cutout', 'materials', 'livery'], decals: [{ face: '+z', at: [0, -5.1, 2.72], w: 12, h: 3, px: 40, items: [{ t: 'text', s: 'CHERRY', x: 0, y: 0, size: 1.9, weight: 800, spacing: 0.4, color: '#17181b' }] }], info: { title: 'Top housing', lines: ['14.0 mm: the plate cutout', 'transparent cover (RGB)'], conf: ['spec'] } },
     ],
     mechanism: {
       press: {
@@ -49,6 +50,6 @@ window.SPEC = (() => {
         ],
       },
     },
-    director: { modeDur: 3.2, tourDur: 3.2 },
+    director: { hold: 2.5, modeDur: 3.2, tourDur: 3.2 },
   };
 })();

@@ -15,7 +15,8 @@
     const name = ['y', 'z', 'x'].map((ax) => { const v = { x, y, z }[ax]; return v ? FACE[ax][v > 0 ? 0 : 1] : ''; }).join(''), n = [x, y, z].filter((v) => v).length;
     const stickers = {}; [['x', x], ['y', y], ['z', z]].forEach(([ax, v]) => { if (v) stickers[(v > 0 ? '+' : '-') + ax] = COLOR[(v > 0 ? '+' : '-') + ax]; });
     const kind = ['', 'center', 'edge', 'corner'][n], k = n === 1 ? 24 : 15;
-    parts.push({ id: name, name: kind[0].toUpperCase() + kind.slice(1) + ' ' + name, kind: 'cubie', p: { s: PITCH, stickers }, at: [x * PITCH, y * PITCH, z * PITCH], explode: [x * k, y * k, z * k], cubie: [x, y, z], conf: 'derived', claims: ['cubie', 'pieces26'], tour: n === 3 && name === 'UFR' || n === 2 && name === 'UF' || n === 1 && name === 'U',
+    const decals = name === 'U' ? [{ face: '+y', at: [0, PITCH / 2 + 0.5, 0], w: 14, h: 6, px: 30, items: [{ t: 'text', s: "Rubik's", x: 0, y: 0, size: 4.8, weight: 900, spacing: 0.1, color: '#0b0c0e', font: 'serif' }] }] : undefined;
+    parts.push({ id: name, decals, name: kind[0].toUpperCase() + kind.slice(1) + ' ' + name, kind: 'cubie', p: { s: PITCH, stickers }, at: [x * PITCH, y * PITCH, z * PITCH], explode: [x * k, y * k, z * k], cubie: [x, y, z], conf: 'derived', claims: ['cubie', 'pieces26'], tour: n === 3 && name === 'UFR' || n === 2 && name === 'UF' || n === 1 && name === 'U',
       info: { title: kind[0].toUpperCase() + kind.slice(1) + ' ' + name, lines: [n === 3 ? '8 corners: three stickers, can twist in place' : n === 2 ? '12 edges: two stickers, can flip in place' : '6 centres: one sticker, never leave their place', 'Each is an 18.67 mm cube (a third of 56 mm)', 'Sticker colours follow the usual scheme: not in the sources'], conf: ['spec', 'derived', 'estimated'] } });
   }
 
@@ -35,6 +36,7 @@
         { id: 'alg1260', conf: 'derived', text: "R U2 D' B D' brings the cube back after exactly 1,260 repeats.", src: ['wiki-rubik'], cross: 'Computed by the model in kit/cube.js by repeating the sequence until the cube is solved; it equals the published maximum period, 1,260.' },
         { id: 'superflip', conf: 'spec', text: 'The superflip (every edge flipped, everything else in place) is reached from solved in 20 moves in the half-turn metric by U R2 F B R B2 R U2 L B2 R U\' D\' R2 F R\' L B2 U2 F2.', src: ['wiki-superflip'] },
         { id: 'notation', conf: 'spec', text: 'Notation: F B U D L R name the faces; a prime is an anticlockwise turn; a 2 is a half turn.', src: ['wiki-rubik'] },
+        { id: 'livery', conf: 'estimated', text: "The centre of the white face carries the Rubik's wordmark.", why: "Drawn from memory of the product. None of the opened sources describes the print; only type is used." },
         { id: 'scheme', conf: 'estimated', text: 'Sticker colours: white up, yellow down, green front, blue back, red right, orange left.', why: 'The usual scheme; none of the sources states it.' },
       ],
     },
@@ -48,6 +50,6 @@
         { id: 'positions', label: 'Positions', metric: 'positions', formula: '8! x 3^7 x 12! / 2 x 2^11', publish: { text: '43,252,003,274,489,856,000', claim: 'positions' } },
       ] },
     },
-    director: { zoom: 0.92, tour: ['UFR', 'UF', 'U'] },
+    director: { hold: 2.5, zoom: 0.92, tour: ['UFR', 'UF', 'U'] },
   };
 })();

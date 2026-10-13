@@ -93,15 +93,37 @@
       const c = frame[CIDX[d.cubie.join()]], h = d.cubie, R = c.R; p.group.position.x += (c.pos[0] - h[0]) * CPITCH; p.group.position.y += (c.pos[1] - h[1]) * CPITCH; p.group.position.z += (c.pos[2] - h[2]) * CPITCH;
       cubeM.set(R[0], R[1], R[2], 0, R[3], R[4], R[5], 0, R[6], R[7], R[8], 0, 0, 0, 0, 1); cubeQ.setFromRotationMatrix(cubeM); p.group.quaternion.premultiply(cubeQ);
     }
+    // Marca: letras, filetes y formas impresas sobre una cara de la pieza. decal = { face: '+z' | '-z' | '+x' | '-x' | '+y' | '-y', at: [x, y, z] locales, w, h (mm),
+    //   rot (grados sobre la normal), px (pixeles por mm), glow (color emisivo), items: [{ t: 'text' | 'rect' | 'circle' | 'line', ... en mm, y hacia arriba }] }.
+    // Solo tipografia y color de marca: nada de logos copiados; lo que el objeto lleva impreso se declara como cualquier otro dato (y si no esta en la fuente, ESTIMATED).
+    const DFACE = { '+z': [0, 0, 0], '-z': [0, Math.PI, 0], '+x': [0, Math.PI / 2, 0], '-x': [0, -Math.PI / 2, 0], '+y': [-Math.PI / 2, 0, 0], '-y': [Math.PI / 2, 0, 0] };
+    const FONTS = { sans: MX.SANS, serif: MX.SERIF, mono: MX.MONO };
+    function makeDecal(dc) {
+      const PX = dc.px || 14, tex = G.canvasTex(Math.max(8, Math.round(dc.w * PX)), Math.max(8, Math.round(dc.h * PX)), (c, cw, ch) => {
+        c.translate(cw / 2, ch / 2); c.scale(PX, PX); c.textBaseline = 'middle'; c.lineJoin = 'round';
+        (dc.items || []).forEach((it) => {
+          c.save(); c.globalAlpha = it.a == null ? 1 : it.a;
+          if (it.t === 'text') { c.font = (it.weight || 700) + ' ' + it.size + 'px ' + (FONTS[it.font] || it.font || MX.SANS); c.fillStyle = it.color || '#fff'; c.textAlign = it.align || 'center'; if ('letterSpacing' in c) c.letterSpacing = (it.spacing || 0) + 'px'; if (it.skew) c.transform(1, 0, -it.skew, 1, 0, 0); c.fillText(it.s, it.x || 0, -(it.y || 0)); }
+          else if (it.t === 'rect') { const x = (it.x || 0) - it.w / 2, y = -(it.y || 0) - it.h / 2, r = it.r || 0; c.beginPath(); if (c.roundRect) c.roundRect(x, y, it.w, it.h, r); else c.rect(x, y, it.w, it.h); if (it.color) { c.fillStyle = it.color; c.fill(); } if (it.stroke) { c.strokeStyle = it.stroke; c.lineWidth = it.lw || 0.2; c.stroke(); } }
+          else if (it.t === 'circle') { c.beginPath(); c.arc(it.x || 0, -(it.y || 0), it.r, 0, TAU); if (it.color) { c.fillStyle = it.color; c.fill(); } if (it.stroke) { c.strokeStyle = it.stroke; c.lineWidth = it.lw || 0.2; c.stroke(); } }
+          else if (it.t === 'line') { c.beginPath(); c.moveTo(it.x1, -it.y1); c.lineTo(it.x2, -it.y2); c.strokeStyle = it.color || '#fff'; c.lineWidth = it.lw || 0.3; c.lineCap = 'round'; c.stroke(); }
+          c.restore();
+        });
+      }), mat = G.flatMat(tex), grpD = new TH.Group(), m = new TH.Mesh(new TH.PlaneGeometry(dc.w, dc.h), mat);
+      if (dc.glow) { mat.emissive = new TH.Color(dc.glow); mat.emissiveMap = tex; mat.emissiveIntensity = dc.glowK || 1.4; }
+      m.rotation.z = (dc.rot || 0) * Math.PI / 180; m.renderOrder = 2; grpD.add(m); const f = DFACE[dc.face || '+z']; grpD.rotation.set(f[0], f[1], f[2]); grpD.position.set(dc.at[0], dc.at[1], dc.at[2]); return grpD;
+    }
     const root = new TH.Group(); if (ORI) root.rotation.set(ORI[0] * Math.PI / 180, ORI[1] * Math.PI / 180, ORI[2] * Math.PI / 180); st.scene.add(root);          // up: 'z' -> el eje z del spec queda vertical
     spec.parts.forEach((d, i) => {
       const grp = P[d.kind](Object.assign({}, d.p, { mat: d.mat }, roleCfg(d.role), camCfg(d))), base = v3(S.startPos(d)); grp.userData.spec = d;
       grp.traverse((m) => { if (m.isMesh || m.isLine) m.material = Array.isArray(m.material) ? m.material.map((q) => q.clone()) : m.material.clone(); });      // material propio por pieza: la atenuacion de una no puede tocar a las demas
+      (d.decals || []).forEach((dc) => grp.add(makeDecal(dc)));
       const part = F.add({ id: d.id, group: grp, base, explode: v3(d.explode || [0, 0, 0]), from: new TH.Vector3(0, 0, 90), conf: d.conf, est: d.conf === 'estimated' && d.kind !== 'pin', info: d.info || autoInfo(d, grp.userData), spec: d, body: d.body || null });
       part.arc = new TH.Vector3(0, 14, 0); part.spin = new TH.Vector3(0, 0, (MX.hash(i, 7) - 0.5) * 3.2); part.name = d.name || d.id;
       const phi = d.body && byBodyPhi[d.body] != null && S.teethOf(d) ? byBodyPhi[d.body] : 0;
       part.pose = (s, p) => {
         const m = s.mech, pr = m && m.press ? m.press : 0;
+        if (d.rot) { p.group.rotation.x += d.rot[0] * RAD; p.group.rotation.y += d.rot[1] * RAD; p.group.rotation.z += d.rot[2] * RAD; }
         if (d.spin) p.group.rotation.z += d.spin * (s.t == null ? performance.now() / 1000 : Math.max(0, s.t));
         if (d.engine && m && m.eng) { engPose(d, p, m.eng); return; }
         if (d.cubie && m && m.cube) { cubePose(d, p, m.cube); return; }
@@ -132,7 +154,7 @@
     /* ---------------------------------------------------------- plan del video */
     const order = parts.slice().sort((a, b) => (a.spec.late ? 1 : 0) - (b.spec.late ? 1 : 0) || a.base.z - b.base.z || parts.indexOf(a) - parts.indexOf(b)), N = order.length, step = Math.min(0.3, 6.2 / N), arrive = {};
     order.forEach((p, i) => { arrive[p.id] = 0.9 + i * step; });
-    const ASM_END = 0.9 + (N - 1) * step + 1.1, MD = dir.modeDur || 4.6, TD = dir.tourDur || 3.3, tM0 = ASM_END + 0.3, KD = dir.keyDur || 1.35, runs = an.enigmaRuns || [];
+    const ASM_END = 0.9 + (N - 1) * step + 1.1, MD = dir.modeDur || 4.6, TD = dir.tourDur || 3.3, HOLD = dir.hold || 0, tM0 = ASM_END + 0.3 + HOLD, KD = dir.keyDur || 1.35, runs = an.enigmaRuns || [];
     const MQ = (CUBE && M.cube.quarter) || 0.34, MH = (CUBE && M.cube.half) || 0.5, MG = 0.05, cubeDur = (r) => r.moves.reduce((s2, mv) => s2 + (mv.q === 2 ? MH : MQ) + MG, 0);
     const mD = modes.map((m, k) => (CUBE ? Math.max(4.5, 1.0 + cubeDur(an.cubeRuns[k]) + 1.5) : ENIG ? 1.1 + (runs[k] ? runs[k].events.length : 1) * KD + 0.6 : MD)), mS = []; { let acc = tM0; mD.forEach((d) => { mS.push(acc); acc += d; }); }
     // cubo: la lista de giros con su tiempo, y el estado entero del cubo antes de cada uno
@@ -181,6 +203,7 @@
 
     // camara por claves
     const keys = [[0, Object.assign({}, VW.iso, { zoom: VW.iso.zoom * 0.5, yaw: -62, pitch: 30 })], [ASM_END, VW.iso, [0.3, 0, 0.2, 1]]];
+    if (HOLD) keys.push([ASM_END + HOLD * 0.5, Object.assign({}, VW.iso, { yaw: VW.iso.yaw + 22, pitch: VW.iso.pitch + 4, zoom: VW.iso.zoom * 1.06 })], [ASM_END + HOLD, Object.assign({}, VW.iso, { yaw: VW.iso.yaw - 6, pitch: VW.iso.pitch + 8 })]);      // toma de presentacion: el objeto entero, con su marca, antes de abrirlo
     const cyc = [VW.front, VW.iso, VW.side, VW.three];
     modes.forEach((m, k) => { const t = mS[k]; keys.push([t + 0.5, Object.assign({}, k % 2 ? cyc[k % 4] : cyc[(k + 1) % 4]), [0.45, 0, 0.2, 1]]); keys.push([t + mD[k] - 0.2, Object.assign({}, cyc[(k + 2) % 4], { yaw: cyc[(k + 2) % 4].yaw + 8 })]); });
     keys.push([tE0 + ED, VW.expl, [0.4, 0, 0.15, 1]]);

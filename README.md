@@ -145,6 +145,10 @@ A part, with the evidence it stands on:
 
 The director builds the film by itself: staggered assembly, a cutaway while the mechanism runs, one mode at a time with its published number, the exploded view, a tour with a callout per part, re-assembly, and an evidence table with the sources.
 
+### Brand identity
+
+An object has to look like itself. The maker's wordmark, colours and finish are drawn with `decals` (type, rules and shapes on any face, with optional glow), never with logo files, and they are declared like any other number: a livery that no opened source shows is an `ESTIMATED` claim and says so. `director.hold` gives the finished, lettered object a beauty shot before the cutaway starts.
+
 ### Sound
 
 Real recordings, not synthesis: keys, metal, glass, plastic and rubber impacts (CC0, see [THIRD_PARTY.md](THIRD_PARTY.md)), mapped per material and size. Tooth ticks are the real tooth passes of the running gears, and the engine fires in its real order.
