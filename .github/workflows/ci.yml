@@ -15,6 +15,7 @@ jobs:
       - name: Regression tests for the evidence gate
         run: node --test tests/gate.test.mjs
       - name: Every shipped example passes its own gate
+        shell: bash      # pipefail: a failing gate must not be hidden by tail
         run: |
           for e in hub switch enigma k20a rubik rtx4090 mos6502 rar5 winrar; do
             echo "== $e"
