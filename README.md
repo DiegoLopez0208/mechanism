@@ -28,7 +28,7 @@ refuses to render when the numbers do not add up, and outputs a film, an interac
 
 ## What it does
 
-Ask your agent for an exploded view of something real. It does not draw what it can look up wrong:
+Ask your agent for an exploded view of something real: a machine, a chip, or **software** (a file format, a protocol, an algorithm's output). It does not draw what it can look up wrong:
 
 1. **Researches.** Searches, opens datasheets and teardowns, downloads the pictures and looks at them, measures them.
 2. **Writes a spec.** Parts with real dimensions, how they move, and the evidence behind every number.
@@ -79,6 +79,7 @@ Every example is a film, a live viewer (`examples/<name>/index.html?explore`, ad
 | [`enigma`](examples/enigma) | The Enigma I rotor stack. Wiring, notches and stepping are simulated and must match the published tests: `AAAAA` becomes `BDZGO`, with rings BBB `EWTYX`, and the middle rotor double-steps `ADU > ADV > AEW > BFX`. In the viewer you type on your keyboard. |
 | [`rubik`](examples/rubik) | 26 cubies that really turn. The 20-move superflip flips all 12 edges, the longest period is 1,260 and the positions count 43,252,003,274,489,856,000. |
 | [`k20a`](examples/k20a) | Honda K20A, inline four with 16 valves. A crank-slider with exact kinematics: displacement computed from bore and stroke (1,998 cc published) and the published firing order 1-3-4-2 must be possible with the crank. The connecting rod and valve timing are not published and are drawn dashed. |
+| [`winrar`](examples/winrar) | **Software**, taken apart: the 87 bytes WinRAR 7.23 writes for a one-file archive, every one explained. A model written from the published RAR5 format must reproduce them byte for byte (the four CRC-32 values included), and the real `UnRAR.exe` must accept and extract the archive the model built. Change one byte and the gate fails. |
 | [`mos6502`](examples/mos6502) | The 6502 in its 40-pin DIP. The gate counts the address and data pins on the pinout and compares them with the published 16-bit and 8-bit buses, computes the 64 KB address space and the 105 undefined opcodes, and measures the drawn leads against the DIP standard (2.54 mm pitch, 15.24 mm rows). Two sources have to agree; the body is estimated. |
 | [`rtx4090`](examples/rtx4090) | GeForce RTX 4090 Founders Edition. TFLOPS (82.58 at boost, 73.07 at base), fillrates, the 1,008 GB/s of bandwidth and the 24 GB are each computed from the published cores, clocks, bus and data rate and must match. Every variable carries its claim; the memory packages are an estimated assumption and are drawn as one. The inside of the card is not published and is dashed. |
 | [`hub`](examples/hub) | Three-speed planetary hub (Sturmey-Archer AW type). The running model gives 0.75, 1.00 and 1.333 against the published 75, 100 and 133 %. |
@@ -155,6 +156,14 @@ Every film is drawn as a **dossier**: a blue engineering drawing with a grid and
 | `paper` | Light paper, serif titles, corner-marked card. |
 | `night` | The paper card in the dark. |
 | `studio` | Black product-film set with a glow and rim light in the maker's colour (`brand: { accent }` in the spec). |
+
+### Software
+
+Software is verified the same way, against the real program: pick what it writes (a file format, a message, a result), make the real tool produce a sample, write a pure model from the published description, and let the gate demand that the model rebuilds the sample byte for byte and that the real tool accepts what the model built. `examples/winrar` does it for RAR5: `scripts/make-winrar-sample.mjs` runs `Rar.exe` and `UnRAR.exe`, the model is `kit/rar5.js`, and the evidence travels with the spec in `data.js`.
+
+### Films open with a verdict
+
+A film can open with the question and the published answers being checked one by one (`director.cold`), shows each part's sources as it is inspected, and closes with a receipt (VERIFIED or DOES NOT PASS) listing every figure compared.
 
 ### Brand identity
 

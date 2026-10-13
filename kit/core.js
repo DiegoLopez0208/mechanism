@@ -59,6 +59,7 @@
   MX.setStyle = (name, accent) => {
     const t = THEMES[name] || THEMES.paper; Object.keys(MX.THEME).forEach((k) => { delete MX.THEME[k]; }); Object.assign(MX.THEME, t); MX.THEME.name = THEMES[name] ? name : 'paper';
     if (accent && t.accent) MX.THEME.teal = accent;
+    MX.INK = MX.THEME.ink;      // el color de texto por defecto sigue al estilo (antes quedaba oscuro sobre fondos oscuros)
     MX.SERIF = t.titleFont === 'mono' ? REALMONO : t.titleFont === 'sans' ? MONO0 : SERIF0; if (t.mono) { MX.MONO = REALMONO; } else { MX.MONO = MONO0; }
   };
   MX.setStyle(g.MX_THEME || MX.DEFAULT_STYLE);

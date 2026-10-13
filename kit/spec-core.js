@@ -108,10 +108,10 @@
     out.calc = { vars: V };
     ((M.drive && M.drive.modes) || []).forEach((m) => {
       let val = null; try { val = new Function(...names, 'return (' + m.expr + ');')(...vals); } catch (e) { out.problems.push('phase ' + m.label + ': cannot evaluate ' + m.expr + ' (' + e.message + ')'); }
-      const d = m.digits == null ? 2 : m.digits, pub = m.publish, text = val == null ? '' : val.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
-      const ok = !pub || val == null ? null : Math.abs(val - pub.value) <= (pub.tol == null ? Math.abs(pub.value) * 0.005 : pub.tol);
+      const d = m.digits == null ? 2 : m.digits, pub = m.publish, isS = typeof val === 'string', text = val == null ? '' : isS ? val : val.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+      const ok = !pub || val == null ? null : isS ? val === pub.text : Math.abs(val - pub.value) <= (pub.tol == null ? Math.abs(pub.value) * 0.005 : pub.tol);
       out.modes.push({ id: m.id, label: m.label, ratio: val, text, publish: pub || null, ok, used: (m.expr.match(/[A-Za-z_][A-Za-z0-9_]*/g) || []).filter((k, i, a) => k in V && a.indexOf(k) === i) });
-      if (ok === false) out.problems.push('phase ' + m.label + ': the model gives ' + text + ' and the published one is ' + pub.value);
+      if (ok === false) out.problems.push('phase ' + m.label + ': the model gives ' + text + ' and the published one is ' + (pub.text != null ? pub.text : pub.value));
     });
   }
 
@@ -180,7 +180,7 @@
     if (an.enigmaTests) { lines.push('enigma: published tests'); an.enigmaTests.forEach((t) => lines.push('  ' + t.id + ': ' + t.got + (t.expect ? ' (published ' + t.expect + ')' : '') + (t.win ? ' windows ' + t.win : '') + (t.ok ? '  ok' : '  MISMATCH'))); an.modes.forEach((m) => lines.push('  phase ' + m.label + ': ' + m.text + (m.publish ? '  published ' + m.publish.text + (m.ok ? '  ok' : '  MISMATCH') : ''))); }
     if (an.engine) { const e = an.engine; lines.push('engine: ' + e.n + ' cylinders, displacement ' + e.displacement.toFixed(1) + ' cc, relacion biela/radio ' + e.rodRatio.toFixed(2) + (e.ch != null ? ', implied compression height ' + e.ch.toFixed(2) + ' mm' : '') + ', order ' + e.firing); an.modes.forEach((m) => lines.push('  phase ' + m.label + ': ' + m.text + (m.publish ? '  published ' + (m.publish.text || m.publish.value) + (m.ok ? '  ok' : '  MISMATCH') : ''))); }
     if (an.cube) { lines.push('cube: ' + an.cube.pieces + ' cubies'); an.modes.forEach((m, i) => lines.push('  phase ' + m.label + ': ' + m.text + ' (' + an.cubeRuns[i].moves.length + ' turns)' + (m.publish ? '  published ' + (m.publish.text || m.publish.value || m.publish.length + ' moves') + (m.ok ? '  ok' : '  MISMATCH') : ''))); }
-    if (an.calc) { lines.push('calc: ' + Object.keys(an.calc.vars).length + ' variables'); an.modes.forEach((m) => lines.push('  phase ' + m.label + ': ' + m.text + (m.publish ? '  published ' + m.publish.value + (m.ok ? '  ok' : '  MISMATCH') : ''))); }
+    if (an.calc) { lines.push('calc: ' + Object.keys(an.calc.vars).length + ' variables'); an.modes.forEach((m) => lines.push('  phase ' + m.label + ': ' + m.text + (m.publish ? '  published ' + (m.publish.text != null ? m.publish.text : m.publish.value) + (m.ok ? '  ok' : '  MISMATCH') : ''))); }
     if (an.press) { lines.push('press: travel ' + an.press.travel + ' mm, actuation ' + an.press.actuation + ' mm' + (an.press.predictedFinal ? '; a linear spring would give ' + an.press.predictedFinal.toFixed(1) + ' at the end, published ' + an.press.publishedFinal + (an.press.consistent ? '  ok' : '  DOES NOT ADD UP (explained)') : '')); an.modes.forEach((m) => lines.push('  phase ' + m.label + ': ' + m.ratio + (m.publish ? '  published ' + m.publish.value + (m.ok ? '  ok' : '  MISMATCH') : ''))); }
     if (an.K) { lines.push('mechanism: residual ' + an.K.residual.toExponential(1)); an.centers.forEach((c) => lines.push('  centres ' + c.a + '-' + c.b + ': ' + c.dist.toFixed(3) + ' mm (required ' + c.need.toFixed(3) + ')  ' + (c.ok ? 'ok' : 'MISMATCH'))); an.modes.forEach((m) => lines.push('  mode ' + m.label + ': ' + m.ratio.toFixed(4) + (m.publish ? '  published ' + m.publish.value + (m.ok ? '  ok' : '  MISMATCH') : ''))); }
     return { errors, warnings, lines, analysis: an };

@@ -120,7 +120,8 @@
       const grp = P[d.kind](Object.assign({}, d.p, { mat: d.mat }, roleCfg(d.role), camCfg(d))), base = v3(S.startPos(d)); grp.userData.spec = d;
       grp.traverse((m) => { if (m.isMesh || m.isLine) m.material = Array.isArray(m.material) ? m.material.map((q) => q.clone()) : m.material.clone(); });      // material propio por pieza: la atenuacion de una no puede tocar a las demas
       (d.decals || []).forEach((dc) => grp.add(makeDecal(dc)));
-      const part = F.add({ id: d.id, group: grp, base, explode: v3(d.explode || [0, 0, 0]), from: new TH.Vector3(0, 0, 90), conf: d.conf, est: d.conf === 'estimated' && d.kind !== 'pin', info: d.info || autoInfo(d, grp.userData), spec: d, body: d.body || null });
+      const srcLine = () => { const ids = []; (d.claims || []).forEach((cid) => ((claimBy[cid] || {}).src || []).forEach((sid) => { if (!ids.includes(sid)) ids.push(sid); })); const hosts = ids.slice(0, 2).map((sid) => { const sr = sources.find((q) => q.id === sid); if (!sr) return sid; let h = sr.url; try { h = new URL(sr.url).hostname; } catch (e) { /* url rara */ } return h.replace('www.', '') + ' ' + (sr.fetched || ''); }); return hosts.length ? 'SOURCE  ' + hosts.join('  +  ') : (d.conf === 'estimated' ? 'NO SOURCE: ESTIMATED' : ''); };
+      const part = F.add({ id: d.id, group: grp, base, explode: v3(d.explode || [0, 0, 0]), from: new TH.Vector3(0, 0, 90), conf: d.conf, est: d.conf === 'estimated' && d.kind !== 'pin', info: Object.assign({}, d.info || autoInfo(d, grp.userData), { src: srcLine() }), spec: d, body: d.body || null });
       part.arc = new TH.Vector3(0, 14, 0); part.spin = new TH.Vector3(0, 0, (MX.hash(i, 7) - 0.5) * 3.2); part.name = d.name || d.id;
       const phi = d.body && byBodyPhi[d.body] != null && S.teethOf(d) ? byBodyPhi[d.body] : 0;
       part.pose = (s, p) => {
@@ -155,8 +156,16 @@
 
     /* ---------------------------------------------------------- plan del video */
     const order = parts.slice().sort((a, b) => (a.spec.late ? 1 : 0) - (b.spec.late ? 1 : 0) || a.base.z - b.base.z || parts.indexOf(a) - parts.indexOf(b)), N = order.length, step = Math.min(0.3, 6.2 / N), arrive = {};
-    order.forEach((p, i) => { arrive[p.id] = 0.9 + i * step; });
-    const ASM_END = 0.9 + (N - 1) * step + 1.1, MD = dir.modeDur || 4.6, TD = dir.tourDur || 3.3, HOLD = dir.hold || 0, tM0 = ASM_END + 0.3 + HOLD, KD = dir.keyDur || 1.35, runs = an.enigmaRuns || [];
+    const COLD = dir.cold ? (dir.cold.dur || 8) : 0;      // apertura: la pregunta y las respuestas publicadas, antes de armar nada
+    order.forEach((p, i) => { arrive[p.id] = 0.9 + COLD + i * step; });
+    const ASM_END = 0.9 + COLD + (N - 1) * step + 1.1, MD = dir.modeDur || 4.6, TD = dir.tourDur || 3.3, HOLD = dir.hold || 0, tM0 = ASM_END + 0.3 + HOLD, KD = dir.keyDur || 1.35, runs = an.enigmaRuns || [];
+    // lo que el gate comparo: valor publicado y valor del modelo, una fila por comprobacion (sirve a la apertura y al recibo)
+    const VROWS = (() => {
+      const r = [];
+      (an.enigmaTests || []).forEach((t, i) => { const T0 = (M && M.enigma && M.enigma.tests[i]) || {}; r.push({ label: t.id, pub: t.expect || (T0.windows || []).join(' '), got: t.expect ? t.got : (T0.windows || []).join(' '), ok: t.ok }); });
+      if (!r.length) an.modes.forEach((m) => { if (m.publish) r.push({ label: m.label, pub: String(m.publish.text != null ? m.publish.text : m.publish.value != null ? m.publish.value : m.publish.length + ' moves'), got: m.text != null && m.text !== '' ? String(m.text) : m.ratio != null ? String(Math.round(m.ratio * 10000) / 10000) : '', ok: m.ok }); });
+      return r;
+    })(), VOK = VROWS.every((r) => r.ok !== false);
     const MQ = (CUBE && M.cube.quarter) || 0.34, MH = (CUBE && M.cube.half) || 0.5, MG = 0.05, cubeDur = (r) => r.moves.reduce((s2, mv) => s2 + (mv.q === 2 ? MH : MQ) + MG, 0);
     const mD = modes.map((m, k) => (CUBE ? Math.max(4.5, 1.0 + cubeDur(an.cubeRuns[k]) + 1.5) : ENIG ? 1.1 + (runs[k] ? runs[k].events.length : 1) * KD + 0.6 : MD)), mS = []; { let acc = tM0; mD.forEach((d) => { mS.push(acc); acc += d; }); }
     // cubo: la lista de giros con su tiempo, y el estado entero del cubo antes de cada uno
@@ -184,6 +193,7 @@
     if (PRESS && M.press.force) { panels.push({ kind: 'curve', t0: tp, t1: tp + PD + 1.6 }); tp += PD + 1.6; }
     pages.forEach((pg, i) => { panels.push({ kind: 'claims', page: i, rows: pg, t0: tp, t1: tp + PD + 0.6 }); tp += PD + 0.6; });
     panels.push({ kind: 'sources', t0: tp, t1: tp + 5 }); tp += 5;
+    if (VROWS.length) { panels.push({ kind: 'verdict', t0: tp, t1: tp + 6.5 }); tp += 6.5; }
     const DUR = Math.ceil(tp * 2) / 2;
 
     // velocidad del conductor: parado mientras se arma, vivo en los modos (con un bache en cada cambio), lento en el recorrido
@@ -223,7 +233,7 @@
       const s = { t, e: eg, explodeK: (id) => { const dl = stag[id] * 0.35, a = E.sm(ramp(ex, dl, dl + 0.65)), b = E.sm(ramp(re, (1 - stag[id]) * 0.35, (1 - stag[id]) * 0.35 + 0.65)); return a * (1 - b); },
         assemble: (id) => { const k = E.outBack(ramp(t, arrive[id], arrive[id] + 0.95), 1.1); return { k: Math.min(1.04, k) > 1 ? 1 : k, alpha: ramp(t, arrive[id], arrive[id] + 0.3) * (cutSet[id] ? 1 - cutSet[id] * cut : 1) }; },
         focus: tr ? tr.id : null, focusA: tr ? tr.a : 0, dimTo: 0.012, light: { az: -38 + 26 * Math.sin(t * 0.23), el: 54 },
-        mech: mechAt(t), hint: t < ASM_END ? 'ASSEMBLY' : t < tE0 ? (PRESS ? 'KEY PRESS' : ENIG ? 'ENCIPHERING' : CALC ? 'THE NUMBERS' : CUBE ? 'FACE TURNS' : ENGN ? 'FOUR-STROKE CYCLE' : 'POWER PATH') : t < tT0 ? 'EXPLODED VIEW' : t < tR0 ? 'PART ' + ((tr ? tr.j : tourIds.length - 1) + 1) + ' OF ' + tourIds.length : t < tP0 ? 'RE-ASSEMBLY' : 'EVIDENCE',
+        mech: mechAt(t), hint: t < COLD ? 'THE QUESTION' : t < ASM_END ? 'ASSEMBLY' : t < tE0 ? (PRESS ? 'KEY PRESS' : ENIG ? 'ENCIPHERING' : CALC ? 'THE NUMBERS' : CUBE ? 'FACE TURNS' : ENGN ? 'FOUR-STROKE CYCLE' : 'POWER PATH') : t < tT0 ? 'EXPLODED VIEW' : t < tR0 ? 'PART ' + ((tr ? tr.j : tourIds.length - 1) + 1) + ' OF ' + tourIds.length : t < tP0 ? 'RE-ASSEMBLY' : 'EVIDENCE',
         readout: md && t >= tM0 && t < tR0 ? md.label + '  -  ' + (PRESS ? pressAt(t).toFixed(2) + ' mm' : ENIG ? ((mechAt(t).enigma || {}).window || '') : CALC ? an.modes[modeIdx(t)].text + (md.unit ? ' ' + md.unit : '') : CUBE ? cubeDone(t) + ' turns' : ENGN ? Math.round(crankDeg(mechAt(t).eng.theta)) + ' / 720 deg' : an.modes[modeIdx(t)].ratio.toFixed(3) + ' : 1') : parts.length + ' parts', infoAt: [64, H - 360] };
       s.modeA = md && t >= tM0 && t < tE0 ? Math.min(ramp(t, tM0, tM0 + 0.6), 1 - ramp(t, tE0 - 0.5, tE0 - 0.1)) : 0; s.mode = md; s.modeI = modeIdx(t); s.speed = speedAt(t);
       if (CALC && md && md.show && s.modeA > 0.01) { s.focusSet = md.show; s.focusA = s.modeA * 0.9; s.dimTo = md.dim == null ? 0.55 : md.dim; }
@@ -281,8 +291,9 @@
     const drawCalc = (c, s) => {
       const a = s.modeA; if (!(a > 0.01)) return; const mi = s.modeI, m = modes[mi], r = an.modes[mi], x = 78, y = H - 318, V = M.calc.vars, big = (r.text + (m.unit ? ' ' + m.unit : '')).length > 11;
       c.save(); c.globalAlpha = a; c.fillStyle = MX.rgba(T.paper, T.dark ? 0.86 : 0.9); c.fillRect(x - 24, y - 70, W - 2 * x + 48, 262); c.fillStyle = T.teal; c.fillRect(x - 24, y - 70, 4, 262);
-      MX.A = 1; MX.text(m.label, x, y, { size: 56, font: MX.SERIF, w: 500, color: T.ink }); MX.text(m.formula || '', x, y + 42, { size: 21, font: MX.SANS, color: T.mute });
-      MX.text(r.text + (m.unit ? ' ' + m.unit : ''), W - x, y - 2, { size: big ? 46 : 64, font: MX.SERIF, w: 500, color: T.ink, align: 'right' });
+      MX.A = 1; const fit = (str, size, wfont, maxW) => { c.save(); c.font = wfont + ' ' + size + 'px ' + MX.SERIF; const w0 = c.measureText(str).width; c.restore(); return w0 > maxW ? size * maxW / w0 : size; }, valTxt = r.text + (m.unit ? ' ' + m.unit : ''), vs = fit(valTxt, big ? 46 : 64, 500, (W - 2 * x) * 0.5), ls = fit(m.label, 56, 500, (W - 2 * x) - vs * 0.62 * valTxt.length - 40);
+      MX.text(m.label, x, y, { size: Math.max(26, ls), font: MX.SERIF, w: 500, color: T.ink }); MX.text(m.formula || '', x, y + 42, { size: 21, font: MX.SANS, color: T.mute });
+      MX.text(valTxt, W - x, y - 2, { size: vs, font: MX.SERIF, w: 500, color: T.ink, align: 'right' });
       if (m.publish) { const cl = claimBy[m.publish.claim], w = 190, pt = String(m.publish.text || m.publish.value); tagPill(c, W - x - w - 4, y + 44, cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + (pt.length > 14 ? '' : ' ' + pt)); MX.text(r.ok ? 'matches the model' : 'MISMATCH', W - x - w - 18, y + 44, { size: 19, font: MX.SANS, color: r.ok ? T.teal : T.ember, align: 'right', w: 500 }); }
       let cx = x, cy = y + 112; c.font = '600 17px ' + MX.SANS;
       r.used.forEach((k) => {
@@ -339,6 +350,21 @@
         MX.A = ak; MX.text('a linear spring would give ' + an.press.predictedFinal.toFixed(0) + ' ' + fu, X(last[0]) - 14, Y(py) + 66, { size: 20, font: MX.SANS, w: 600, color: T.ember, align: 'right' }); c.restore();
         const nl = wrap(pr.note || '', '400 21px ' + MX.SANS, W - 172); MX.A = ak; nl.forEach((ln, i) => MX.text(ln, 86, yb + 120 + i * 28, { size: 21, font: MX.SANS, color: T.ink })); H2.endPanel(); return;
       }
+      if (pn.kind === 'verdict') {
+        if (!H2.panel(a, spec.fig || 'Fig', 'Receipt', 'What was checked against what is published, and what was not.')) return;
+        const rows = VROWS.slice(0, 7), nSpec = claims.filter((cc) => cc.conf === 'spec').length, nEst = claims.filter((cc) => cc.conf === 'estimated').length;
+        rows.forEach((r, i) => {
+          const y = 520 + i * 70, ai = a * ramp(t, pn.t0 + 0.4 + i * 0.28, pn.t0 + 0.8 + i * 0.28), col = r.ok === false ? T.ember : T.teal;
+          c.save(); c.globalAlpha = ai; c.strokeStyle = T.line; c.beginPath(); c.moveTo(86, y - 44); c.lineTo(W - 86, y - 44); c.stroke(); c.restore();
+          MX.A = ai; MX.text(String(r.label).slice(0, 34), 86, y, { size: 22, font: MX.MONO, color: T.mute }); MX.text(r.pub, W - 380, y, { size: r.pub.length > 8 ? 22 : 28, font: MX.MONO, w: 600, color: T.ink, align: 'right' }); MX.text(r.got, W - 130, y, { size: r.got.length > 8 ? 22 : 28, font: MX.MONO, w: 600, color: col, align: 'right' }); MX.text(r.ok === false ? 'X' : 'OK', W - 86, y, { size: 22, font: MX.MONO, w: 700, color: col, align: 'right' }); MX.A = a;
+        });
+        MX.A = a * ramp(t, pn.t0 + 0.3, pn.t0 + 0.7); MX.text('PUBLISHED', W - 380, 470, { size: 13, font: MX.MONO, color: T.mute, align: 'right', spacing: 2.4 }); MX.text('MODEL', W - 130, 470, { size: 13, font: MX.MONO, color: T.mute, align: 'right', spacing: 2.4 }); MX.A = a;
+        const sy = 520 + rows.length * 70 + 60, as = a * ramp(t, pn.t0 + 0.8 + rows.length * 0.28, pn.t0 + 1.4 + rows.length * 0.28), sc = 1 + 0.35 * (1 - ramp(t, pn.t0 + 0.8 + rows.length * 0.28, pn.t0 + 1.3 + rows.length * 0.28)), stamp = VOK ? 'VERIFIED' : 'DOES NOT PASS', scol = VOK ? T.teal : T.ember;
+        c.save(); c.globalAlpha = as; c.translate(W / 2, sy + 30); c.rotate(-0.07); c.scale(sc, sc); c.strokeStyle = scol; c.lineWidth = 5; c.strokeRect(-250, -52, 500, 104); c.lineWidth = 1.5; c.strokeRect(-258, -60, 516, 120); c.restore();
+        MX.A = as; c.save(); c.translate(W / 2, sy + 30); c.rotate(-0.07); c.scale(sc, sc); MX.text(stamp, 0, 20, { size: 64, font: MX.MONO, w: 800, color: scol, align: 'center', spacing: 4 }); c.restore();
+        MX.A = a * ramp(t, pn.t0 + 2.4, pn.t0 + 3.2); MX.text(rows.filter((r) => r.ok !== false).length + ' of ' + rows.length + ' published figures reproduced   -   ' + nSpec + ' published claims', 86, sy + 140, { size: 18, font: MX.MONO, color: T.mute }); MX.text(nEst + ' estimated, drawn dashed   -   ' + sources.length + ' sources opened', 86, sy + 174, { size: 18, font: MX.MONO, color: T.mute }); MX.A = a;
+        H2.endPanel(); return;
+      }
       if (pn.kind === 'claims') {
         if (!H2.panel(a, spec.fig || 'Fig', 'What the numbers stand on', 'Page ' + (pn.page + 1) + ' of ' + pages.length + '. Every claim names its source, its cross-check or why it is a guess.')) return;
         let y = 500;
@@ -360,7 +386,24 @@
       });
       H2.endPanel();
     };
-    F.overlay((ctx, s) => { if (s.t == null) return; drawMode(ctx, s); panels.forEach((pn) => { if (s.t >= pn.t0 - 0.01 && s.t <= pn.t1 + 0.01) drawPanel(ctx, pn, s.t); }); });
+    // apertura: la pregunta, las respuestas publicadas y el modelo que las alcanza fila por fila
+    const drawCold = (c, s) => {
+      if (!COLD || s.t >= COLD + 0.5) return; const t = s.t, fade = 1 - ramp(t, COLD - 0.5, COLD + 0.4); if (fade < 0.01) return;
+      c.save(); c.globalAlpha = fade; c.fillStyle = T.paper; c.fillRect(34, 216, W - 68, H - 250); MX.A = fade;
+      const q = dir.cold.question || 'Does the model reproduce what is published?', rows = VROWS.slice(0, 5), lines = wrap(q, '500 50px ' + MX.SERIF, W - 172), qa = ramp(t, 0.7, 1.3);
+      MX.A = fade * ramp(t, 0.3, 0.7); MX.text('THE QUESTION', 86, 292, { size: 14, font: MX.MONO, color: T.teal, spacing: 3, w: 700 });
+      MX.A = fade * qa; lines.forEach((ln, i) => MX.text(ln, 86, 366 + i * 62, { size: 50, font: MX.SERIF, w: 500, color: T.ink }));
+      const y0 = 366 + lines.length * 62 + 60; MX.A = fade * ramp(t, 2.0, 2.5); MX.text('PUBLISHED', W - 360, y0, { size: 13, font: MX.MONO, color: T.mute, align: 'right', spacing: 2.4 }); MX.text('MODEL', W - 86, y0, { size: 13, font: MX.MONO, color: T.mute, align: 'right', spacing: 2.4 });
+      rows.forEach((r, i) => {
+        const y = y0 + 60 + i * 78, t1 = 2.3 + i * 0.4, t2 = COLD - 3.0 + i * 0.4, done = t >= t2, col = r.ok === false ? T.ember : T.teal;
+        c.save(); c.globalAlpha = fade * ramp(t, t1, t1 + 0.4); c.strokeStyle = T.line; c.beginPath(); c.moveTo(86, y - 46); c.lineTo(W - 86, y - 46); c.stroke(); c.restore();
+        MX.A = fade * ramp(t, t1, t1 + 0.4); MX.text(String(r.label).slice(0, 26), 86, y, { size: 21, font: MX.MONO, color: T.mute }); MX.text(r.pub, W - 360, y, { size: r.pub.length > 8 ? 22 : 32, font: MX.MONO, w: 700, color: T.ink, align: 'right' });
+        MX.A = fade * (done ? ramp(t, t2, t2 + 0.3) : 0.5 + 0.4 * Math.sin(t * 7 + i)); MX.text(done ? r.got + '  ' + (r.ok === false ? 'X' : 'OK') : 'checking...', W - 86, y, { size: done ? (r.got.length > 8 ? 22 : 32) : 20, font: MX.MONO, w: 700, color: done ? col : T.mute, align: 'right' });
+      });
+      MX.A = fade * ramp(t, COLD - 1.2, COLD - 0.6); MX.text(rows.filter((r) => r.ok !== false).length + ' of ' + rows.length + ' reproduced by a model built from the published numbers. Now, how it is built.', 86, y0 + 60 + rows.length * 78 + 24, { size: 19, font: MX.SANS, color: T.mute });
+      MX.A = 1; c.restore();
+    };
+    F.overlay((ctx, s) => { if (s.t == null) return; drawMode(ctx, s); drawCold(ctx, s); panels.forEach((pn) => { if (s.t >= pn.t0 - 0.01 && s.t <= pn.t1 + 0.01) drawPanel(ctx, pn, s.t); }); });
 
     /* ---------------------------------------------------------- sonido */
     function audio() {
@@ -403,6 +446,8 @@
         for (let i = 0; i < 8; i++) ev.push({ t: e.te + 0.15 + i * 0.07, v: 'tick', f: 1800 + i * 160, vel: 0.28, pan: -0.5 + i * 0.14, send: 0.2 });
         ev.push({ t: e.te + 0.64, v: 'tone', f: SND.note(57, 'major', (e.out.charCodeAt(0) - 65) % 14), timbre: 'bell', d: 0.9, gain: 0.22, pan: 0.15 }, { t: e.te + 0.64, v: 'tick', f: 3200, vel: 0.5, pan: 0.15 });
       }));
+      if (COLD) { VROWS.slice(0, 5).forEach((r, i) => { ev.push({ t: 2.3 + i * 0.4, v: 'tick', f: 1800 + i * 150, vel: 0.6, pan: -0.2 }, { t: COLD - 3.0 + i * 0.4, v: 'detent', f: 700 + i * 90, vel: 0.85, pan: 0.2, send: 0.2 }); }); ev.push({ t: COLD - 0.5, v: 'boom', gain: 0.5 }); }
+      panels.forEach((pn) => { if (pn.kind === 'verdict') ev.push({ t: pn.t0 + 0.9 + Math.min(7, VROWS.length) * 0.28, v: 'boom', gain: 0.8 }, { t: pn.t0 + 0.9 + Math.min(7, VROWS.length) * 0.28, v: 'impact', mat: 'steel', size: 60, vel: 0.9, hard: 0.9 }); });
       ev.push({ t: tE0 - 0.1, v: 'whoosh', d: 1.5, f0: 220, f1: 3400, gain: 0.8, skew: 0.8 }, { t: tE0 + ED - 0.5, v: 'boom', gain: 0.7 });
       tourIds.forEach((id, j) => { const p = parts.find((x) => x.id === id), ts = tT0 + j * TD; ev.push({ t: ts + 0.3, v: 'tone', f: note(0, j * 2), timbre: 'bell', d: 1.3, gain: 0.42, pan: pan(p) }, { t: ts + 0.32, v: 'impact', mat: P.soundMat(p.spec.mat), size: clamp(Math.max(p.size.x, p.size.y), 4, 80), vel: 0.32, pan: pan(p), ring: 0.6 }); });
       ev.push({ t: tR0 - 0.1, v: 'whoosh', d: 1.6, f0: 3400, f1: 240, gain: 0.8 }, { t: tR0 + RD - 0.3, v: 'boom', gain: 0.8 });

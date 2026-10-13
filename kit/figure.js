@@ -122,6 +122,7 @@
       const p = F.byId[s.focus]; if (!p || !p.info || (s.focusA || 0) < 0.02) return; const c = MX.ctx, i = p.info, at = s.infoAt || [64, H - 340], lines = [i.title].concat(i.lines || []);
       MX.callout(F.anchor(p.id), at, lines, { alpha: s.focusA, size: 26, color: T.ink });
       c.save(); c.globalAlpha = s.focusA; let x = at[0] + 10; const y = at[1] + lines.length * 30 + 14; [].concat(i.conf || []).forEach((k) => { x += H2.tag(c, x, y, k) + 8; }); c.restore();
+      if (i.src) MX.text(i.src, at[0] + 10, y + 46, { size: 14, font: MX.MONO, color: T.mute, alpha: s.focusA, spacing: 0.6 });      // de donde sale lo que dice la ficha
     };
 
     /* ---------------------------------------------------------- cuadro */
