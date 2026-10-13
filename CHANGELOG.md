@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0 - 2026-10-13
+
+- **Pin tumbler lock** (examples/lock): the Kwikset KW1 keying table cross-checked (pin + cut depth = .501 in for all six heights, within .003 in of the plug diameter), the right key aligns five splits on the shear line, a wrong key blocks the plug, MACS respected; blind test recognised by two judges.
+- Engine: `kind: profile` (a polygon extruded: key blades, cams), `motion(step, t, phase)` so a phase can show a different case, and a fix: a part hidden with scale 0 now comes back when its motion stops asking for a scale.
+- 29 tests, now including the lock.
+
 ## 0.4.0 - 2026-10-13
 
 - **Three lengths.** `--length short|normal|extended` (and `?length=`, `director.length`, `director.short`): the short cut is about 30 s (verdict panel only, two tour stops, three phases), the extended one adds longer phases and a longer tour. Short cuts of the nine checked objects are on the page (30 s / Full switch).

@@ -17,7 +17,7 @@
 (function (g) {
   'use strict';
   const MX = (g.MX = g.MX || {}), S = (MX.spec = MX.spec || {});
-  const KINDS = ['gear', 'ring', 'sprocket', 'shaft', 'pin', 'disc', 'flange', 'tube', 'plate', 'bearing', 'spring', 'nut', 'bolt', 'box', 'block', 'cross', 'rotor', 'crankshaft', 'conrod', 'piston', 'engblock', 'camshaft', 'valve', 'cubie', 'fan', 'fins'];
+  const KINDS = ['gear', 'ring', 'sprocket', 'shaft', 'pin', 'disc', 'flange', 'tube', 'plate', 'bearing', 'spring', 'nut', 'bolt', 'box', 'block', 'cross', 'rotor', 'crankshaft', 'conrod', 'piston', 'engblock', 'camshaft', 'valve', 'cubie', 'fan', 'fins', 'profile'];
   const CONFS = ['spec', 'measured', 'derived', 'estimated'];
   S.KINDS = KINDS; S.CONFS = CONFS;
   const teethOf = (d) => (d.kind === 'gear' || d.kind === 'ring' ? d.p.z : d.kind === 'sprocket' ? d.p.teeth : null);

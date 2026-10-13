@@ -135,7 +135,7 @@ test('recognize: a failed blind test is reported, not hidden', () => {
 });
 
 test('the shipped examples keep passing with an honest verdict', () => {
-  for (const name of ['hub', 'switch', 'enigma', 'k20a', 'rubik', 'rtx4090', 'mos6502', 'rar5', 'winrar']) {
+  for (const name of ['hub', 'switch', 'enigma', 'k20a', 'rubik', 'rtx4090', 'mos6502', 'rar5', 'winrar', 'lock']) {
     const r = validateExample(name);
     assert.equal(r.errors.length, 0, name + ': ' + r.errors.join('; '));
     assert.equal(r.verdict.state, 'VERIFIED', name);
@@ -153,5 +153,16 @@ test('RAR5: changing one byte of the sample makes the gate fail', () => {
     let failed = false;
     try { const ctx = load([tmp, path.join(dir, 'spec.js')]), r = ctx.MX.spec.validate(ctx.SPEC); failed = r.errors.length > 0 && r.verdict.state === 'DOES NOT PASS'; } catch (e) { failed = true; }      // a model that cannot even parse the altered file also refuses it
     assert.ok(failed, 'a changed byte must not pass');
+  } finally { fs.rmSync(tmp, { force: true }); }
+});
+
+test('lock: changing one published key pin height breaks the stack check', () => {
+  const dir = path.join(root, 'examples', 'lock'), src = fs.readFileSync(path.join(dir, 'spec.js'), 'utf8');
+  assert.ok(src.includes('0.241'), 'the key pin table is in the spec');
+  const tmp = path.join(root, 'tests', '.tampered-lock.js'); fs.writeFileSync(tmp, src.replace('0.241', '0.250'));
+  try {
+    const ctx = load([tmp]), r = ctx.MX.spec.validate(ctx.SPEC);
+    assert.ok(r.errors.length > 0, 'a pin 0.009 in off must not pass');
+    assert.ok(r.errors.some((e) => /Pin plus cut|The right key|Key pin step/.test(e)), r.errors.join('; '));
   } finally { fs.rmSync(tmp, { force: true }); }
 });

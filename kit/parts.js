@@ -150,6 +150,8 @@
   };
   P.block = (o) => grp(new TH.Mesh(extrude(rrect(o.w, o.d, o.r == null ? 0.4 : o.r), o.h, Math.min(0.1, o.h * 0.1)), P.mat(o.mat || 'plastic')), { kind: 'block', w: o.w, d: o.d, h: o.h });
   // cruz (+) extruida: brazos de largo "arm" y espesor "thick", altura len en z (la interfaz del vastago de un switch MX)
+  // profile: a closed polygon (o.pts, [x, y] in mm, origin where the part sits) extruded by o.len: a key blade with V cuts, a cam, a tooth profile
+  P.profile = (o) => { const s = new TH.Shape(); o.pts.forEach((q, i) => (i ? s.lineTo(q[0], q[1]) : s.moveTo(q[0], q[1]))); s.closePath(); return grp(new TH.Mesh(extrude(s, o.len, o.bevel == null ? 0.05 : o.bevel), P.mat(o.mat || 'brass')), { kind: 'profile', len: o.len }); };
   P.cross = (o) => { const a = o.arm / 2, t = o.thick / 2, s = new TH.Shape(); [[-a, -t], [-t, -t], [-t, -a], [t, -a], [t, -t], [a, -t], [a, t], [t, t], [t, a], [-t, a], [-t, t], [-a, t]].forEach((q, i) => (i ? s.lineTo(q[0], q[1]) : s.moveTo(q[0], q[1]))); s.closePath(); return grp(new TH.Mesh(extrude(s, o.len, 0.05), P.mat(o.mat || 'pom-red')), { kind: 'cross', arm: o.arm, thick: o.thick, len: o.len }); };
 
   /* ------------------------------------------------------------ rotores de cifrado (Enigma): rueda de entrada, rotor, reflector */

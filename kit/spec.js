@@ -129,7 +129,8 @@
         if (d.rot) { p.group.rotation.x += d.rot[0] * RAD; p.group.rotation.y += d.rot[1] * RAD; p.group.rotation.z += d.rot[2] * RAD; }
         if (d.spin) p.group.rotation.z += d.spin * (s.t == null ? performance.now() / 1000 : Math.max(0, s.t));
         if (d.motion && m) {      // movimiento declarado por la pieza como funcion del paso actual: { pos: [dx, dy, dz], scale: k | [kx, ky, kz], rot: [rx, ry, rz] }
-          const mo = d.motion(m.step || 0, s.t == null ? 0 : s.t);
+          const mo = d.motion(m.step || 0, s.t == null ? 0 : s.t, m.phase || 0);
+          p.group.scale.set(1, 1, 1);      // a part that was hidden (scale ~0) or pulsed must come back when its motion stops asking for a scale
           if (mo) { if (mo.pos) { p.group.position.x += mo.pos[0]; p.group.position.y += mo.pos[1]; p.group.position.z += mo.pos[2]; } if (mo.scale != null) { const sc = Array.isArray(mo.scale) ? mo.scale : [mo.scale, mo.scale, mo.scale]; p.group.scale.set(sc[0], sc[1], sc[2]); } if (mo.rot) { p.group.rotation.x += mo.rot[0]; p.group.rotation.y += mo.rot[1]; p.group.rotation.z += mo.rot[2]; } }
         }
         if (d.engine && m && m.eng) { engPose(d, p, m.eng); return; }
@@ -156,7 +157,7 @@
     const mk = (yaw, pitch, zoom, o) => Object.assign({ yaw, pitch, zoom, tx: ctr.x, ty: ctr.y, tz: ctr.z, cx: W / 2, cy, dof: 0 }, o || {});
     const VW = { front: mk(0, 0, zf * 0.92), iso: mk(-34, 22, zf * (ORI ? 0.85 : 0.7)), side: mk(-72, 14, zf * (ORI ? 0.95 : 0.6)), expl: mk(-50, 18, W * 0.8 / (ORI ? Math.max(D, zExt, yMax - yMin) * 1.2 : D * 0.62 + zExt * 0.8)), three: mk(-18, 40, zf * (ORI ? 0.85 : 0.72)) };
     Object.keys(dir.views || {}).forEach((k) => { VW[k] = Object.assign({}, VW[k] || VW.iso, dir.views[k]); });      // las vistas del spec se mezclan sobre las de fabrica
-    const shot = (id, o) => { const p = parts.find((x) => x.id === id), dim = Math.max(p.size.x, p.size.y, p.size.z * 0.6); return Object.assign(F.shot(id, { yaw: o.yaw, pitch: o.pitch, zoom: clamp(W * 0.46 / dim, 3.5, 140), e: 1, cy: cy - 40 }), { dof: o.dof == null ? 0.5 : o.dof }); };
+    const shot = (id, o) => { const p = parts.find((x) => x.id === id), dim = Math.max(p.size.x, p.size.y, p.size.z * 0.6) * (p.spec.tourDim || 1); /* part.tourDim widens the shot of a part whose motion carries it away from where the camera aims */ return Object.assign(F.shot(id, { yaw: o.yaw, pitch: o.pitch, zoom: clamp(W * 0.46 / dim, 3.5, 140), e: 1, cy: cy - 40 }), { dof: o.dof == null ? 0.5 : o.dof }); };
 
     /* ---------------------------------------------------------- plan del video */
     const order = parts.slice().sort((a, b) => (a.spec.late ? 1 : 0) - (b.spec.late ? 1 : 0) || a.base.z - b.base.z || parts.indexOf(a) - parts.indexOf(b)), N = order.length, step = Math.min(SHORT ? 0.12 : 0.3, (SHORT ? 2.4 : 6.2) / N), arrive = {};
@@ -224,7 +225,7 @@
     const thetaAt = (t) => { const x = clamp(t * 60, 0, EGT.length - 2), i = Math.floor(x); return lerp(EGT[i], EGT[i + 1], x - i); };
     const crankDeg = (th) => ((th / RAD) % 720 + 720) % 720;
     const enig = ENIG ? makeEnigma() : null;
-    const mechAt = (t) => (ENIG ? enig.mech(t) : CUBE ? { ang: () => 0, press: 0, cube: cubeFrame(t) } : ENGN ? { ang: () => 0, press: 0, eng: { theta: thetaAt(t) } } : TL ? Object.assign(TL.view(t), { press: pressAt(t) }) : { ang: () => 0, press: pressAt(t), step: stepIdx(t) });
+    const mechAt = (t) => (ENIG ? enig.mech(t) : CUBE ? { ang: () => 0, press: 0, cube: cubeFrame(t) } : ENGN ? { ang: () => 0, press: 0, eng: { theta: thetaAt(t) } } : TL ? Object.assign(TL.view(t), { press: pressAt(t) }) : { ang: () => 0, press: pressAt(t), step: stepIdx(t), phase: Math.max(0, modeIdx(t)) });
 
     // camara por claves
     const keys = [[0, Object.assign({}, VW.iso, { zoom: VW.iso.zoom * 0.5, yaw: -62, pitch: 30 })], [ASM_END, VW.iso, [0.3, 0, 0.2, 1]]];
@@ -232,7 +233,7 @@
     const cyc = [VW.front, VW.iso, VW.side, VW.three];
     modes.forEach((m, k) => { if (!mD[k]) return; const t = mS[k]; keys.push([t + 0.5, Object.assign({}, k % 2 ? cyc[k % 4] : cyc[(k + 1) % 4]), [0.45, 0, 0.2, 1]]); keys.push([t + mD[k] - 0.2, Object.assign({}, cyc[(k + 2) % 4], { yaw: cyc[(k + 2) % 4].yaw + 8 })]); });
     keys.push([tE0 + ED, VW.expl, [0.4, 0, 0.15, 1]]);
-    const YP = [[-38, 20], [-20, 12], [-58, 26], [-30, 8], [-48, 30]];
+    const YP = dir.tourAngles || [[-38, 20], [-20, 12], [-58, 26], [-30, 8], [-48, 30]];      // director.tourAngles: [[yaw, pitch], ...] for objects whose natural view is not the default one
     tourIds.forEach((id, j) => { const ts = tT0 + j * TD, [y, p] = YP[j % YP.length]; keys.push([ts + 0.3, shot(id, { yaw: y, pitch: p }), [0.5, 0, 0.15, 1]]); keys.push([ts + TD - 0.1, shot(id, { yaw: y + 9, pitch: p - 3, dof: 0.8 }), [0.2, 0, 0.8, 1]]); });
     keys.push([tR0 + RD, Object.assign({}, VW.iso, { zoom: VW.iso.zoom * 0.88 }), [0.4, 0, 0.2, 1]], [DUR, Object.assign({}, VW.iso, { zoom: VW.iso.zoom * 0.8, yaw: -26 })]);
     keys.sort((a, b) => a[0] - b[0]);
@@ -586,7 +587,7 @@
         extra: (Sx) => {
           const now = performance.now(), dt = Math.min(0.05, (now - live.last) / 1000); live.last = now; if (an.K) it.step(dt, live.mode, live.spin ? 1 : 0); if (live.spin) live.t = (live.t || 0) + dt; const r = live.mode ? an.modes[modes.indexOf(live.mode)].ratio : null, px = PRESS ? (1 - Math.cos((live.t || 0) * 2.2)) / 2 * M.press.travel : 0;
           const eth = ENGN ? (live.t || 0) * (drive.rpm || 40) * 6 * RAD : 0;
-          return { mech: { ang: (b) => (an.K ? it.ang(b) : 0), press: px, eng: ENGN ? { theta: eth } : undefined, cube: CUBE ? cubeFrame(tM0 + (live.t || 0) % (tMend - tM0)) : undefined, step: STEPS ? ((live.t || 0) * M.steps.rate) % (M.steps.count + 6) : undefined }, light: { az: -38, el: 54 }, dimTo: live.est ? 0.16 : 0.1, ...(live.est ? { focusSet: estIds, focusA: 0.9 } : {}), ...(live.on ? { ui: (c) => {
+          return { mech: { ang: (b) => (an.K ? it.ang(b) : 0), press: px, eng: ENGN ? { theta: eth } : undefined, cube: CUBE ? cubeFrame(tM0 + (live.t || 0) % (tMend - tM0)) : undefined, step: STEPS ? ((live.t || 0) * M.steps.rate) % (M.steps.count + 6) : undefined, phase: Math.max(0, modes.indexOf(live.mode)) }, light: { az: -38, el: 54 }, dimTo: live.est ? 0.16 : 0.1, ...(live.est ? { focusSet: estIds, focusA: 0.9 } : {}), ...(live.on ? { ui: (c) => {
             const b = breakIt(), x = 64, w = W - 128, ln = wrap(b.msg, '500 22px ' + MX.SANS, w - 48); c.save(); c.fillStyle = MX.rgba(T.paper, 0.92); c.fillRect(x - 14, 232, w + 28, 152 + ln.length * 30); c.strokeStyle = T.ember; c.lineWidth = 2; c.strokeRect(x - 14, 232, w + 28, 152 + ln.length * 30);
             MX.text('WHAT IF A PUBLISHED NUMBER WERE WRONG?', x, 262, { size: 14, font: MX.MONO, color: T.ember, spacing: 2.4, w: 700 }); MX.text('we changed "' + b.label + '" from ' + b.was + ' to ' + b.now, x, 300, { size: 24, font: MX.MONO, color: T.ink, w: 600 });
             ln.forEach((l, i) => MX.text(l, x, 336 + i * 30, { size: 22, font: MX.SANS, color: T.mute })); MX.text(b.state, x, 360 + ln.length * 30, { size: 30, font: MX.MONO, w: 800, color: T.ember, spacing: 3 }); c.restore(); } } : {}), readout: (CUBE ? 'FACE TURNS  -  ' : ENGN ? Math.round(crankDeg(eth)) + ' / 720 deg  -  ' : PRESS ? px.toFixed(2) + ' mm  ' + Math.round(forceAt(px)) + ' ' + (M.press.forceUnit || 'cN') + '  -  ' : live.mode && !ENGN && !CUBE && !CALC ? live.mode.label + '  ' + r.toFixed(3) + ' : 1  -  ' : '') + 'EXPLODE ' + Math.round(Sx.e * 100) + '%' };

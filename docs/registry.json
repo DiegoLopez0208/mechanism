@@ -69,6 +69,28 @@
       "specSha256": "7484361fe97035909f5a16c812959cde64496f05e848de612b73dd58bcf867e3"
     },
     {
+      "id": "lock",
+      "title": "Pin tumbler lock",
+      "kind": "REAL OBJECT",
+      "state": "VERIFIED",
+      "reproduced": 14,
+      "failed": 0,
+      "pending": 0,
+      "estimated": 1,
+      "dimensions": 5,
+      "mixed": 5,
+      "parts": 35,
+      "claims": 7,
+      "sources": 3,
+      "errors": 0,
+      "warnings": 5,
+      "recognition": {
+        "features": 3,
+        "blind": "recognised"
+      },
+      "specSha256": "edf3d70413c02f4e4a2d5db57edcb34d033721c91a4dec60bb89b90e90ebd95d"
+    },
+    {
       "id": "mos6502",
       "title": "MOS 6502",
       "kind": "REAL MICROPROCESSOR",
@@ -198,7 +220,7 @@
         "features": 3,
         "blind": "recognised"
       },
-      "specSha256": "247ae53082de3e2cdd0c4912e6c296e8280fdd433f69c88dbf9c60ef87b3def5"
+      "specSha256": "7ab8c2959fc5c2bdbf2f579891017ea8200df90946831c58963e5f4dac20e43b"
     }
   ]
 }
