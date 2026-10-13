@@ -4,7 +4,7 @@
 // pide el audio sintetizado y los une con ffmpeg normalizando el volumen.
 //
 //   node scripts/render.mjs examples/backpressure/index.html --duration 28 --fps 30 --out out/backpressure.mp4
-//   opciones: --aspect 4:5|9:16|1:1 (figuras de spec)  --from 12 --to 20 (clip)  --export stl|glb --e 1 (modelo 3D, con --out archivo)  --theme night|paper  --blur 4 (subframes por frame, 1 = sin blur)  --shutter 0.5 (fraccion del intervalo)  --crf 16  --still 12.5 (solo un PNG)
+//   opciones: --aspect 4:5|9:16|1:1 (figuras de spec)  --from 12 --to 20 (clip)  --export stl|glb --e 1 (modelo 3D, con --out archivo)  --length short|normal|extended  --theme night|paper  --blur 4 (subframes por frame, 1 = sin blur)  --shutter 0.5 (fraccion del intervalo)  --crf 16  --still 12.5 (solo un PNG)
 import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, writeFileSync, rmSync, existsSync, renameSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
@@ -41,7 +41,7 @@ const png = (d) => Buffer.from(d.split(',')[1], 'base64');
 
 try {
   await send('Page.enable');
-  await send('Page.navigate', { url: pathToFileURL(path.resolve(page)).href + '?render=1&t=0' + (opt('style', opt('theme', '')) ? '&theme=' + opt('style', opt('theme', '')) : '') + (opt('aspect', '') ? '&aspect=' + opt('aspect', '') : '') });
+  await send('Page.navigate', { url: pathToFileURL(path.resolve(page)).href + '?render=1&t=0' + (opt('style', opt('theme', '')) ? '&theme=' + opt('style', opt('theme', '')) : '') + (opt('length', '') ? '&length=' + opt('length', '') : '') + (opt('aspect', '') ? '&aspect=' + opt('aspect', '') : '') });
   for (let i = 0; i < 100; i++) { await sleep(150); if (await evalJs('typeof window.__frame === "function"')) break; if (i === 99) throw new Error('la pagina no expuso __frame (usa MX.run)'); }
   mkdirSync(path.dirname(OUT), { recursive: true });
   if (args.includes('--info')) { console.log(JSON.stringify(await evalJs('window.__specInfo ? window.__specInfo() : null'), null, 1)); cleanup(); process.exit(0); }

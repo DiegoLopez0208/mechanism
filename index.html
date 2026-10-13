@@ -171,6 +171,7 @@ footer a { border-bottom:1px solid var(--line); }
   <ul><li><a href="#gate">The gate</a></li><li><a href="#examples">Films</a></li><li><a href="#touch">Touch it</a></li><li><a href="#how">How it works</a></li><li><a href="#install">Install</a></li></ul>
   <a class="pill" href="https://github.com/DiegoLopez0208/mechanism" target="_blank" rel="noopener">GitHub</a>
   <div class="looks" id="looks" role="group" aria-label="Look"><button data-look="paper">Paper</button><button data-look="night">Night</button><button data-look="dossier">Dossier</button><button data-look="studio">Studio</button></div>
+  <div class="looks" id="lens" role="group" aria-label="Film length"><button data-len="short">30 s</button><button data-len="full">Full</button></div>
 </div></nav>
 
 <header class="hero" id="top"><div class="wrap hero-grid">
@@ -349,10 +350,15 @@ node scripts/render.mjs examples/my-object/index.html</div>
 <script>
 (function () {
   const root = document.documentElement, file = location.protocol === 'file:', LOOKS = ['paper', 'night', 'dossier', 'studio'];
-  const vurl = (p) => (file ? p : 'docs/media/video/' + p.split('/').pop());      // from disk: the full renders in out/; on the web: 720p copies
+  const SHORTS = ['winrar', 'hub', 'enigma', 'rar5', 'switch', 'k20a', 'rubik', 'rtx4090', 'mos6502'];      // objects with a 30 s cut (render.mjs --length short)
+  let LEN = 'short'; try { LEN = localStorage.getItem('mx-len') || 'short'; } catch (e) {}
+  const vurl = (p) => { const f = p.split('/').pop(), base = f.replace(/[.]mp4$/, ''), sh = LEN === 'short' && SHORTS.includes(base); return file ? (sh ? 'out/' + base + '-short.mp4' : p) : 'docs/media/video/' + (sh ? base + '-short.mp4' : f); };      // from disk: the full renders in out/; on the web: 720p copies
   const setVideo = (v) => { const src = vurl(v.dataset.paper), was = v.currentTime, playing = !v.paused; if (!v.src.endsWith(src)) { v.src = src; v.addEventListener('loadedmetadata', function f() { v.currentTime = was || 0; if (playing) v.play().catch(() => {}); v.removeEventListener('loadedmetadata', f); }); } };
   const apply = (t) => { if (!LOOKS.includes(t)) t = 'paper'; root.dataset.theme = t; document.querySelectorAll('#looks button').forEach((b) => b.classList.toggle('on', b.dataset.look === t)); try { localStorage.setItem('mx-theme', t); } catch (e) {} document.querySelectorAll('video[data-paper]').forEach(setVideo); if (window.heroTheme) window.heroTheme(t); loadViewer(false); };
   document.querySelectorAll('#looks button').forEach((b) => b.addEventListener('click', () => apply(b.dataset.look)));
+  const applyLen = (l) => { LEN = l === 'full' ? 'full' : 'short'; document.querySelectorAll('#lens button').forEach((b) => b.classList.toggle('on', b.dataset.len === LEN)); try { localStorage.setItem('mx-len', LEN); } catch (e) {} document.querySelectorAll('video[data-paper]').forEach(setVideo); };
+  document.querySelectorAll('#lens button').forEach((b) => b.addEventListener('click', () => applyLen(b.dataset.len)));
+  document.querySelectorAll('#lens button').forEach((b) => b.classList.toggle('on', b.dataset.len === LEN));
   document.querySelectorAll('.copy').forEach((b) => b.addEventListener('click', () => { navigator.clipboard.writeText(b.dataset.copy).then(() => { b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy'; }, 1400); }).catch(() => {}); }));
 
   // reveal on scroll

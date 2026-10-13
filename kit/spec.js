@@ -56,7 +56,7 @@
     { const want = q.get('style') || q.get('theme') || spec.style || MX.THEME.name; MX.setStyle(want, spec.brand && spec.brand.accent); }      // el estilo por URL manda; si no, el del spec; la marca da el acento de los estilos que lo usan
     V.errors.forEach((e) => console.error('SPEC: ' + e)); V.warnings.forEach((w) => console.warn('SPEC: ' + w));
     if (V.errors.length && !explore) { document.title = 'SPEC ERROR'; throw new Error('el spec no pasa la validacion:\n' + V.errors.join('\n')); }
-    const M = spec.mechanism || null, drive = (M && M.drive) || { modes: [], rpm: 30 }, modes = drive.modes || [], dir = spec.director || {}, PRESS = !!(M && M.press), ENIG = !!(M && M.enigma), ENGN = !!(M && M.engine), CUBE = !!(M && M.cube), CALC = !!(M && M.calc), STEPS = !!(M && M.steps), RAD = Math.PI / 180, UP = spec.up === 'z', ORI = spec.orient || (UP ? [-90, 0, 0] : null);
+    const M = spec.mechanism || null, drive = (M && M.drive) || { modes: [], rpm: 30 }, modes = drive.modes || [], dir = spec.director || {}, LEN = q.get('length') || dir.length || 'normal', SHORT = LEN === 'short', LONG = LEN === 'extended', PRESS = !!(M && M.press), ENIG = !!(M && M.enigma), ENGN = !!(M && M.engine), CUBE = !!(M && M.cube), CALC = !!(M && M.calc), STEPS = !!(M && M.steps), RAD = Math.PI / 180, UP = spec.up === 'z', ORI = spec.orient || (UP ? [-90, 0, 0] : null);
     const claimsOf = (k) => ((spec.research && spec.research.claims) || []).filter((c) => c.conf === k).length;
     const claims = (spec.research && spec.research.claims) || [], sources = (spec.research && spec.research.sources) || [], claimBy = Object.fromEntries(claims.map((c) => [c.id, c]));
 
@@ -159,10 +159,10 @@
     const shot = (id, o) => { const p = parts.find((x) => x.id === id), dim = Math.max(p.size.x, p.size.y, p.size.z * 0.6); return Object.assign(F.shot(id, { yaw: o.yaw, pitch: o.pitch, zoom: clamp(W * 0.46 / dim, 3.5, 140), e: 1, cy: cy - 40 }), { dof: o.dof == null ? 0.5 : o.dof }); };
 
     /* ---------------------------------------------------------- plan del video */
-    const order = parts.slice().sort((a, b) => (a.spec.late ? 1 : 0) - (b.spec.late ? 1 : 0) || a.base.z - b.base.z || parts.indexOf(a) - parts.indexOf(b)), N = order.length, step = Math.min(0.3, 6.2 / N), arrive = {};
-    const COLD = dir.cold ? (dir.cold.dur || 8) : 0;      // apertura: la pregunta y las respuestas publicadas, antes de armar nada
+    const order = parts.slice().sort((a, b) => (a.spec.late ? 1 : 0) - (b.spec.late ? 1 : 0) || a.base.z - b.base.z || parts.indexOf(a) - parts.indexOf(b)), N = order.length, step = Math.min(SHORT ? 0.12 : 0.3, (SHORT ? 2.4 : 6.2) / N), arrive = {};
+    const COLD = dir.cold && !SHORT ? (dir.cold.dur || 8) : 0;      // apertura: la pregunta y las respuestas publicadas, antes de armar nada
     order.forEach((p, i) => { arrive[p.id] = 0.9 + COLD + i * step; });
-    const ASM_END = 0.9 + COLD + (N - 1) * step + 1.1, MD = dir.modeDur || 4.6, TD = dir.tourDur || 3.3, HOLD = dir.hold || 0, tM0 = ASM_END + 0.3 + HOLD, KD = dir.keyDur || 1.35, runs = an.enigmaRuns || [];
+    const ASM_END = 0.9 + COLD + (N - 1) * step + 1.1, MD = SHORT ? Math.min(dir.modeDur || 4.6, 2.6) : (dir.modeDur || 4.6) * (LONG ? 1.3 : 1), TD = SHORT ? 2.2 : (dir.tourDur || 3.3) * (LONG ? 1.2 : 1), HOLD = SHORT ? 0 : dir.hold || 0, tM0 = ASM_END + 0.3 + HOLD, KD = (dir.keyDur || 1.35) * (SHORT ? 0.6 : 1), runs = an.enigmaRuns || [];
     // lo que el gate comparo: valor publicado y valor del modelo, una fila por comprobacion (sirve a la apertura y al recibo)
     const VROWS = (() => {
       const r = [];
@@ -170,10 +170,16 @@
       if (!r.length) an.modes.forEach((m) => { if (m.publish) r.push({ label: m.label, pub: String(m.publish.text != null ? m.publish.text : m.publish.value != null ? m.publish.value : m.publish.length + ' moves'), got: m.text != null && m.text !== '' ? String(m.text) : m.ratio != null ? String(Math.round(m.ratio * 10000) / 10000) : '', ok: m.ok }); });
       return r;
     })(), VOK = VROWS.every((r) => r.ok !== false), VPEND = VROWS.filter((r) => r.ok == null).length, VSTAMP = !VOK ? 'DOES NOT PASS' : !VROWS.length ? 'NOTHING CHECKED' : VPEND ? 'INCOMPLETE' : 'VERIFIED';
-    const MQ = (CUBE && M.cube.quarter) || 0.34, MH = (CUBE && M.cube.half) || 0.5, MG = 0.05, cubeDur = (r) => r.moves.reduce((s2, mv) => s2 + (mv.q === 2 ? MH : MQ) + MG, 0);
-    const mD = modes.map((m, k) => (STEPS && m.steps ? Math.max(4.5, 1.2 + M.steps.count / M.steps.rate + 1.6) : CUBE ? Math.max(4.5, 1.0 + cubeDur(an.cubeRuns[k]) + 1.5) : ENIG ? 1.1 + (runs[k] ? runs[k].events.length : 1) * KD + 0.6 : MD)), mS = []; { let acc = tM0; mD.forEach((d) => { mS.push(acc); acc += d; }); }
+    const MQ = ((CUBE && M.cube.quarter) || 0.34) * (SHORT ? 0.5 : 1), MH = ((CUBE && M.cube.half) || 0.5) * (SHORT ? 0.5 : 1), MG = SHORT ? 0.03 : 0.05, cubeDur = (r) => r.moves.reduce((s2, mv) => s2 + (mv.q === 2 ? MH : MQ) + MG, 0);
+    const SR = STEPS ? M.steps.rate * (SHORT ? 2.6 : 1) : 1, keepSet = (() => {
+      if (!SHORT || modes.length <= 3 || CUBE || ENIG) return null; const pick = dir.short && dir.short.modes, set = new Set();
+      if (pick) pick.forEach((id) => { const i = modes.findIndex((m) => m.id === id); if (i >= 0) set.add(i); });
+      else { modes.forEach((m, i) => { if (m.steps) set.add(i); }); modes.forEach((m, i) => { if (set.size < 3 && m.publish && !set.has(i)) set.add(i); }); modes.forEach((m, i) => { if (set.size < 3) set.add(i); }); }
+      return set;
+    })(), keepMode = (k) => !keepSet || keepSet.has(k);      // a mode that is not kept lasts 0 s: the clock skips it
+    const mD = modes.map((m, k) => (!keepMode(k) ? 0 : STEPS && m.steps ? Math.max(SHORT ? 3 : 4.5, 1.2 + M.steps.count / SR + 1.6) : CUBE ? Math.max(4.5, 1.0 + cubeDur(an.cubeRuns[k]) + 1.5) : ENIG ? 1.1 + (runs[k] ? runs[k].events.length : 1) * KD + 0.6 : MD)), mS = []; { let acc = tM0; mD.forEach((d) => { mS.push(acc); acc += d; }); }
     // pasos: el reloj de un proceso que ocurre ficha por ficha; vale 0 antes de la fase y count despues
-    const sMode = STEPS ? modes.findIndex((m) => m.steps) : -1, stepIdx = (t) => (sMode < 0 ? 0 : clamp((t - mS[sMode] - 1.0) * M.steps.rate, 0, M.steps.count));
+    const sMode = STEPS ? modes.findIndex((m) => m.steps) : -1, stepIdx = (t) => (sMode < 0 ? 0 : clamp((t - mS[sMode] - 1.0) * SR, 0, M.steps.count));
     // cubo: la lista de giros con su tiempo, y el estado entero del cubo antes de cada uno
     const CEV = [], CST = [];
     if (CUBE) { const cur = CB.create(); an.cubeRuns.forEach((run, k) => { let t = mS[k] + 1.0; run.moves.forEach((mv) => { const d = mv.q === 2 ? MH : MQ; CST.push(CB.clone(cur)); CEV.push({ t0: t, t1: t + d, mv, k }); CB.turn(cur, mv); t += d + MG; }); }); CST.push(CB.clone(cur)); }
@@ -186,25 +192,26 @@
       const mulv = (m, v) => [0, 1, 2].map((r) => m[r * 3] * v[0] + m[r * 3 + 1] * v[1] + m[r * 3 + 2] * v[2]);
       return CST[i].map((c) => (CB.inLayer(c, ev.mv.face) ? { pos: mulv(Rm, c.pos), R: [0, 1, 2].flatMap((r) => [0, 1, 2].map((q) => Rm[r * 3] * c.R[q] + Rm[r * 3 + 1] * c.R[3 + q] + Rm[r * 3 + 2] * c.R[6 + q])) } : c));
     };
-    const tMend = tM0 + mD.reduce((s2, d) => s2 + d, 0), tE0 = tMend + (modes.length ? 0.2 : 0.4), ED = 2.8, tT0 = tE0 + ED + 0.4;
-    const tourIds = (dir.tour || parts.filter((p) => p.spec.tour !== false && p.info && !p.spec.decor).sort((a, b) => (a.base.z + a.explode.z) - (b.base.z + b.explode.z)).map((p) => p.id));
-    const tR0 = tT0 + tourIds.length * TD, RD = 2.6, tP0 = tR0 + RD + 0.3, PD = 5.4;
+    const tMend = tM0 + mD.reduce((s2, d) => s2 + d, 0), tE0 = tMend + (modes.length ? 0.2 : 0.4), ED = SHORT ? 1.8 : 2.8, tT0 = tE0 + ED + 0.4;
+    const tourAll = parts.filter((p) => p.spec.tour !== false && p.info && !p.spec.decor).sort((a, b) => (a.base.z + a.explode.z) - (b.base.z + b.explode.z)).map((p) => p.id);
+    const tourIds = SHORT ? (((dir.short && dir.short.tour) || dir.tour || tourAll).slice(0, 2)) : LONG ? tourAll.slice(0, 12) : (dir.tour || tourAll);
+    const tR0 = tT0 + tourIds.length * TD, RD = SHORT ? 1.4 : 2.6, tP0 = tR0 + RD + 0.3, PD = 5.4;
     // paginado de la tabla de evidencia (se mide con la misma tipografia con que se dibuja)
     const CW = W - 86 * 2 - 188, FONT = '400 23px ' + MX.SANS, pages = [];
     { let cur = [], used = 0; const room = H - 216 - 34 - 290;
       claims.forEach((c) => { const lines = wrap(c.text + (c.cross ? '  Cross-check: ' + c.cross : c.why ? '  ' + c.why : ''), FONT, CW), h = lines.length * 29 + 54; if (used + h > room && cur.length) { pages.push(cur); cur = []; used = 0; } cur.push({ c, lines, h }); used += h; });
       if (cur.length) pages.push(cur); }
     const panels = []; let tp = tP0;
-    if (modes.length) { panels.push({ kind: 'ratios', t0: tp, t1: tp + PD }); tp += PD; }
-    if (PRESS && M.press.force) { panels.push({ kind: 'curve', t0: tp, t1: tp + PD + 1.6 }); tp += PD + 1.6; }
-    pages.forEach((pg, i) => { panels.push({ kind: 'claims', page: i, rows: pg, t0: tp, t1: tp + PD + 0.6 }); tp += PD + 0.6; });
-    panels.push({ kind: 'sources', t0: tp, t1: tp + 5 }); tp += 5;
-    if (VROWS.length) { panels.push({ kind: 'verdict', t0: tp, t1: tp + 6.5 }); tp += 6.5; }
+    if (modes.length && !SHORT) { panels.push({ kind: 'ratios', t0: tp, t1: tp + PD }); tp += PD; }
+    if (PRESS && M.press.force && !SHORT) { panels.push({ kind: 'curve', t0: tp, t1: tp + PD + 1.6 }); tp += PD + 1.6; }
+    if (!SHORT) pages.forEach((pg, i) => { panels.push({ kind: 'claims', page: i, rows: pg, t0: tp, t1: tp + PD + 0.6 }); tp += PD + 0.6; });
+    if (!SHORT || !VROWS.length) { panels.push({ kind: 'sources', t0: tp, t1: tp + (SHORT ? 3 : 5) }); tp += SHORT ? 3 : 5; }
+    if (VROWS.length) { const vd = SHORT ? 4.5 : 6.5; panels.push({ kind: 'verdict', t0: tp, t1: tp + vd }); tp += vd; }
     const DUR = Math.ceil(tp * 2) / 2;
 
     // velocidad del conductor: parado mientras se arma, vivo en los modos (con un bache en cada cambio), lento en el recorrido
     const sk = [[0, 0], [tM0, 0], [tM0 + 0.9, 1]];
-    modes.forEach((m, k) => { if (k) { const tb = mS[k]; sk.push([tb - 0.45, 1], [tb, 0.08], [tb + 0.55, 1]); } });
+    modes.forEach((m, k) => { if (k && mD[k]) { const tb = mS[k]; sk.push([tb - 0.45, 1], [tb, 0.08], [tb + 0.55, 1]); } });
     sk.push([tE0 - 0.3, 1], [tE0 + 0.8, 0.4], [tR0, 0.4], [tR0 + 1.2, 0.7], [DUR, 0.3]);
     const speedAt = (t) => { let i = 0; while (i < sk.length - 2 && t >= sk[i + 1][0]) i++; const [t0, a] = sk[i], [t1, b] = sk[i + 1]; return lerp(a, b, E.sm(clamp((t - t0) / Math.max(1e-6, t1 - t0), 0, 1))); };
     const modeIdx = (t) => { if (!modes.length) return -1; let k = 0; while (k < modes.length - 1 && t >= mS[k + 1] - 1e-6) k++; return k; };
@@ -223,7 +230,7 @@
     const keys = [[0, Object.assign({}, VW.iso, { zoom: VW.iso.zoom * 0.5, yaw: -62, pitch: 30 })], [ASM_END, VW.iso, [0.3, 0, 0.2, 1]]];
     if (HOLD) keys.push([ASM_END + HOLD * 0.5, Object.assign({}, VW.iso, { yaw: VW.iso.yaw + 22, pitch: VW.iso.pitch + 4, zoom: VW.iso.zoom * 1.06 })], [ASM_END + HOLD, Object.assign({}, VW.iso, { yaw: VW.iso.yaw - 6, pitch: VW.iso.pitch + 8 })]);      // toma de presentacion: el objeto entero, con su marca, antes de abrirlo
     const cyc = [VW.front, VW.iso, VW.side, VW.three];
-    modes.forEach((m, k) => { const t = mS[k]; keys.push([t + 0.5, Object.assign({}, k % 2 ? cyc[k % 4] : cyc[(k + 1) % 4]), [0.45, 0, 0.2, 1]]); keys.push([t + mD[k] - 0.2, Object.assign({}, cyc[(k + 2) % 4], { yaw: cyc[(k + 2) % 4].yaw + 8 })]); });
+    modes.forEach((m, k) => { if (!mD[k]) return; const t = mS[k]; keys.push([t + 0.5, Object.assign({}, k % 2 ? cyc[k % 4] : cyc[(k + 1) % 4]), [0.45, 0, 0.2, 1]]); keys.push([t + mD[k] - 0.2, Object.assign({}, cyc[(k + 2) % 4], { yaw: cyc[(k + 2) % 4].yaw + 8 })]); });
     keys.push([tE0 + ED, VW.expl, [0.4, 0, 0.15, 1]]);
     const YP = [[-38, 20], [-20, 12], [-58, 26], [-30, 8], [-48, 30]];
     tourIds.forEach((id, j) => { const ts = tT0 + j * TD, [y, p] = YP[j % YP.length]; keys.push([ts + 0.3, shot(id, { yaw: y, pitch: p }), [0.5, 0, 0.15, 1]]); keys.push([ts + TD - 0.1, shot(id, { yaw: y + 9, pitch: p - 3, dof: 0.8 }), [0.2, 0, 0.8, 1]]); });
@@ -417,7 +424,7 @@
     // a plain sentence while the object assembles, and what the colours mean while the numbers run: for someone who knows nothing about it
     const drawWhat = (c, s) => {
       if (s.t == null || (!dir.what && !dir.legend)) return; const t = s.t;
-      if (dir.what) { const a = ramp(t, COLD + 0.6, COLD + 1.2) * (1 - ramp(t, ASM_END + 0.2, ASM_END + 0.9)); if (a > 0.01) { c.save(); MX.A = a; const ln = wrap(dir.what, '500 32px ' + MX.SERIF, W - 172); c.fillStyle = MX.rgba(T.paper, 0.78 * a); c.fillRect(34, H - 300, W - 68, 66 + ln.length * 44); MX.text('WHAT YOU ARE LOOKING AT', 86, H - 268, { size: 14, font: MX.MONO, color: T.teal, spacing: 3, w: 700 }); ln.forEach((l, i) => MX.text(l, 86, H - 224 + i * 44, { size: 32, font: MX.SERIF, w: 500, color: T.ink })); MX.A = 1; c.restore(); } }
+      if (dir.what) { const a = ramp(t, COLD + 0.6, COLD + 1.2) * (1 - ramp(t, ASM_END - 0.7, ASM_END - 0.1)); if (a > 0.01) { c.save(); MX.A = a; const ln = wrap(dir.what, '500 32px ' + MX.SERIF, W - 172); c.fillStyle = MX.rgba(T.paper, 0.78 * a); c.fillRect(34, H - 300, W - 68, 66 + ln.length * 44); MX.text('WHAT YOU ARE LOOKING AT', 86, H - 268, { size: 14, font: MX.MONO, color: T.teal, spacing: 3, w: 700 }); ln.forEach((l, i) => MX.text(l, 86, H - 224 + i * 44, { size: 32, font: MX.SERIF, w: 500, color: T.ink })); MX.A = 1; c.restore(); } }
       if (dir.legend) { const a = ramp(t, tM0 - 0.2, tM0 + 0.4) * (1 - ramp(t, tE0 - 0.6, tE0 - 0.1)); if (a > 0.01) { c.save(); let x = 78; dir.legend.forEach((q) => { c.font = '600 15px ' + MX.MONO; const w = c.measureText(q.text).width; c.globalAlpha = a; c.fillStyle = q.color; c.fillRect(x, 236, 14, 14); MX.A = a; MX.text(q.text, x + 22, 249, { size: 15, font: MX.MONO, w: 600, color: T.ink }); x += w + 56; }); MX.A = 1; c.restore(); } }
     };
     F.overlay((ctx, s) => { if (s.t == null) return; drawWhat(ctx, s); drawMode(ctx, s); drawCold(ctx, s); panels.forEach((pn) => { if (s.t >= pn.t0 - 0.01 && s.t <= pn.t1 + 0.01) drawPanel(ctx, pn, s.t); }); });
@@ -430,7 +437,7 @@
         ev.push({ t: t0 + 0.04, v: 'whoosh', d: 0.55, f0: 500, f1: 2600, pan: pan(p), gain: 0.16, q: 2 }, { t: t0 + 0.78, v: 'impact', mat: sm, size, vel: sm === 'rubber' ? 0.5 : 0.58, hard: 0.55, pan: pan(p), ring: 0.8, thump: size > 40 ? 90 : 0 });
       });
       if (modes.length) {
-        modes.forEach((m, k) => { const tb = mS[k]; ev.push({ t: tb + 0.02, v: 'click', f: 1500, gain: 0.55, sharp: 0.8 }, { t: tb + 0.1, v: 'tone', f: note(0, Math.round((an.modes[k].ratio || 3) * 6)), timbre: 'bell', d: 1.6, gain: 0.5, pan: 0.1 }, { t: tb + 0.1, v: 'whoosh', d: 0.7, f0: 300, f1: 1800, gain: 0.3 }); });
+        modes.forEach((m, k) => { if (!mD[k]) return; const tb = mS[k]; ev.push({ t: tb + 0.02, v: 'click', f: 1500, gain: 0.55, sharp: 0.8 }, { t: tb + 0.1, v: 'tone', f: note(0, Math.round((an.modes[k].ratio || 3) * 6)), timbre: 'bell', d: 1.6, gain: 0.5, pan: 0.1 }, { t: tb + 0.1, v: 'whoosh', d: 0.7, f0: 300, f1: 1800, gain: 0.3 }); });
         // los dientes que realmente pasan: una marca por cada diente del engrane de referencia que cruza el contacto
         const mesh = (M.links || []).find((l) => l.t === 'ext'), zref = mesh ? an.K.teeth[mesh.a] : 20, rel = mesh ? Math.abs(an.K.rates[mesh.a] - (mesh.carrier ? an.K.rates[mesh.carrier] : 0)) : 1; let cnt = 0, kept = 0;
         for (let i = 1; !PRESS && TL && i < TL.n; i++) {
@@ -463,7 +470,7 @@
         for (let i = 0; i < 8; i++) ev.push({ t: e.te + 0.15 + i * 0.07, v: 'tick', f: 1800 + i * 160, vel: 0.28, pan: -0.5 + i * 0.14, send: 0.2 });
         ev.push({ t: e.te + 0.64, v: 'tone', f: SND.note(57, 'major', (e.out.charCodeAt(0) - 65) % 14), timbre: 'bell', d: 0.9, gain: 0.22, pan: 0.15 }, { t: e.te + 0.64, v: 'tick', f: 3200, vel: 0.5, pan: 0.15 });
       }));
-      if (STEPS && sMode >= 0) for (let i = 0; i < M.steps.count; i++) { const tt = mS[sMode] + 1.0 + i / M.steps.rate; ev.push({ t: tt, v: 'tick', f: 1500 + (i % 7) * 140, vel: 0.5, pan: -0.15 }); if (M.steps.kind && M.steps.kind(i) === 'match') ev.push({ t: tt + 0.05, v: 'detent', f: 700, vel: 0.8, pan: 0.2, send: 0.2 }); }
+      if (STEPS && sMode >= 0) for (let i = 0; i < M.steps.count; i++) { const tt = mS[sMode] + 1.0 + i / SR; ev.push({ t: tt, v: 'tick', f: 1500 + (i % 7) * 140, vel: 0.5, pan: -0.15 }); if (M.steps.kind && M.steps.kind(i) === 'match') ev.push({ t: tt + 0.05, v: 'detent', f: 700, vel: 0.8, pan: 0.2, send: 0.2 }); }
       if (COLD) { VROWS.slice(0, 5).forEach((r, i) => { ev.push({ t: 2.3 + i * 0.4, v: 'tick', f: 1800 + i * 150, vel: 0.6, pan: -0.2 }, { t: COLD - 3.0 + i * 0.4, v: 'detent', f: 700 + i * 90, vel: 0.85, pan: 0.2, send: 0.2 }); }); ev.push({ t: COLD - 0.5, v: 'boom', gain: 0.5 }); }
       panels.forEach((pn) => { if (pn.kind === 'verdict') ev.push({ t: pn.t0 + 0.9 + Math.min(7, VROWS.length) * 0.28, v: 'boom', gain: 0.8 }, { t: pn.t0 + 0.9 + Math.min(7, VROWS.length) * 0.28, v: 'impact', mat: 'steel', size: 60, vel: 0.9, hard: 0.9 }); });
       ev.push({ t: tE0 - 0.1, v: 'whoosh', d: 1.5, f0: 220, f1: 3400, gain: 0.8, skew: 0.8 }, { t: tE0 + ED - 0.5, v: 'boom', gain: 0.7 });

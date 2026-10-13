@@ -166,6 +166,10 @@ The gate ends with `verdict: VERIFIED   8 reproduced, 1 estimated, 0 unchecked`.
 
 It also refuses what a template leaves behind: `example.com` and `TODO` in sources, claims or part names, non-positive or non-finite dimensions, a spec with no parts, a calculated variable with no claim, an expression that gives `undefined`/`NaN`/`Infinity`, an invalid tolerance and an ESTIMATED part with no reason. `node scripts/new.mjs` starts a draft that fails until it is filled in. Every one of those cases is a test in `tests/gate.test.mjs` (`npm test`) and runs in CI.
 
+### Three lengths
+
+The same spec renders three films: `--length short` (about 30 s: the plain sentence, the unpacking or the first checks, the explode, two parts, the receipt), `normal` (the default: verdict-first opening, every check, the tour, the evidence pages) and `extended` (longer checks, up to 12 parts in the tour). `node scripts/render.mjs examples/hub/index.html --length short --out out/hub-short.mp4`. A spec can say what its short cut keeps: `director: { short: { modes: ['unpack', 'crc'], tour: ['out25', 'bookP'] } }` (a cube or a cipher keeps every phase, because their state runs through all of them) and its default with `director.length`.
+
 ### Provenance per dimension, and a register
 
 A part can say where each of its sizes comes from, and the gate compares the drawn size with the source:
