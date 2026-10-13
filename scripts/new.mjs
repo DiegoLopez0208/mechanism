@@ -7,20 +7,22 @@
 // La pagina copia los scripts de examples/hub (la lista es fija: lo unico que cambia es spec.js).
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const args = process.argv.slice(2), name = args.find((a) => !a.startsWith('--') && !(args[args.indexOf(a) - 1] || '').startsWith('--'));
 const opt = (k, d) => { const i = args.indexOf('--' + k); return i >= 0 ? args[i + 1] : d; };
-if (!name || !/^[a-z0-9][a-z0-9-]*$/.test(name)) { console.error('uso: node scripts/new.mjs <nombre-en-minusculas> [--title "Titulo"] [--fig "Fig 8"]'); process.exit(1); }
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), dir = path.join(root, 'examples', name), title = opt('title', name), fig = opt('fig', 'Fig 1');
-if (fs.existsSync(dir)) { console.error('ya existe examples/' + name); process.exit(1); }
+if (!name || !/^[a-z0-9][a-z0-9-]*$/.test(name)) { console.error('uso: node scripts/new.mjs <nombre-en-minusculas> [--title "Titulo"] [--fig "Fig 8"] [--dir <carpeta de trabajo>]'); process.exit(1); }
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), work = opt('dir', null), dir = work ? path.resolve(work, name) : path.join(root, 'examples', name), title = opt('title', name), fig = opt('fig', 'Fig 1');
+// --dir <folder>: the object goes in a folder of YOUR project (never inside the skill folder: agents cannot write there), and its page points at the kit by absolute URL
+const rel = work ? dir.split(path.sep).join('/') : 'examples/' + name, kitUrl = pathToFileURL(path.join(root, 'kit') + path.sep).href;
+if (fs.existsSync(dir)) { console.error('ya existe ' + rel); process.exit(1); }
 fs.mkdirSync(dir, { recursive: true });
 
 const hub = fs.readFileSync(path.join(root, 'examples/hub/index.html'), 'utf8');
-fs.writeFileSync(path.join(dir, 'index.html'), hub.replace(/<title>[^<]*<\/title>/, '<title>' + fig + ' - ' + title.replace(/[<>&]/g, '') + '</title>'));
+fs.writeFileSync(path.join(dir, 'index.html'), (work ? hub.split('../../kit/').join(kitUrl) : hub).replace(/<title>[^<]*<\/title>/, '<title>' + fig + ' - ' + title.replace(/[<>&]/g, '') + '</title>'));
 fs.copyFileSync(path.join(root, 'examples/hub/run.js'), path.join(dir, 'run.js'));
 fs.writeFileSync(path.join(dir, 'spec.js'), `/*
- * spec.js - ${title}. Plantilla minima, BORRADOR: "node scripts/check-spec.mjs examples/${name}/spec.js" falla hasta que cada TODO y example.com se reemplacen por lo que investigaste.
+ * spec.js - ${title}. Plantilla minima, BORRADOR: "node scripts/check-spec.mjs ${rel}/spec.js" falla hasta que cada TODO y example.com se reemplacen por lo que investigaste.
  * Reemplaza las fuentes, las afirmaciones y las piezas por lo que investigaste. Reglas: todo numero SPEC / MEASURED / DERIVED nombra su fuente
  * (DERIVED trae su cruce, MEASURED su error, ESTIMATED su motivo). Ver SKILL.md y examples/hub, examples/switch, examples/enigma.
  */
@@ -45,4 +47,4 @@ window.SPEC = {
   director: {},
 };
 `);
-console.log('creado examples/' + name + '/ (index.html, run.js, spec.js)\nsiguiente: edita spec.js con lo investigado -> node scripts/check-spec.mjs examples/' + name + '/spec.js -> node scripts/probe.mjs "examples/' + name + '/index.html?explore" out/probe-' + name);
+console.log('creado ' + rel + '/ (index.html, run.js, spec.js)\nsiguiente: edita spec.js con lo investigado -> node scripts/check-spec.mjs ' + rel + '/spec.js -> node scripts/probe.mjs \"' + rel + '/index.html?explore\" ' + (work ? rel + '/probe' : 'out/probe-' + name));
