@@ -54,7 +54,7 @@
 
     // fases de los dientes. meshes: [{ a, b, t: 'ext' | 'int', beta }]  beta = direccion (rad) del centro de a al centro de b con theta = 0.
     // ext: za (fa - beta) + zb (fb - beta - pi) = pi (mod 2pi);  int (a = corona): za (fa - beta) = zb (fb - beta) (mod 2pi)
-    K.phases = (meshes, root) => {
+    const phasesOne = (meshes, root) => {
       const phi = { [root || meshes[0].a]: 0 }, checks = [], pending = meshes.slice(), done = [];
       const fwd = (m) => {
         const za = tz(m.a), zb = tz(m.b), fa = phi[m.a];
@@ -74,6 +74,14 @@
         const r = m.t === 'ext' ? za * (fa - m.beta) + zb * (fb - m.beta - Math.PI) - Math.PI : za * (fa - m.beta) - zb * (fb - m.beta);
         checks.push({ a: m.a, b: m.b, t: m.t, residual: Math.abs(wrap(r)), ok: Math.abs(wrap(r)) < 1e-6 });
       });
+      return { phi, checks };
+    };
+    // Compound arbors (a pinion and a wheel rigid on one shaft, as in every watch train and gearbox) split the mesh graph into pieces. Each piece is solved from its own root and
+    // checked as strictly as before; the angle between the two rigid gears of one arbor is free, so it is not checked. (Found by a fresh-session test on the ETA 2824-2.)
+    K.phases = (meshes, root) => {
+      const comp = [];
+      meshes.forEach((m) => { const hit = comp.filter((c) => c.ids.has(m.a) || c.ids.has(m.b)), c = hit[0] || { ids: new Set(), ms: [] }; if (!hit.length) comp.push(c); hit.slice(1).forEach((o) => { o.ids.forEach((i) => c.ids.add(i)); c.ms.push(...o.ms); comp.splice(comp.indexOf(o), 1); }); c.ids.add(m.a); c.ids.add(m.b); c.ms.push(m); });
+      const phi = {}, checks = []; comp.forEach((c) => { const q = phasesOne(c.ms, root && c.ids.has(root) ? root : c.ms[0].a); Object.assign(phi, q.phi); checks.push(...q.checks); });
       return { phi, checks };
     };
     return K;

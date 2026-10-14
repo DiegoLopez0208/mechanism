@@ -335,8 +335,8 @@
       MX.text(m.formula || '', x, y + 42, { size: 21, font: MX.SANS, color: T.mute });
       MX.text(ratio.toFixed(3) + ' : 1', W - x, y - 2, { size: 64, font: MX.SERIF, w: 500, color: T.ink, align: 'right' });
       if (m.publish) { const cl = claimBy[m.publish.claim], w = 190; tagPill(c, W - x - w - 4, y + 44, cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + ' ' + m.publish.text); MX.text(r.ok ? 'matches the model' : 'MISMATCH', W - x - w - 18, y + 44, { size: 19, font: MX.SANS, color: r.ok ? T.teal : T.ember, align: 'right', w: 500 }); }
-      const bar = (yy, label, v, mx, col) => { MX.text(label, x, yy + 5, { size: 15, font: MX.SANS, color: T.mute, spacing: 2.2, w: 600 }); c.fillStyle = MX.rgba(T.ink, 0.12); c.fillRect(x + 150, yy - 8, 430, 12); c.fillStyle = col; c.fillRect(x + 150, yy - 8, 430 * clamp(v / mx, 0, 1), 12); MX.text(Math.round(v) + ' rpm', x + 600, yy + 5, { size: 18, font: MX.SANS, color: T.ink, w: 500 }); };
-      bar(y + 92, 'DRIVER', drpm, drive.rpm * 1.6, T.teal); bar(y + 124, 'HUB SHELL', hrpm, drive.rpm * 1.6, T.ember);
+      const bar = (yy, label, v, mx, col) => { MX.text(label, x, yy + 5, { size: 15, font: MX.SANS, color: T.mute, spacing: 2.2, w: 600 }); c.fillStyle = MX.rgba(T.ink, 0.12); c.fillRect(x + 150, yy - 8, 430, 12); c.fillStyle = col; c.fillRect(x + 150, yy - 8, 430 * clamp(v / mx, 0, 1), 12); MX.text((Math.abs(v) < 10 ? v.toFixed(2) : Math.round(v)) + ' rpm', x + 600, yy + 5, { size: 18, font: MX.SANS, color: T.ink, w: 500 }); };
+      bar(y + 92, m.inLabel || drive.inLabel || 'DRIVER', drpm, drive.rpm * 1.6, T.teal); bar(y + 124, m.outLabel || drive.outLabel || 'OUTPUT', hrpm, drive.rpm * 1.6, T.ember);      /* labels per mode or per drive: a watch train is not a hub */
       c.restore();
     };
     const drawPanel = (c, pn, t) => {

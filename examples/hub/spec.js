@@ -50,7 +50,7 @@ window.SPEC = (() => {
     mechanism: {
       free: 'carrier',
       links: [{ t: 'fixed', a: 'sun' }].concat(PL.flatMap((a, i) => [{ t: 'ext', a: 'sun', b: 'p' + (i + 1), carrier: 'carrier' }, { t: 'int', a: 'ring', b: 'p' + (i + 1), carrier: 'carrier' }])),
-      drive: {
+      drive: { outLabel: 'HUB SHELL',
         rpm: 36,
         modes: [
           { id: '2', label: 'Gear 2', driver: 'ring', shell: 'driver', publish: { value: 1, text: '100 %', claim: 'ratios' }, formula: 'direct drive: shell = driver', note: 'Direct drive. The planetary stage idles.' },

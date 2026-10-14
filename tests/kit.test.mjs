@@ -97,3 +97,11 @@ test('RAR5: build then parse gives back the file, and the CRCs check', () => {
   const bad = Uint8Array.from(arc); bad[bad.length - 5] ^= 1;      // inside the end of archive header
   const q = R.parse(bad); assert.ok(q.blocks.some((b) => b.crc && b.crc.calc !== b.crc.stored), 'a changed byte breaks a CRC');
 });
+
+test('kin: a compound train (two meshes joined by a shaft, so two mesh components) gets tooth phases for every gear', () => {
+  const K = ctx.MX.kin({ bodies: ['A', 'B', 'C', 'D'], teeth: { A: 20, B: 10, C: 30, D: 10 }, free: 'A', links: [{ t: 'ext', a: 'A', b: 'B' }, { t: 'same', a: 'B', b: 'C' }, { t: 'ext', a: 'C', b: 'D' }] });
+  const meshes = [{ a: 'A', b: 'B', t: 'ext', beta: 0 }, { a: 'C', b: 'D', t: 'ext', beta: 0.7 }], ph = K.phases(meshes, 'A');
+  assert.deepEqual(Object.keys(ph.phi).sort(), ['A', 'B', 'C', 'D']);
+  assert.ok(ph.checks.length === 2 && ph.checks.every((c) => c.ok), JSON.stringify(ph.checks));
+  assert.ok(!ph.checks.some((c) => /sin conexion/.test(c.note || '')), 'no "no connection to the root" for the second stage');
+});
