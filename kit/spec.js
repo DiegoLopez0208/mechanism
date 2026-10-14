@@ -382,11 +382,12 @@
         MX.A = ak; MX.text('a linear spring would give ' + an.press.predictedFinal.toFixed(0) + ' ' + fu, X(last[0]) - 14, Y(py) + 66, { size: 20, font: MX.SANS, w: 600, color: T.ember, align: 'right' }); c.restore();
         const nl = wrap(pr.note || '', '400 21px ' + MX.SANS, W - 172); MX.A = ak; nl.forEach((ln, i) => MX.text(ln, 86, yb + 120 + i * 28, { size: 21, font: MX.SANS, color: T.ink })); H2.endPanel(); return;
       }
-      if (pn.kind === 'outro') {
-        if (!H2.panel(a, spec.fig || 'Fig', 'mechanism', 'Build inspectable models from evidence. See what is known, estimated and tested.')) return;
+      if (pn.kind === 'outro') {      // director.outro: { title, sub, line, url } to sign the film; nothing about the toolkit is drawn unless the spec asks for it
+        const oc = dir.outro && typeof dir.outro === 'object' ? dir.outro : {};
+        if (!H2.panel(a, spec.fig || 'Fig', oc.title || spec.title || '', oc.sub || spec.sub || '')) return;
         const o1 = ramp(t, pn.t0 + 0.5, pn.t0 + 1.0), o2 = ramp(t, pn.t0 + 0.9, pn.t0 + 1.4);
-        MX.A = a * o1; MX.text((spec.title || '') + (V.verdict ? '   -   ' + V.verdict.state : ''), 86, 520, { size: 24, font: MX.MONO, w: 600, color: T.ink });
-        MX.A = a * o2; MX.text('github.com/DiegoLopez0208/mechanism', 86, 600, { size: 30, font: MX.MONO, w: 700, color: T.teal }); MX.text('a skill for Claude Code and other coding agents', 86, 646, { size: 20, font: MX.SANS, color: T.mute }); MX.A = a;
+        MX.A = a * o1; MX.text((V.verdict ? V.verdict.state : '') + (V.verdict && oc.what ? '   -   ' : '') + (oc.what || ''), 86, 520, { size: 24, font: MX.MONO, w: 600, color: T.ink });
+        MX.A = a * o2; if (oc.url) MX.text(oc.url, 86, 600, { size: 30, font: MX.MONO, w: 700, color: T.teal }); if (oc.line) MX.text(oc.line, 86, 646, { size: 20, font: MX.SANS, color: T.mute }); MX.A = a;
         H2.endPanel(); return;
       }
       if (pn.kind === 'verdict') {

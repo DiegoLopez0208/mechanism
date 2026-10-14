@@ -69,6 +69,6 @@
         { id: 'dens', label: 'Transistor density', expr: 'transistors / area', unit: 'per mm2', digits: 0, formula: '3,510 transistors / 16.6 mm2', show: ['die'] },
       ] },
     },
-    director: { hold: 3.5, tour: ['body', 'die', 'pin9', 'pin26'] },
+    director: { outro: { url: 'github.com/DiegoLopez0208/mechanism', line: 'a skill for Claude Code and other coding agents' },  hold: 3.5, tour: ['body', 'die', 'pin9', 'pin26'] },
   };
 })();

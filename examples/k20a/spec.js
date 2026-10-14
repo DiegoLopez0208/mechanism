@@ -78,6 +78,6 @@
         { id: 'firing', label: 'Firing order', metric: 'firing', formula: 'one power stroke every 180 degrees of crank', publish: { text: '1-3-4-2', claim: 'firing' } },
       ] },
     },
-    director: { hold: 4, modeDur: 6.2, tourDur: 3.0, tour: ['block', 'crank', 'rod1', 'piston1', 'cam-in', 'v-in-1a', 'head', 'flywheel'] },
+    director: { outro: { url: 'github.com/DiegoLopez0208/mechanism', line: 'a skill for Claude Code and other coding agents' },  hold: 4, modeDur: 6.2, tourDur: 3.0, tour: ['block', 'crank', 'rod1', 'piston1', 'cam-in', 'v-in-1a', 'head', 'flywheel'] },
   };
 })();

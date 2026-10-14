@@ -51,6 +51,6 @@ window.SPEC = (() => {
         ],
       },
     },
-    director: { hold: 2.5, modeDur: 3.2, tourDur: 3.2 },
+    director: { outro: { url: 'github.com/DiegoLopez0208/mechanism', line: 'a skill for Claude Code and other coding agents' },  hold: 2.5, modeDur: 3.2, tourDur: 3.2 },
   };
 })();

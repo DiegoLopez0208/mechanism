@@ -66,6 +66,6 @@ window.SPEC = (() => {
         ],
       },
     },
-    director: { what: "The rotor core of an Enigma I cipher machine: three wired rotors scramble each letter, a reflector sends it back.", cold: { dur: 9, question: 'Does a model built only from the published wiring give what a real Enigma gave?' }, sound: { bed: { bpm: 54, root: 38, mode: 'minor', level: 0.36, prog: [0, 3, 5, 4], arp: false }, room: { size: 0.8, wet: 0.14, fb: 0.7 } }, keyDur: 1.2, tourDur: 3.4, tour: ['etw', 'rotorR', 'ratchetR', 'rotorM', 'rotorL', 'ukw', 'pawlR'], views: { iso: { yaw: -30, pitch: 28 }, front: { yaw: -14, pitch: 12 }, side: { yaw: -62, pitch: 22 }, three: { yaw: -22, pitch: 58 } } },
+    director: { outro: { url: 'github.com/DiegoLopez0208/mechanism', line: 'a skill for Claude Code and other coding agents' },  what: "The rotor core of an Enigma I cipher machine: three wired rotors scramble each letter, a reflector sends it back.", cold: { dur: 9, question: 'Does a model built only from the published wiring give what a real Enigma gave?' }, sound: { bed: { bpm: 54, root: 38, mode: 'minor', level: 0.36, prog: [0, 3, 5, 4], arp: false }, room: { size: 0.8, wet: 0.14, fb: 0.7 } }, keyDur: 1.2, tourDur: 3.4, tour: ['etw', 'rotorR', 'ratchetR', 'rotorM', 'rotorL', 'ukw', 'pawlR'], views: { iso: { yaw: -30, pitch: 28 }, front: { yaw: -14, pitch: 12 }, side: { yaw: -62, pitch: 22 }, three: { yaw: -22, pitch: 58 } } },
   };
 })();
