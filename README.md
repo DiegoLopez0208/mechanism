@@ -90,7 +90,7 @@ Every example is a film, a live viewer (`examples/<name>/index.html?explore`, ad
 | [`s25-vs-s26`](examples/s25-vs-s26) | Galaxy S25 Ultra against S26 Ultra at the same scale, measured on the official renders. Interiors are not drawn: no readable photo, and the film says so. |
 | [`phones`](examples/phones) | POCO X8 Pro Max against Galaxy S26 Ultra, measured on official photos with OpenCV, interior from the maker's spare-parts photos. |
 | [`rpi4`](examples/rpi4) | Raspberry Pi 4B from the official datasheet drawing. |
-| [`instruments`](examples/instruments), [`backpressure`](examples/backpressure) | A catalog photo turned into 3D plates with its limits stated; an idea from a repo built as a working machine. |
+| [`backpressure`](examples/backpressure) | An idea from a repo built as a working machine. |
 
 ## Install
 

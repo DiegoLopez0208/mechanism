@@ -1,5 +1,5 @@
 """photo2contours.py - segmenta objetos sobre fondo claro y guarda sus contornos reales (en pixeles) + medidas relativas.
-   uv run --with opencv-python-headless --with numpy python scripts/photo2contours.py data/instruments/photo.jpg data/instruments [umbral]
+   uv run --with opencv-python-headless --with numpy python scripts/photo2contours.py data/<name>/photo.jpg data/<name> [umbral]
    Salida: contours.json (poligonos, agujeros, caja orientada, largo/ancho en px) y debug.png (superposicion para revisar a ojo).
    Sin escala de referencia NO hay milimetros: solo proporciones. Un factor mm/px se aplica despues, desde un objeto de largo conocido."""
 import sys, json
