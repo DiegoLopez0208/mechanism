@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Site on phones.** A Playwright pass (iPhone 13, Pixel 7, Edge) found that the look and 30 s / Full switches were clipped off screen on 390 px, the hero hint was cut, the card links (Viewer, GLB, spec.js) were 18 px high and the example pages asked for a favicon that did not exist. Fixed. No horizontal scroll, no console errors, videos play at 720x900 and the viewers draw.
+
 ## 0.6.0 - 2026-10-13
 
 The pre-launch release: audited, faster to render, lighter to install.
