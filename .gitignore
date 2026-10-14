@@ -27,3 +27,6 @@ data/audio/dl/
 lint/
 
 tools/react-evidence/node_modules/
+
+# 720p films: assets of the "media" release, not files of the repository
+docs/media/video/
