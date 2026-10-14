@@ -69,6 +69,6 @@
         { id: 'dens', label: 'Transistor density', expr: 'transistors / area', unit: 'per mm2', digits: 0, formula: '3,510 transistors / 16.6 mm2', show: ['die'] },
       ] },
     },
-    director: { hold: 3.5, zoom: 1.35, tour: ['body', 'die', 'pin9', 'pin26'] },
+    director: { hold: 3.5, tour: ['body', 'die', 'pin9', 'pin26'] },
   };
 })();

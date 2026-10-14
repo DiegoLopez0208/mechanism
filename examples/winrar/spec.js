@@ -124,6 +124,6 @@
         { id: 'ratio', label: 'How much it packed', expr: 'ratio', unit: '% of the text', digits: 1, formula: lit + ' literals and ' + mat + ' copies turn ' + NOUT + ' bytes into ' + NIN, show: inIds(0, NIN), dim: 0.7 },
       ] },
     },
-    director: { cold: { dur: 8, question: 'Can a model built only from RFC 1951 unpack what WinRAR packed?' }, what: 'WinRAR packs files so they take less room. Here it unpacks one: 49 bytes go in, 119 characters come out.', legend: [{ color: '#c9ccd2', text: 'packed bytes' }, { color: '#e3b341', text: 'a literal' }, { color: '#7ed321', text: 'copied from earlier' }], zoom: 2.0, views: { iso: { yaw: -10, pitch: 52 }, front: { yaw: 0, pitch: 64 }, side: { yaw: -26, pitch: 44 }, three: { yaw: 14, pitch: 56 } }, modeDur: 3.4, tour: ['in0', 'out25', 'bookP', 'buckle'], short: { modes: ['unpack', 'text', 'crc'], tour: ['out25', 'bookP'] } },
+    director: { cold: { dur: 8, question: 'Can a model built only from RFC 1951 unpack what WinRAR packed?' }, what: 'WinRAR packs files so they take less room. Here it unpacks one: 49 bytes go in, 119 characters come out.', legend: [{ color: '#c9ccd2', text: 'packed bytes' }, { color: '#e3b341', text: 'a literal' }, { color: '#7ed321', text: 'copied from earlier' }], views: { iso: { yaw: -10, pitch: 52 }, front: { yaw: 0, pitch: 64 }, side: { yaw: -26, pitch: 44 }, three: { yaw: 14, pitch: 56 } }, modeDur: 3.4, tour: ['in0', 'out25', 'bookP', 'buckle'], short: { modes: ['unpack', 'text', 'crc'], tour: ['out25', 'bookP'] } },
   };
 })();

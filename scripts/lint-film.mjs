@@ -26,7 +26,7 @@ const ev = async (e) => { const r = await send('Runtime.evaluate', { expression:
 const done = (code) => { try { ws.close(); } catch { /* closed */ } proc.kill(); try { rmSync(profile, { recursive: true, force: true }); } catch { /* busy */ } process.exit(code); };
 try {
   await send('Page.enable');
-  await send('Page.navigate', { url: pathToFileURL(path.resolve(page)).href + '?render=1&t=0' + (opt('length', '') ? '&length=' + opt('length', '') : '') });
+  await send('Page.navigate', { url: pathToFileURL(path.resolve(page)).href + '?render=1&t=0' + (opt('length', '') ? '&length=' + opt('length', '') : '') + (opt('query', '') ? '&' + opt('query', '') : '') });
   for (let i = 0; i < 100; i++) { await sleep(150); if (await ev('typeof window.__frame === "function"')) break; if (i === 99) throw new Error('the page did not expose __frame: does the spec pass the gate? run check-spec.mjs'); }
   const info = JSON.parse(await ev('JSON.stringify(window.__specInfo ? window.__specInfo() : null)'));
   if (!info || !info.shots) throw new Error('this page has no __specInfo().shots (declarative specs only)');

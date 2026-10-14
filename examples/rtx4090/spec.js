@@ -93,6 +93,6 @@
         { id: 'dens', label: 'Transistor density', expr: 'transistors * 1000 / die', unit: 'M per mm2', digits: 1, formula: '76.3 billion / 608.5 mm2', show: ['die'], dim: 0.7 },
       ] },
     },
-    director: { hold: 4.5, zoom: 1.5, tour: ['die', 'mem1', 'base', 'fins', 'fanA', 'shroud'] },
+    director: { hold: 4.5, tour: ['die', 'mem1', 'base', 'fins', 'fanA', 'shroud'] },
   };
 })();

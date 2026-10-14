@@ -157,7 +157,17 @@
     const mk = (yaw, pitch, zoom, o) => Object.assign({ yaw, pitch, zoom, tx: ctr.x, ty: ctr.y, tz: ctr.z, cx: W / 2, cy, dof: 0 }, o || {});
     const VW = { front: mk(0, 0, zf * 0.92), iso: mk(-34, 22, zf * (ORI ? 0.85 : 0.7)), side: mk(-72, 14, zf * (ORI ? 0.95 : 0.6)), expl: mk(-50, 18, W * 0.8 / (ORI ? Math.max(D, zExt, yMax - yMin) * 1.2 : D * 0.62 + zExt * 0.8)), three: mk(-18, 40, zf * (ORI ? 0.85 : 0.72)) };
     Object.keys(dir.views || {}).forEach((k) => { VW[k] = Object.assign({}, VW[k] || VW.iso, dir.views[k]); });      // las vistas del spec se mezclan sobre las de fabrica
-    const shot = (id, o) => { const p = parts.find((x) => x.id === id), dim = Math.max(p.size.x, p.size.y, p.size.z * 0.6) * (p.spec.tourDim || 1); /* part.tourDim widens the shot of a part whose motion carries it away from where the camera aims */ return Object.assign(F.shot(id, { yaw: o.yaw, pitch: o.pitch, zoom: clamp(W * 0.46 / dim, 3.5, 140), e: 1, cy: cy - 40 }), { dof: o.dof == null ? 0.5 : o.dof }); };
+    // Autofit: project the box of the assembled object with the real camera and set each view's zoom so it fills the stage (about 78 % of the width or 46 % of the height).
+    // The old fit used a circle around the origin, which leaves tall, flat or off-centre objects small. A spec that sets director.zoom keeps its own zoom.
+    if ((!dir.zoom || q.has('fit')) && dir.fit !== false && !q.has('nofit')) {
+      const FW = W * 0.8, FH = H * (asp === '9:16' ? 0.42 : 0.48), cs = [];
+      [wbox.min.x, wbox.max.x].forEach((x) => [wbox.min.y, wbox.max.y].forEach((y) => [wbox.min.z, wbox.max.z].forEach((z) => cs.push([x, y, z]))));
+      ['iso', 'three', 'front', 'side'].forEach((k) => {
+        F.setView(VW[k]); const pts = cs.map((q) => st.project(q[0], q[1], q[2])), xs = pts.map((q) => q[0]), ys = pts.map((q) => q[1]), w = Math.max(1, Math.max(...xs) - Math.min(...xs)), h = Math.max(1, Math.max(...ys) - Math.min(...ys));
+        VW[k].zoom *= Math.max(1, Math.min(2.4, Math.min(FW / w, FH / h)));      /* only ever enlarge: an object that already fills the stage keeps its view */
+      });
+    }
+    const shot = (id, o) => { const p = parts.find((x) => x.id === id), dim = Math.max(p.size.x, p.size.y, p.size.z * 0.6) * (p.spec.tourDim || 1); /* part.tourDim widens the shot of a part whose motion carries it away from where the camera aims */ const ta = p.spec.tourAt || [0, 0, 0]; return Object.assign(F.shot(id, { dx: ta[0], dy: ta[1], dz: ta[2], yaw: o.yaw, pitch: o.pitch, zoom: clamp(W * 0.5 / dim, 3.5, 140), e: 1, cy: cy - 40 }), { dof: o.dof == null ? 0.5 : o.dof }); };
 
     /* ---------------------------------------------------------- plan del video */
     const order = parts.slice().sort((a, b) => (a.spec.late ? 1 : 0) - (b.spec.late ? 1 : 0) || a.base.z - b.base.z || parts.indexOf(a) - parts.indexOf(b)), N = order.length, step = Math.min(SHORT ? 0.12 : 0.3, (SHORT ? 2.4 : 6.2) / N), arrive = {};
@@ -208,6 +218,7 @@
     if (!SHORT) pages.forEach((pg, i) => { panels.push({ kind: 'claims', page: i, rows: pg, t0: tp, t1: tp + PD + 0.6 }); tp += PD + 0.6; });
     if (!SHORT || !VROWS.length) { panels.push({ kind: 'sources', t0: tp, t1: tp + (SHORT ? 3 : 5) }); tp += SHORT ? 3 : 5; }
     if (VROWS.length) { const vd = SHORT ? 4.5 : 6.5; panels.push({ kind: 'verdict', t0: tp, t1: tp + vd }); tp += vd; }
+    if (dir.outro !== false) { const od = SHORT ? 2.8 : 3.4; panels.push({ kind: 'outro', t0: tp, t1: tp + od }); tp += od; }      /* the cut is shared out of context: say what it is and where it lives */
     const DUR = Math.ceil(tp * 2) / 2;
 
     // velocidad del conductor: parado mientras se arma, vivo en los modos (con un bache en cada cambio), lento en el recorrido
@@ -264,7 +275,7 @@
     const drawPress = (c, s) => {
       const a = s.modeA; if (!(a > 0.01)) return; const mi = s.modeI, m = modes[mi], pr = M.press, x = s.mech.press, Fv = forceAt(x), act = x >= pr.actuation - 1e-6, X0 = 78, y = H - 318, fmax = Math.max.apply(null, (pr.force || [[0, 1]]).map((q) => q[1])), u = pr.unit || 'mm', fu = pr.forceUnit || 'cN';
       c.save(); c.globalAlpha = a; c.fillStyle = MX.rgba(T.paper, T.dark ? 0.86 : 0.9); c.fillRect(X0 - 24, y - 70, W - 2 * X0 + 48, 232); c.fillStyle = T.teal; c.fillRect(X0 - 24, y - 70, 4, 232);
-      MX.A = 1; MX.text(m.label, X0, y, { size: 64, font: MX.SERIF, w: 500, color: T.ink }); MX.text(m.formula || '', X0, y + 42, { size: 21, font: MX.SANS, color: T.mute });
+      MX.A = 1; MX.text(m.label, X0, y, { size: lblFit(m.label), font: MX.SERIF, w: 500, color: T.ink }); MX.text(m.formula || '', X0, y + 42, { size: 21, font: MX.SANS, color: T.mute });
       MX.text(x.toFixed(2) + ' ' + u, W - X0, y - 2, { size: 64, font: MX.SERIF, w: 500, color: T.ink, align: 'right' });
       tagPill(c, W - X0 - 150, y + 44, act ? 'spec' : 'estimated', act ? 'ACTUATED' : 'OPEN');
       if (m.publish) { const cl = claimBy[m.publish.claim]; tagPill(c, W - X0 - 340, y + 44, cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + ' ' + m.publish.text); }
@@ -277,7 +288,7 @@
     const drawEngine = (c, s) => {
       const a = s.modeA; if (!(a > 0.01)) return; const mi = s.modeI, m = modes[mi], r = an.modes[mi], x = 78, y = H - 318, th = crankDeg(s.mech.eng.theta), bw = 430, col = [T.ember, T.mute, T.teal, T.ink];
       c.save(); c.globalAlpha = a; c.fillStyle = MX.rgba(T.paper, T.dark ? 0.86 : 0.9); c.fillRect(x - 24, y - 70, W - 2 * x + 48, 262); c.fillStyle = T.teal; c.fillRect(x - 24, y - 70, 4, 262);
-      MX.A = 1; MX.text(m.label, x, y, { size: 64, font: MX.SERIF, w: 500, color: T.ink }); MX.text(m.formula || '', x, y + 42, { size: 21, font: MX.SANS, color: T.mute });
+      MX.A = 1; MX.text(m.label, x, y, { size: lblFit(m.label), font: MX.SERIF, w: 500, color: T.ink }); MX.text(m.formula || '', x, y + 42, { size: 21, font: MX.SANS, color: T.mute });
       MX.text(r.text + (m.unit ? ' ' + m.unit : ''), W - x, y - 2, { size: 64, font: MX.SERIF, w: 500, color: T.ink, align: 'right' });
       if (m.publish) { const cl = claimBy[m.publish.claim], w = 190; tagPill(c, W - x - w - 4, y + 44, cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + ' ' + (m.publish.text || m.publish.value)); MX.text(r.ok ? 'matches the model' : 'MISMATCH', W - x - w - 18, y + 44, { size: 19, font: MX.SANS, color: r.ok ? T.teal : T.ember, align: 'right', w: 500 }); }
       for (let k = 0; k < AE.n; k++) {
@@ -291,7 +302,7 @@
     const drawCube = (c, s) => {
       const a = s.modeA; if (!(a > 0.01)) return; const mi = s.modeI, m = modes[mi], r = an.modes[mi], run = an.cubeRuns[mi], x = 78, y = H - 318, t = s.t, nDone = cubeDone(t);
       c.save(); c.globalAlpha = a; c.fillStyle = MX.rgba(T.paper, T.dark ? 0.86 : 0.9); c.fillRect(x - 24, y - 70, W - 2 * x + 48, 262); c.fillStyle = T.teal; c.fillRect(x - 24, y - 70, 4, 262);
-      MX.A = 1; MX.text(m.label, x, y, { size: 64, font: MX.SERIF, w: 500, color: T.ink }); MX.text(m.formula || '', x, y + 42, { size: 21, font: MX.SANS, color: T.mute });
+      MX.A = 1; MX.text(m.label, x, y, { size: lblFit(m.label), font: MX.SERIF, w: 500, color: T.ink }); MX.text(m.formula || '', x, y + 42, { size: 21, font: MX.SANS, color: T.mute });
       MX.text(r.text + (m.unit ? ' ' + m.unit : ''), W - x, y - 2, { size: 64, font: MX.SERIF, w: 500, color: T.ink, align: 'right' });
       if (m.publish) { const cl = claimBy[m.publish.claim], w = 190; const pt = String(m.publish.text || m.publish.value || m.publish.length + ' MOVES'); tagPill(c, W - x - w - 4, y + 44, cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + (pt.length > 14 ? '' : ' ' + pt)); MX.text(r.ok ? 'matches the model' : 'MISMATCH', W - x - w - 18, y + 44, { size: 19, font: MX.SANS, color: r.ok ? T.teal : T.ember, align: 'right', w: 500 }); }
       const first = CEV.findIndex((q) => q.k === mi), cur = first < 0 ? 0 : clamp(nDone - first, 0, run.moves.length), per = 15, st0 = clamp(cur - 6, 0, Math.max(0, run.moves.length - per));
@@ -323,6 +334,7 @@
       });
       c.restore();
     };
+    const lblFit = (str) => { const c2 = MX.ctx; c2.save(); c2.font = '500 64px ' + MX.SERIF; const w0 = c2.measureText(String(str)).width; c2.restore(); return Math.max(34, w0 > 470 ? 64 * 470 / w0 : 64); };      // a phase label shrinks instead of running into its value
     const drawMode = (c, s) => {
       if (PRESS) return drawPress(c, s);
       if (ENIG) return drawEnigma(c, s);
@@ -331,7 +343,7 @@
       if (CALC) return drawCalc(c, s);
       const a = s.modeA; if (!(a > 0.01)) return; const mi = s.modeI, m = modes[mi], r = an.modes[mi], x = 78, y = H - 318, ratio = r.ratio, drpm = drive.rpm * s.speed, hrpm = drpm * ratio;
       c.save(); c.globalAlpha = a; c.fillStyle = MX.rgba(T.paper, T.dark ? 0.86 : 0.9); c.fillRect(x - 24, y - 70, W - 2 * x + 48, 232); c.fillStyle = T.teal; c.fillRect(x - 24, y - 70, 4, 232);
-      MX.A = 1; MX.text(m.label, x, y, { size: 64, font: MX.SERIF, w: 500, color: T.ink });
+      MX.A = 1; MX.text(m.label, x, y, { size: lblFit(m.label), font: MX.SERIF, w: 500, color: T.ink });
       MX.text(m.formula || '', x, y + 42, { size: 21, font: MX.SANS, color: T.mute });
       MX.text(ratio.toFixed(3) + ' : 1', W - x, y - 2, { size: 64, font: MX.SERIF, w: 500, color: T.ink, align: 'right' });
       if (m.publish) { const cl = claimBy[m.publish.claim], w = 190; tagPill(c, W - x - w - 4, y + 44, cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + ' ' + m.publish.text); MX.text(r.ok ? 'matches the model' : 'MISMATCH', W - x - w - 18, y + 44, { size: 19, font: MX.SANS, color: r.ok ? T.teal : T.ember, align: 'right', w: 500 }); }
@@ -368,6 +380,13 @@
         c.save(); c.globalAlpha = ak; c.strokeStyle = T.ember; c.lineWidth = 3; c.setLineDash([10, 8]); c.beginPath(); c.moveTo(X(0), Y(pts[0][1])); c.lineTo(X(last[0]), Y(py)); c.stroke(); c.setLineDash([]); c.fillStyle = T.ember; c.beginPath(); c.arc(X(last[0]), Y(py), 8, 0, 6.2832); c.fill();
         MX.A = ak; MX.text('a linear spring would give ' + an.press.predictedFinal.toFixed(0) + ' ' + fu, X(last[0]) - 14, Y(py) + 66, { size: 20, font: MX.SANS, w: 600, color: T.ember, align: 'right' }); c.restore();
         const nl = wrap(pr.note || '', '400 21px ' + MX.SANS, W - 172); MX.A = ak; nl.forEach((ln, i) => MX.text(ln, 86, yb + 120 + i * 28, { size: 21, font: MX.SANS, color: T.ink })); H2.endPanel(); return;
+      }
+      if (pn.kind === 'outro') {
+        if (!H2.panel(a, spec.fig || 'Fig', 'mechanism', 'Build inspectable models from evidence. See what is known, estimated and tested.')) return;
+        const o1 = ramp(t, pn.t0 + 0.5, pn.t0 + 1.0), o2 = ramp(t, pn.t0 + 0.9, pn.t0 + 1.4);
+        MX.A = a * o1; MX.text((spec.title || '') + (V.verdict ? '   -   ' + V.verdict.state : ''), 86, 520, { size: 24, font: MX.MONO, w: 600, color: T.ink });
+        MX.A = a * o2; MX.text('github.com/DiegoLopez0208/mechanism', 86, 600, { size: 30, font: MX.MONO, w: 700, color: T.teal }); MX.text('a skill for Claude Code and other coding agents', 86, 646, { size: 20, font: MX.SANS, color: T.mute }); MX.A = a;
+        H2.endPanel(); return;
       }
       if (pn.kind === 'verdict') {
         if (!H2.panel(a, spec.fig || 'Fig', 'Receipt', 'What was checked against what is published, and what was not.')) return;

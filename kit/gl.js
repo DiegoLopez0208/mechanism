@@ -31,7 +31,7 @@
     if (TG.grid) { const gp = TG.grid.px, n = TG.grid.every || 5; for (let i = 0, x = 0; x <= bgc.width; x += gp, i++) { bx.strokeStyle = i % n ? TG.grid.minor : TG.grid.major; bx.lineWidth = i % n ? 1 : 1.4; bx.beginPath(); bx.moveTo(x + 0.5, 0); bx.lineTo(x + 0.5, bgc.height); bx.stroke(); } for (let j = 0, y = 0; y <= bgc.height; y += gp, j++) { bx.strokeStyle = j % n ? TG.grid.minor : TG.grid.major; bx.lineWidth = j % n ? 1 : 1.4; bx.beginPath(); bx.moveTo(0, y + 0.5); bx.lineTo(bgc.width, y + 0.5); bx.stroke(); } }
     const bgt = new TH.CanvasTexture(bgc); bgt.colorSpace = TH.SRGBColorSpace; scene.background = bgt;
     const pm = new TH.PMREMGenerator(renderer); scene.environment = pm.fromScene(new TH.RoomEnvironment(), 0.04).texture; pm.dispose();
-    scene.environmentIntensity = o.envIntensity == null ? 0.6 : o.envIntensity;
+    scene.environmentIntensity = o.envIntensity == null ? 0.74 : o.envIntensity;
     const camera = FOV > 0 ? new TH.PerspectiveCamera(FOV, W / H, 10, 4000) : new TH.OrthographicCamera(-1, 1, 1, -1, -2000, 2000);
     scene.add(new TH.HemisphereLight('#ffffff', '#d8d3c4', 0.28));
     const key = new TH.DirectionalLight('#fff1e0', 2.3), kp = o.key || [-60, 170, 110];

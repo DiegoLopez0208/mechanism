@@ -51,6 +51,6 @@
         { id: 'positions', label: 'Positions', metric: 'positions', formula: '8! x 3^7 x 12! / 2 x 2^11', publish: { text: '43,252,003,274,489,856,000', claim: 'positions' } },
       ] },
     },
-    director: { hold: 2.5, zoom: 0.92, tour: ['UFR', 'UF', 'U'] },
+    director: { hold: 2.5, tour: ['UFR', 'UF', 'U'] },
   };
 })();
