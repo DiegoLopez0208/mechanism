@@ -164,6 +164,82 @@ footer a { border-bottom:1px solid var(--line); }
 @media (max-width: 960px) { .grid { grid-template-columns:repeat(2, minmax(0,1fr)); } .steps { grid-template-columns:repeat(2,1fr); } .legend { grid-template-columns:repeat(2,1fr); } .two, .gate, .live3d { grid-template-columns:1fr; } .viewer { margin:0 auto; } .term { transform:none; } }
 @media (max-width: 640px) { nav { position:static; } nav .wrap { height:auto; flex-wrap:wrap; gap:10px 12px; padding-top:12px; padding-bottom:12px; } nav .wrap .pill { margin-left:auto; } #looks, #lens { flex:0 0 auto; } #looks { order:3; } #lens { order:4; margin-left:auto; } .looks button { padding:9px 11px; min-height:36px; } .stage3d .hint { white-space:normal; width:88%; text-align:center; letter-spacing:.14em; line-height:1.5; }  .dl { gap:8px; flex-wrap:wrap; } .dl a { display:inline-flex; align-items:center; min-height:36px; padding:0 12px; border:1px solid var(--line); border-radius:6px; } .gate a { display:inline-block; padding:6px 0; } }
 @media (max-width: 760px) { .hero-grid { grid-template-columns:1fr; gap:8px; } nav ul { display:none; } .grid { grid-template-columns:1fr; } .proof .wrap { grid-template-columns:1fr; } .proof div.item + div.item { padding-left:0; border-left:0; border-top:1px solid var(--line); } section { padding:72px 0; } .steps { grid-template-columns:1fr; } .stage3d { min-height:360px; } .facts { gap:22px; } }
+
+/* ---- identity: the page is a drawing sheet. Square corners, hairlines, registration marks, sheet numbers, a title block. ---- */
+:root { --mono:ui-monospace, 'Cascadia Mono', 'SF Mono', Consolas, monospace; --tick:var(--teal); }
+body { counter-reset:sec; background-image:linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px), linear-gradient(color-mix(in srgb, var(--ink) 5%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--ink) 5%, transparent) 1px, transparent 1px); background-size:40px 40px, 40px 40px, 200px 200px, 200px 200px; background-attachment:fixed; }
+.pill, .btn, .chip, .tag, .looks, .looks button, .pick button, .road span, .copy, .tags span, .viewer .poster b { border-radius:0; }
+.card .stage, .viewer, .term, .code { border-radius:0; }
+.btn, .pill, .looks button, .pick button, .chip, .tag, .copy, .dl a, .eyebrow, .road span { font-family:var(--mono); }
+.btn { padding:14px 22px; letter-spacing:.1em; font-weight:600; font-size:12px; }
+.btn::after { content:'\2192'; margin-left:12px; display:inline-block; transition:transform .2s; }
+.btn:hover::after { transform:translateX(4px); }
+.btn.fill { box-shadow:5px 5px 0 color-mix(in srgb, var(--teal) 70%, transparent); } .btn.fill:hover { box-shadow:2px 2px 0 var(--teal); transform:translate(3px,3px); }
+.mark { font-family:var(--mono); font-weight:700; font-size:22px; letter-spacing:-.02em; display:flex; align-items:center; gap:11px; }
+.mark::before { content:''; width:18px; height:18px; flex:none; background:linear-gradient(var(--teal),var(--teal)) center/100% 2px no-repeat, linear-gradient(var(--teal),var(--teal)) center/2px 100% no-repeat; border:2px solid var(--teal); box-sizing:border-box; }
+nav ul { font-family:var(--mono); font-size:11.5px; letter-spacing:.16em; }
+nav ul a { position:relative; padding:4px 0; } nav ul a::after { content:''; position:absolute; left:0; right:100%; bottom:-2px; height:2px; background:var(--teal); transition:right .25s; } nav ul a:hover::after { right:0; }
+.eyebrow { font-size:11px; letter-spacing:.22em; } .eyebrow::before { content:'// '; color:var(--mute); }
+
+/* the hero: a title block like the corner of a drawing */
+.hero { padding-bottom:0; }
+.hero::before { -webkit-mask-image:none; mask-image:none; opacity:.55; }
+.titleblock { position:relative; z-index:1; display:grid; grid-template-columns:1fr .7fr 1.7fr 1fr .7fr; margin:64px 0 0; border:1px solid var(--line); border-bottom:0; background:color-mix(in srgb, var(--bg) 72%, transparent); backdrop-filter:blur(6px); }
+.titleblock div { padding:12px 18px 13px; border-left:1px solid var(--line); min-width:0; } .titleblock div:first-child { border-left:0; }
+.titleblock dt { font:600 9.5px var(--mono); letter-spacing:.24em; text-transform:uppercase; color:var(--mute); margin:0 0 4px; }
+.titleblock dd { margin:0; font:600 14px var(--mono); color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.facts div b { font-family:var(--mono); font-weight:700; letter-spacing:-.04em; }
+.facts div { border-left:2px solid var(--teal); padding-left:14px; }
+.stage3d .ring { border-radius:0; border:1px dashed color-mix(in srgb, var(--ink) 18%, transparent); inset:5% 4%; }
+.stage3d .ring.b { inset:16% 15%; border-radius:50%; }
+.tags span { background:var(--bg); }
+
+.proof { background:color-mix(in srgb, var(--bg2) 92%, transparent); }
+.proof b { font-family:var(--mono); font-weight:700; font-size:20px; letter-spacing:-.01em; }
+.proof .item b::before { content:'\25A0'; color:var(--teal); margin-right:10px; font-size:12px; vertical-align:2px; }
+
+/* sections: a sheet number and a name on the top rule */
+section { position:relative; padding-top:100px; }
+section::before { counter-increment:sec; content:counter(sec, decimal-leading-zero) '  /  ' attr(data-label); position:absolute; top:30px; left:max(28px, calc((100% - 1180px) / 2 + 28px)); font:600 11px var(--mono); letter-spacing:.24em; text-transform:uppercase; color:var(--mute); }
+section::after { content:''; position:absolute; top:0; left:0; right:0; height:9px; background-image:repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px 10px), repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px 50px); background-size:100% 5px, 100% 9px; background-repeat:no-repeat; pointer-events:none; }
+.head h2, .gate h2, .live3d h2 { text-wrap:balance; }
+.gate .eyebrow, .live3d .eyebrow { display:none; } .gate h2 { margin-top:0 !important; }
+.lensrow { display:flex; align-items:center; gap:12px; margin-left:auto; } .lensrow span { font:600 10px var(--mono); letter-spacing:.22em; text-transform:uppercase; color:var(--mute); }
+
+/* the terminal */
+.term { box-shadow:8px 8px 0 color-mix(in srgb, var(--teal) 55%, transparent); transform:none; border-color:var(--line); } .term:hover { transform:translate(3px,3px); box-shadow:4px 4px 0 color-mix(in srgb, var(--teal) 55%, transparent); }
+.term .bar i { border-radius:0; width:10px; height:10px; }
+.term .tabs button { border-radius:0; }
+
+/* each film is a numbered sheet with registration marks in the corners */
+.grid { counter-reset:sh; gap:44px 30px; perspective:none; }
+.card { counter-increment:sh; position:relative; padding:12px 12px 20px; border:1px solid var(--line); background-color:color-mix(in srgb, var(--bg) 60%, transparent);
+  background-image:linear-gradient(var(--tick),var(--tick)), linear-gradient(var(--tick),var(--tick)), linear-gradient(var(--tick),var(--tick)), linear-gradient(var(--tick),var(--tick)), linear-gradient(var(--tick),var(--tick)), linear-gradient(var(--tick),var(--tick)), linear-gradient(var(--tick),var(--tick)), linear-gradient(var(--tick),var(--tick));
+  background-size:16px 2px, 2px 16px, 16px 2px, 2px 16px, 16px 2px, 2px 16px, 16px 2px, 2px 16px;
+  background-position:left top, left top, right top, right top, left bottom, left bottom, right bottom, right bottom; background-repeat:no-repeat; transition:opacity .7s, translate .7s, border-color .2s; }
+.card:hover { border-color:color-mix(in srgb, var(--teal) 60%, transparent); }
+.card::before { content:'SHEET ' counter(sh, decimal-leading-zero); display:block; font:600 10px var(--mono); letter-spacing:.24em; color:var(--mute); margin:0 0 10px; }
+.card .stage { box-shadow:none; border:1px solid var(--line); transform:none !important; }
+.card .stage:hover { box-shadow:none; }
+.card h3 { font-family:var(--mono); font-size:22px; font-weight:700; letter-spacing:-.01em; margin:18px 0 10px; text-transform:uppercase; }
+.card .chip { font-size:10.5px; letter-spacing:.06em; padding:5px 9px; outline:1px solid color-mix(in srgb, currentColor 35%, transparent); outline-offset:2px; margin:4px 0 14px 3px; }
+.card p { font-size:14.5px; line-height:1.6; }
+.dl a { font-size:11px; letter-spacing:.14em; border-bottom:0; padding:5px 0; background:linear-gradient(currentColor, currentColor) bottom/100% 1px no-repeat; transition:background-size .2s; } .dl a:hover { background-size:100% 3px; }
+
+.pick button { font-size:11px; letter-spacing:.1em; } .pick button.on, .pick button:hover { box-shadow:3px 3px 0 color-mix(in srgb, var(--teal) 55%, transparent); }
+.viewer { box-shadow:8px 8px 0 color-mix(in srgb, var(--teal) 40%, transparent); }
+.step::before { font-family:var(--mono); font-weight:700; } .step { border-top:2px solid var(--line); }
+.legend div { border-top:2px solid var(--line); }
+.code { border-left:3px solid var(--teal); }
+.road span { font-size:12.5px; letter-spacing:.04em; }
+footer { font-family:var(--mono); font-size:12px; letter-spacing:.04em; } footer .wrap::before { content:'END OF SHEET'; flex-basis:100%; font:600 10px var(--mono); letter-spacing:.28em; color:var(--teal); }
+.looks button.on { background:var(--teal); color:var(--bg); }
+
+@media (max-width: 760px) {
+  .titleblock { grid-template-columns:1fr 1fr; margin-top:40px; } .titleblock div:nth-child(odd) { border-left:0; } .titleblock div { border-top:1px solid var(--line); } .titleblock div:nth-child(-n+2) { border-top:0; } .titleblock div:last-child { grid-column:1 / -1; border-left:0; }
+  section { padding-top:96px; } .lensrow { margin-left:0; } .titleblock dd { white-space:normal; }
+  .card::before { margin-bottom:8px; } .btn { padding:13px 18px; }
+}
 </style>
 </head>
 <body>
@@ -172,7 +248,6 @@ footer a { border-bottom:1px solid var(--line); }
   <ul><li><a href="#gate">The gate</a></li><li><a href="#examples">Films</a></li><li><a href="#touch">Touch it</a></li><li><a href="#how">How it works</a></li><li><a href="#install">Install</a></li></ul>
   <a class="pill" href="https://github.com/DiegoLopez0208/mechanism" target="_blank" rel="noopener">GitHub</a>
   <div class="looks" id="looks" role="group" aria-label="Look"><button data-look="paper">Paper</button><button data-look="night">Night</button><button data-look="dossier">Dossier</button><button data-look="studio">Studio</button></div>
-  <div class="looks" id="lens" role="group" aria-label="Film length"><button data-len="short">30 s</button><button data-len="full">Full</button></div>
 </div></nav>
 
 <header class="hero" id="top"><div class="wrap hero-grid">
@@ -190,7 +265,9 @@ footer a { border-bottom:1px solid var(--line); }
     <div class="tags"><span class="a">spec</span><span class="b">estimated</span><span class="c">derived</span></div>
     <div class="hint">Move to orbit &middot; scroll to take it apart &middot; click to turn</div>
   </div>
-</div></header>
+</div>
+  <div class="wrap"><dl class="titleblock"><div><dt>Subject</dt><dd>mechanism</dd></div><div><dt>Revision</dt><dd>0.7.0</dd></div><div><dt>Gate</dt><dd>refuses unsourced numbers</dd></div><div><dt>Verified</dt><dd>11 objects</dd></div><div><dt>Licence</dt><dd>MIT</dd></div></dl></div>
+</header>
 
 <div class="proof"><div class="wrap">
   <div class="item"><b>Sourced</b><span>Every number is SPEC, MEASURED, DERIVED or ESTIMATED, with its source or its reason.</span></div>
@@ -198,7 +275,7 @@ footer a { border-bottom:1px solid var(--line); }
   <div class="item"><b>Three outputs</b><span>A film with real recorded sound, an interactive viewer, and an STL / GLB of the model.</span></div>
 </div></div>
 
-<section id="gate"><div class="wrap gate">
+<section id="gate" data-label="The gate"><div class="wrap gate">
   <div class="rv">
     <div class="eyebrow">The gate</div>
     <h2 style="margin-top:14px">A spec that does not add up is not rendered.</h2>
@@ -215,8 +292,9 @@ footer a { border-bottom:1px solid var(--line); }
   </div>
 </div></section>
 
-<section id="examples"><div class="wrap">
-  <div class="head rv"><h2>The check is on the card.</h2><p>Each one carries what its model had to reproduce, and says plainly what it could not source.</p></div>
+<section id="examples" data-label="The films"><div class="wrap">
+  <div class="head rv"><h2>The check is on the card.</h2><p>Each one carries what its model had to reproduce, and says plainly what it could not source.</p>
+    <div class="lensrow"><span>Film length</span><div class="looks" id="lens" role="group" aria-label="Film length"><button data-len="short">30 s</button><button data-len="full">Full</button></div></div></div>
   <div class="grid">
     <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-enigma.jpg" data-paper="out/enigma.mp4"></video><div class="shine"></div></div>
       <h3>Enigma I</h3><span class="chip ok">AAAAA to BDZGO, reproduced</span>
@@ -277,7 +355,7 @@ footer a { border-bottom:1px solid var(--line); }
   </div>
 </div></section>
 
-<section id="touch"><div class="wrap live3d">
+<section id="touch" data-label="Touch it"><div class="wrap live3d">
   <div class="rv">
     <div class="eyebrow">Touch it</div>
     <h2 style="margin-top:14px">Do not watch it. Take it apart.</h2>
@@ -287,7 +365,7 @@ footer a { border-bottom:1px solid var(--line); }
   <div class="viewer rv" id="viewer"><div class="poster" id="vposter"><img id="vimg" src="docs/media/poster-enigma.jpg" alt=""><b>Load the live viewer</b></div></div>
 </div></section>
 
-<section id="how"><div class="wrap">
+<section id="how" data-label="How it works"><div class="wrap">
   <div class="head rv"><h2>It looks things up before it draws anything.</h2><p>The skill's job is evidence. The engine and the sound are built to serve it.</p></div>
   <div class="steps rv">
     <div class="step"><h3>Research</h3><p>Spec sheets, teardowns, official photos, published test vectors. It opens the pages and the pictures.</p></div>
@@ -320,7 +398,7 @@ PASSES
   </div>
 </div></section>
 
-<section id="install"><div class="wrap">
+<section id="install" data-label="Install"><div class="wrap">
   <div class="head rv"><h2>Use it as a Claude Code skill.</h2><p>Clone it into your skills folder and ask for an exploded view of something real. Needs Node 22+, Edge or Chrome, and ffmpeg.</p></div>
   <div class="two rv">
     <div class="code"><button class="copy" data-copy="git clone https://github.com/DiegoLopez0208/mechanism ~/.claude/skills/mechanism">Copy</button><span class="c"># macOS / Linux</span>
@@ -341,7 +419,7 @@ node scripts/render.mjs examples/my-object/index.html</div>
   </div>
 </div></section>
 
-<section id="next"><div class="wrap">
+<section id="next" data-label="What is next"><div class="wrap">
   <div class="head rv"><h2>On the bench.</h2><p>Objects whose numbers can be computed and checked against what is published.</p></div>
   <div class="road rv"><span class="done">Enigma I</span><span class="done">Rubik's cube, 20-move superflip</span><span class="done">4-cylinder engine, firing order and sound</span><span class="done">Three-speed hub</span><span class="done">Key switch</span><span class="done">MOS 6502, pinout and die</span><span class="done">WinRAR, software: 87 bytes rebuilt</span><span class="done">WinRAR unpacking, from RFC 1951</span><span class="done">Pin tumbler lock, KW1 key</span><span class="done">RTX 4090, cores x clock = TFLOPS</span><span>Pin-tumbler lock, 6^5 keys</span><span>Bicycle drivetrain</span></div>
 </div></section>
