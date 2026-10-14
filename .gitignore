@@ -22,3 +22,6 @@ data/audio/dl/
 *.wav
 .audio-*
 *.video-*.mp4
+
+# film lint frames
+lint/

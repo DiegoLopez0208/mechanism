@@ -500,7 +500,7 @@
       const sc = new TH.Scene(); parts.forEach((p) => { const cl = p.group.clone(true); cl.name = p.id; cl.position.copy(p.group.position); cl.rotation.copy(p.group.rotation); cl.traverse((m) => { if (m.isLine || m.isLineSegments) m.visible = false; if (m.isMesh && !m.geometry.index) { const g2 = m.geometry.clone(); g2.deleteAttribute('uv'); m.geometry = TH.mergeVertices(g2, 1e-3); } }); sc.add(cl); });      // geometria indexada: el GLB pesa una fraccion
       return b64(await new TH.GLTFExporter().parseAsync(sc, { binary: true }));
     };
-    g.__specInfo = () => ({ duration: DUR, parts: parts.length, validation: V.lines, warnings: V.warnings, errors: V.errors, phases: { assembled: ASM_END, modes: tM0, explode: tE0, tour: tT0, reassemble: tR0, panels: tP0 } });
+    g.__specInfo = () => ({ duration: DUR, parts: parts.length, validation: V.lines, warnings: V.warnings, errors: V.errors, phases: { assembled: ASM_END, modes: tM0, explode: tE0, tour: tT0, reassemble: tR0, panels: tP0 }, shots: [{ label: 'assembled', t: ASM_END + 0.4 }].concat(modes.map((m, k) => (mD[k] ? { label: 'mode ' + (m.id || k), t: mS[k] + mD[k] * 0.62 } : null)).filter(Boolean), [{ label: 'exploded', t: tE0 + ED + 0.2 }], tourIds.map((id, j) => ({ label: 'tour ' + id, t: tT0 + j * TD + TD * 0.62 })), [{ label: 'reassembled', t: tR0 + RD - 0.2 }]) });
 
     /* ---------------------------------------------------------- Enigma: estado animado, camino de la senal y HUD */
     // Los eventos (tecla, salida, camino, rotores que avanzan) vienen de kit/enigma.js, ya validados contra los casos publicados.
