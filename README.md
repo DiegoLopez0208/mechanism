@@ -108,7 +108,7 @@ The skill can also be found with `npx skills add DiegoLopez0208/mechanism --list
 
 Then ask: *"Use mechanism to model a mechanical keyboard switch from its published sources."* The agent researches, writes the spec, runs the gate and renders.
 
-Needs Node 22+, Edge or Chrome, and `ffmpeg`. `uv` is only used to measure photos. Nothing to install to render.
+Needs Node 22+, Edge or Chrome (on Linux, Google Chrome stable), and `ffmpeg`; for rendering films, a GPU. `uv` is only used to measure photos. Nothing else to install.
 
 ## Use the toolkit directly
 
@@ -231,7 +231,8 @@ Real recordings, not synthesis: keys, metal, glass, plastic and rubber impacts (
 - The hub's power path per mode is simplified: pawls and clutch are not modelled, and the film says so.
 - Interiors need photos or drawings. Without them they are estimated and dashed.
 - A single photo gives no millimetres: it needs a published size, a ruler or a datasheet.
-- Rendering takes about 2.5 minutes per minute of video (the evidence pages render in one pass, the moving shots in three; `--draft` gives a quick preview).
+- **A GPU makes rendering fast; without one it is very slow.** On a laptop with a discrete GPU a normal film takes about 2 to 3 seconds per second of video and the 30 s cut about a minute (`--draft` gives a quick preview). On a machine with no GPU (software WebGL) one frame takes about 7 seconds, so a 30 s film would take over an hour: use `--still`, `lint-film.mjs` and the viewer there, and render elsewhere.
+- **Platforms.** Developed on Windows. Tested on Ubuntu 24.04 (WSL2, Node 22, Chrome and ffmpeg installed from scratch, as a normal user): the partial-clone install, all the tests and gates, stills and the film lint work. Films were not rendered on Linux (no GPU there) and nothing was tried on macOS. The tests also run on Linux in CI.
 - The sources can be wrong too. The spec keeps them next to each claim so you can check, and notes where a page refused to be read.
 
 ## Roadmap
