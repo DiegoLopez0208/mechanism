@@ -19,6 +19,7 @@ node scripts/stranger.mjs rubik                   # label-free still for the str
 3. Make the model compare itself with something published (a ratio, a CRC, a byte count, a test vector). A model that compares nothing is NOTHING CHECKED.
 4. Declare `recognize` and run the stranger test. Record the result, including a failure.
 5. `npm test` and `node scripts/check-spec.mjs examples/my-object/spec.js` must pass. Do not commit `out/`.
+6. The project page plays 720p copies of the films from the `media` release, not from the repository (`docs/media/video/` is ignored). Make them with `ffmpeg -i out/<name>.mp4 -vf scale=720:-2 -c:v libx264 -crf 30 -preset slow -pix_fmt yuv420p -movflags +faststart -c:a aac -b:a 96k docs/media/video/<name>.mp4` (the same for `<name>-short.mp4`) and upload them with `gh release upload media docs/media/video/<name>.mp4 --clobber`. Posters (`docs/media/poster-<name>.jpg`) and GIFs stay in the repository.
 
 ## Changing the gate
 
