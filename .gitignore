@@ -25,3 +25,5 @@ data/audio/dl/
 
 # film lint frames
 lint/
+
+tools/react-evidence/node_modules/

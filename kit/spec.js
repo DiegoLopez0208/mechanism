@@ -251,7 +251,7 @@
     for (let i = 1; i < keys.length; i++) if (keys[i][0] <= keys[i - 1][0]) keys[i][0] = keys[i - 1][0] + 0.01;
 
     const stag = {}; order.slice().sort((a, b) => (a.explode.length() - b.explode.length())).forEach((p, i) => { stag[p.id] = i / Math.max(1, N - 1); });
-    const tourAt = (t) => { const j = Math.floor((t - tT0) / TD); if (j < 0 || j >= tourIds.length) return null; const ts = tT0 + j * TD, a = Math.min(ramp(t, ts + 0.25, ts + 0.7), 1 - ramp(t, ts + TD - 0.4, ts + TD)); return { id: tourIds[j], a, j }; };
+    const tourAt = (t) => { const n = tourIds.length, jj = Math.floor((t - tT0) / TD); if (jj < 0 || !n || t >= tR0 + RD) return null; if (jj >= n) return { id: tourIds[n - 1], a: 1 - ramp(t, tR0 + RD * 0.55, tR0 + RD), j: n - 1 }; const ts = tT0 + jj * TD; return { id: tourIds[jj], a: jj === 0 ? ramp(t, ts - 0.35, ts + 0.15) : 1, j: jj }; };      // the rest stays dimmed between two stops and until the camera has flown back out: through the shell the frame would go white
     const cutSet = Object.fromEntries(parts.filter((p) => p.spec.cutaway).map((p) => [p.id, typeof p.spec.cutaway === 'number' ? p.spec.cutaway : 0.9]));   // piezas que se vuelven casi transparentes mientras corre el mecanismo (vista de corte)
     const script = (t) => {
       const cut = ramp(t, tM0 - 0.3, tM0 + 0.5) * (1 - ramp(t, tE0 - 0.6, tE0 - 0.1)), ex = ramp(t, tE0, tE0 + ED), re = ramp(t, tR0, tR0 + RD), eg = ex * (1 - re), tr = tourAt(t), md = modeAt(t);
@@ -289,7 +289,7 @@
       const a = s.modeA; if (!(a > 0.01)) return; const mi = s.modeI, m = modes[mi], r = an.modes[mi], x = 78, y = H - 318, th = crankDeg(s.mech.eng.theta), bw = 430, col = [T.ember, T.mute, T.teal, T.ink];
       c.save(); c.globalAlpha = a; c.fillStyle = MX.rgba(T.paper, T.dark ? 0.86 : 0.9); c.fillRect(x - 24, y - 70, W - 2 * x + 48, 262); c.fillStyle = T.teal; c.fillRect(x - 24, y - 70, 4, 262);
       MX.A = 1; MX.text(m.label, x, y, { size: lblFit(m.label), font: MX.SERIF, w: 500, color: T.ink }); MX.text(m.formula || '', x, y + 42, { size: 21, font: MX.SANS, color: T.mute });
-      MX.text(r.text + (m.unit ? ' ' + m.unit : ''), W - x, y - 2, { size: 64, font: MX.SERIF, w: 500, color: T.ink, align: 'right' });
+      MX.text(r.text + (m.unit ? ' ' + m.unit : ''), W - x, y - 2, { size: valFit(r.text + (m.unit ? ' ' + m.unit : ''), m.label), font: MX.SERIF, w: 500, color: T.ink, align: 'right' });
       if (m.publish) { const cl = claimBy[m.publish.claim], w = 190; tagPill(c, W - x - w - 4, y + 44, cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + ' ' + (m.publish.text || m.publish.value)); MX.text(r.ok ? 'matches the model' : 'MISMATCH', W - x - w - 18, y + 44, { size: 19, font: MX.SANS, color: r.ok ? T.teal : T.ember, align: 'right', w: 500 }); }
       for (let k = 0; k < AE.n; k++) {
         const yy = y + 92 + k * 28, ph = EGE.phase(th, AE.ign[k]), name = EGE.stroke(ph); MX.text('CYL ' + (k + 1), x, yy + 5, { size: 15, font: MX.SANS, color: T.mute, spacing: 2.2, w: 600 });
@@ -303,7 +303,7 @@
       const a = s.modeA; if (!(a > 0.01)) return; const mi = s.modeI, m = modes[mi], r = an.modes[mi], run = an.cubeRuns[mi], x = 78, y = H - 318, t = s.t, nDone = cubeDone(t);
       c.save(); c.globalAlpha = a; c.fillStyle = MX.rgba(T.paper, T.dark ? 0.86 : 0.9); c.fillRect(x - 24, y - 70, W - 2 * x + 48, 262); c.fillStyle = T.teal; c.fillRect(x - 24, y - 70, 4, 262);
       MX.A = 1; MX.text(m.label, x, y, { size: lblFit(m.label), font: MX.SERIF, w: 500, color: T.ink }); MX.text(m.formula || '', x, y + 42, { size: 21, font: MX.SANS, color: T.mute });
-      MX.text(r.text + (m.unit ? ' ' + m.unit : ''), W - x, y - 2, { size: 64, font: MX.SERIF, w: 500, color: T.ink, align: 'right' });
+      MX.text(r.text + (m.unit ? ' ' + m.unit : ''), W - x, y - 2, { size: valFit(r.text + (m.unit ? ' ' + m.unit : ''), m.label), font: MX.SERIF, w: 500, color: T.ink, align: 'right' });
       if (m.publish) { const cl = claimBy[m.publish.claim], w = 190; const pt = String(m.publish.text || m.publish.value || m.publish.length + ' MOVES'); tagPill(c, W - x - w - 4, y + 44, cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + (pt.length > 14 ? '' : ' ' + pt)); MX.text(r.ok ? 'matches the model' : 'MISMATCH', W - x - w - 18, y + 44, { size: 19, font: MX.SANS, color: r.ok ? T.teal : T.ember, align: 'right', w: 500 }); }
       const first = CEV.findIndex((q) => q.k === mi), cur = first < 0 ? 0 : clamp(nDone - first, 0, run.moves.length), per = 15, st0 = clamp(cur - 6, 0, Math.max(0, run.moves.length - per));
       run.moves.slice(st0, st0 + per).forEach((mv, j) => { const gi = st0 + j, col = gi < cur ? T.mute : gi === cur ? T.ember : T.ink; MX.text(mv.text, x + j * 62, y + 112, { size: 32, font: MX.MONO, w: gi === cur ? 700 : 500, color: col }); });
@@ -334,6 +334,7 @@
       });
       c.restore();
     };
+    const valFit = (str, label) => { const c2 = MX.ctx; c2.save(); c2.font = '500 ' + lblFit(label) + 'px ' + MX.SERIF; const wl = c2.measureText(String(label)).width; c2.font = '500 64px ' + MX.SERIF; const wv = c2.measureText(String(str)).width; c2.restore(); const avail = W - 2 * 78 - wl - 40; return Math.max(26, wv > avail ? 64 * avail / wv : 64); };
     const lblFit = (str) => { const c2 = MX.ctx; c2.save(); c2.font = '500 64px ' + MX.SERIF; const w0 = c2.measureText(String(str)).width; c2.restore(); return Math.max(34, w0 > 470 ? 64 * 470 / w0 : 64); };      // a phase label shrinks instead of running into its value
     const drawMode = (c, s) => {
       if (PRESS) return drawPress(c, s);

@@ -181,7 +181,7 @@ footer a { border-bottom:1px solid var(--line); }
     <h1>Build it from <em>evidence.</em><br>Take it apart.<br>Film it.</h1>
     <p class="lead">Give it a real object. It looks the numbers up, writes a spec where every number says where it came from, and renders a film, a viewer and a 3D model. If the numbers do not add up, it does not render.</p>
     <div class="btns"><a class="btn fill" href="#examples">Watch the films</a><a class="btn" href="examples/enigma/index.html?explore" target="_blank">Type on the Enigma</a><a class="btn" href="#install">Install</a></div>
-    <div class="facts"><div><b>14</b><span>real objects</span></div><div><b>7</b><span>kinds of check</span></div><div><b>1</b><span>gate that says no</span></div></div>
+    <div class="facts"><div><b>15</b><span>real objects</span></div><div><b>7</b><span>kinds of check</span></div><div><b>1</b><span>gate that says no</span></div></div>
   </div>
   <div class="stage3d" id="stage3d">
     <div class="ring"></div><div class="ring b"></div>
@@ -238,6 +238,10 @@ footer a { border-bottom:1px solid var(--line); }
       <h3>MOS 6502</h3><span class="chip ok">64 KB, 105 opcodes, 16.6 mm2, checked</span>
       <p>Two sources have to agree. The gate counts the address and data pins on the pinout and compares them with the published bus widths, and measures the drawn leads against the DIP standard: 2.54 mm pitch, 15.24 mm rows.</p>
       <div class="dl"><a href="examples/mos6502/index.html?explore" target="_blank">Viewer</a><a href="https://github.com/DiegoLopez0208/mechanism/releases/download/v0.1.0/mos6502.glb">GLB</a><a href="examples/mos6502/spec.js" target="_blank">spec.js</a></div></article>
+    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-react.jpg" data-paper="out/react.mp4"></video><div class="shine"></div></div>
+      <h3>React: what a click does</h3><span class="chip ok">1 of 8 DOM nodes touched</span>
+      <p>Software in motion. A Counter component, its output before and after a click, and the real page. A model written from React's published rules has to predict what the real React 18.3.1 touches: one text, 7 nodes left alone, nothing rebuilt. Measured with a MutationObserver.</p>
+      <div class="dl"><a href="examples/react/index.html?explore" target="_blank">Viewer</a><a href="examples/react/spec.js" target="_blank">spec.js</a></div></article>
     <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-lock.jpg" data-paper="out/lock.mp4"></video><div class="shine"></div></div>
       <h3>Pin tumbler lock</h3><span class="chip ok">14 figures reproduced</span>
       <p>A lock cut open, with a real KW1 key. The published table says pin plus cut depth is .501 in for all six heights and the plug is .498 in: the model has to agree, the right key has to put all five splits on the shear line, and a key with one cut three steps off has to leave a pin across it. The key is a polygon with V cuts and the pins ride on its roots.</p>
@@ -355,7 +359,7 @@ node scripts/render.mjs examples/my-object/index.html</div>
 <script>
 (function () {
   const root = document.documentElement, file = location.protocol === 'file:', LOOKS = ['paper', 'night', 'dossier', 'studio'];
-  const SHORTS = ['lock', 'winrar', 'hub', 'enigma', 'rar5', 'switch', 'k20a', 'rubik', 'rtx4090', 'mos6502'];      // objects with a 30 s cut (render.mjs --length short)
+  const SHORTS = ['lock', 'winrar', 'hub', 'enigma', 'rar5', 'switch', 'k20a', 'rubik', 'rtx4090', 'mos6502', 'react'];      // objects with a 30 s cut (render.mjs --length short)
   let LEN = 'short'; try { LEN = localStorage.getItem('mx-len') || 'short'; } catch (e) {}
   const vurl = (p) => { const f = p.split('/').pop(), base = f.replace(/[.]mp4$/, ''), sh = LEN === 'short' && SHORTS.includes(base); return file ? (sh ? 'out/' + base + '-short.mp4' : p) : 'docs/media/video/' + (sh ? base + '-short.mp4' : f); };      // from disk: the full renders in out/; on the web: 720p copies
   const setVideo = (v) => { const src = vurl(v.dataset.paper), was = v.currentTime, playing = !v.paused; if (!v.src.endsWith(src)) { v.src = src; v.addEventListener('loadedmetadata', function f() { v.currentTime = was || 0; if (playing) v.play().catch(() => {}); v.removeEventListener('loadedmetadata', f); }); } };

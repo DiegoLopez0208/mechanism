@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 function load(extra) {
   const ctx = vm.createContext({ console, TextEncoder, TextDecoder }); ctx.window = ctx;
-  for (const f of ['kit/kin.js', 'kit/enigma.js', 'kit/cube.js', 'kit/rar5.js', 'kit/deflate.js', 'kit/spec-core.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
+  for (const f of ['kit/kin.js', 'kit/enigma.js', 'kit/cube.js', 'kit/rar5.js', 'kit/deflate.js', 'kit/react-reconcile.js', 'kit/spec-core.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
   (extra || []).forEach((f) => vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f }));
   return ctx;
 }
@@ -135,7 +135,7 @@ test('recognize: a failed blind test is reported, not hidden', () => {
 });
 
 test('the shipped examples keep passing with an honest verdict', () => {
-  for (const name of ['hub', 'switch', 'enigma', 'k20a', 'rubik', 'rtx4090', 'mos6502', 'rar5', 'winrar', 'lock']) {
+  for (const name of ['hub', 'switch', 'enigma', 'k20a', 'rubik', 'rtx4090', 'mos6502', 'rar5', 'winrar', 'lock', 'react']) {
     const r = validateExample(name);
     assert.equal(r.errors.length, 0, name + ': ' + r.errors.join('; '));
     assert.equal(r.verdict.state, 'VERIFIED', name);

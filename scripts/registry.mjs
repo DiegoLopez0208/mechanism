@@ -13,7 +13,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), docs = path.join(root, 'docs');
-const KIT = ['kit/kin.js', 'kit/enigma.js', 'kit/cube.js', 'kit/rar5.js', 'kit/deflate.js', 'kit/spec-core.js'];
+const KIT = ['kit/kin.js', 'kit/enigma.js', 'kit/cube.js', 'kit/rar5.js', 'kit/deflate.js', 'kit/react-reconcile.js', 'kit/spec-core.js'];
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const sha = (f) => crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');
 const names = fs.readdirSync(path.join(root, 'examples')).filter((n) => /^[a-z0-9][a-z0-9-]*$/.test(n) && fs.existsSync(path.join(root, 'examples', n, 'spec.js'))).sort();
