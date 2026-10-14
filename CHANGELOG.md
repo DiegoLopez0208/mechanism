@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.7.0 - 2026-10-14
+
+A film about React, and every film re-rendered with the new look.
+
 - **All films re-rendered** with the new look (auto-framing, softer metal, closing card with the name and the verdict), plus two fixes found by reading every cut: the camera no longer flies through the shell between tour stops (the frame went white on the RTX 4090), and a published value too wide for its panel (the Rubik's cube 43,252,003,274,489,856,000) now shrinks instead of printing over its label.
 - **Skill: "Explain what it is first".** A film has to say what the object is and what it does in plain words, and the stranger test is the check. `examples/react` was rebuilt on that rule.
 - **React** (examples/react): software in motion. One click on a Counter component, followed through the real React 18.3.1 in jsdom: the component runs again, React compares old and new output, and exactly one of eight DOM nodes is touched. `kit/react-reconcile.js` (`diff` for a component's output, `reconcile` for keyed lists) is written from the published reconciliation rules; `scripts/make-react-sample.mjs` records the real behaviour with a MutationObserver. Gate: 3 reproduced, 1 estimated; stranger test names React (90 / 92).
