@@ -17,6 +17,7 @@ refuses to render when the numbers do not add up, and outputs a film, an interac
   <img alt="three.js" src="https://img.shields.io/badge/three.js-0.186-23221f">
   <img alt="Node" src="https://img.shields.io/badge/node-%E2%89%A522-0b7285">
   <img alt="Claude Code skill" src="https://img.shields.io/badge/Claude%20Code-skill-c8542a">
+  <a href="https://www.claudepluginhub.com/plugins/diegolopez0208-mechanism?ref=badge"><img alt="Listed on ClaudePluginHub" src="https://www.claudepluginhub.com/badge/diegolopez0208-mechanism"></a>
 </p>
 
 <p align="center"><img src="docs/media/enigma.gif" width="540" alt="Enigma I: the signal travelling through the rotors, checked against the published test vector"></p>
