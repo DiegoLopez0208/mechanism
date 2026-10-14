@@ -1,0 +1,13 @@
+{
+  "name": "mechanism",
+  "version": "0.7.0",
+  "description": "Model a real object (hardware or software) from published evidence, check it against what is published, and film it with sound, an interactive viewer and an STL/GLB.",
+  "author": {
+    "name": "DiegoLopez0208",
+    "url": "https://github.com/DiegoLopez0208"
+  },
+  "homepage": "https://diegolopez0208.github.io/mechanism/",
+  "repository": "https://github.com/DiegoLopez0208/mechanism",
+  "license": "MIT",
+  "keywords": ["3d", "exploded-view", "three.js", "evidence", "video", "teardown"]
+}

@@ -94,7 +94,15 @@ Every example is a film, a live viewer (`examples/<name>/index.html?explore`, ad
 
 ## Install
 
-As a Claude Code skill:
+The one-line way, as a Claude Code plugin (Claude Code 2.1.275 or later):
+
+```
+/plugin install mechanism --marketplace DiegoLopez0208/mechanism
+```
+
+The skill then runs from the plugin folder, and your objects go in your own project.
+
+Or by hand, as a plain skill:
 
 ```bash
 # macOS / Linux: a partial clone, 4 MB (the repo also holds the films, the site and a long history, 85 MB or more, which you do not need to use the skill)

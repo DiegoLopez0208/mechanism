@@ -1,0 +1,15 @@
+{
+  "name": "mechanism",
+  "description": "A skill that builds inspectable models of real objects from evidence and films them.",
+  "owner": {
+    "name": "DiegoLopez0208",
+    "url": "https://github.com/DiegoLopez0208"
+  },
+  "plugins": [
+    {
+      "name": "mechanism",
+      "source": "./",
+      "description": "Model a real object (hardware or software) from published evidence, check it against what is published, and film it with sound, an interactive viewer and an STL/GLB. A model whose numbers do not add up is not rendered."
+    }
+  ]
+}
