@@ -47,3 +47,7 @@ Fixed afterwards in commit bafecf8 (tests 44/44): `plate` takes rectangular hole
 ## Comparison with run 01 (two data points, not a trend)
 
 Different object (a reader's request versus my choice), different skill version (6fd5295 versus 8845863), different judge model for the blind test (Haiku versus Sonnet), different GPU conditions (shared versus not). Run 01: Complete on autonomy, not recognisable. Run 02: Complete on autonomy, recognised. The difference in recognition cannot be attributed to the skill changes.
+
+## Gate today (added 2026-10-16; the run used `8845863` and the gate of that commit)
+
+With the stricter gate (VERIFIED needs a figure from a source independent of the model's inputs) this spec is still **VERIFIED**: 2 independent checks, 6 that share a source with their inputs, and 7 dimension and test-vector checks that are not classified. See Addendum 3 in `criteria.md`.

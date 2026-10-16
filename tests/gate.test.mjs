@@ -22,11 +22,11 @@ const MX = load().MX;
 const good = () => ({
   id: 't', title: 'T',
   research: {
-    sources: [{ id: 's1', title: 'Data sheet', url: 'https://www.rfc-editor.org/rfc/rfc1951', fetched: '2026-10-13' }],
-    claims: [{ id: 'c1', conf: 'spec', text: 'a width of 10 mm', src: ['s1'] }, { id: 'g', conf: 'estimated', text: 'the inside', why: 'nobody publishes it' }],
+    sources: [{ id: 's1', title: 'Data sheet', url: 'https://www.rfc-editor.org/rfc/rfc1951', fetched: '2026-10-13' }, { id: 's2', title: 'Second sheet', url: 'https://www.rfc-editor.org/rfc/rfc1952', fetched: '2026-10-13' }],
+    claims: [{ id: 'c1', conf: 'spec', text: 'a width of 10 mm', src: ['s1'] }, { id: 'g', conf: 'estimated', text: 'the inside', why: 'nobody publishes it' }, { id: 'cpub', conf: 'spec', text: 'the published value is 3', src: ['s2'] }],
   },
   parts: [{ id: 'a', name: 'A', kind: 'plate', p: { w: 10, h: 10, r: 1, t: 2 }, mat: 'steel', at: [0, 0, 0], conf: 'spec', claims: ['c1'] }],
-  mechanism: { calc: { vars: { x: { v: 3, claim: 'c1' } } }, drive: { modes: [{ id: 'm', label: 'three', expr: 'x', publish: { value: 3, claim: 'c1' } }] } },
+  mechanism: { calc: { vars: { x: { v: 3, claim: 'c1' } } }, drive: { modes: [{ id: 'm', label: 'three', expr: 'x', publish: { value: 3, claim: 'cpub' } }] } },      // the published figure comes from s2 and the input from s1: an independent check
 });
 const mutate = (fn) => { const s = good(); fn(s); return MX.spec.validate(s); };
 
@@ -126,26 +126,27 @@ test('gear train: two gears of different size on one body is an error, not a sil
   assert.ok(bad.errors.some((e) => /body sun carries gears with 20 and 60 teeth/.test(e) && /own body/.test(e) && /same/.test(e)), bad.errors.join('; '));
 });
 
-test('provenance: a check that uses the source that fed the model is consistency, not independent evidence', () => {
-  const base = MX.spec.validate(good());
-  assert.equal(base.verdict.state, 'VERIFIED');          // the state does not change: the label does
-  assert.equal(base.verdict.sameSource, 1); assert.equal(base.verdict.independent, 0); assert.equal(base.verdict.consistencyOnly, true);
-  assert.ok(base.lines.some((l) => /^verdict: VERIFIED \(consistency only/.test(l)), base.lines.join('\n'));
-  assert.ok(base.warnings.some((w) => /same source that fed it/.test(w)) && base.warnings.some((w) => /no check uses a source independent/.test(w)), base.warnings.join('\n'));
-  // the published figure now comes from another source: independent
-  const indep = mutate((s) => { s.research.sources.push({ id: 's2', title: 'Second sheet', url: 'https://www.rfc-editor.org/rfc/rfc1952', fetched: '2026-10-13' }); s.research.claims.push({ id: 'c2', conf: 'spec', text: 'the published value is 3', src: ['s2'] }); s.mechanism.drive.modes[0].publish.claim = 'c2'; });
-  assert.equal(indep.errors.length, 0, indep.errors.join('; '));
-  assert.equal(indep.verdict.independent, 1); assert.equal(indep.verdict.sameSource, 0); assert.equal(indep.verdict.consistencyOnly, false);
-  assert.ok(!indep.warnings.some((w) => /same source/.test(w)), indep.warnings.join('\n'));
-  assert.ok(indep.lines.some((l) => /^provenance: 1 independent, 0 same source/.test(l)), indep.lines.join('\n'));
+test('provenance: VERIFIED needs a check whose source is independent of the inputs; otherwise it is CONSISTENT', () => {
+  const base = MX.spec.validate(good());                  // the published figure is from s2 and the input from s1
+  assert.equal(base.verdict.state, 'VERIFIED'); assert.equal(base.verdict.independent, 1); assert.equal(base.verdict.sameSource, 0);
+  assert.ok(base.lines.some((l) => /^provenance: 1 independent, 0 same source/.test(l)), base.lines.join('\n'));
+  assert.ok(!base.warnings.some((w) => /same source|CONSISTENT/.test(w)), base.warnings.join('\n'));
+  // the figure now comes from the source that fed the model: the numbers agree, a wrong source would agree too
+  const same = mutate((s) => { s.mechanism.drive.modes[0].publish.claim = 'c1'; });
+  assert.equal(same.errors.length, 0, same.errors.join('; '));
+  assert.equal(same.verdict.state, 'CONSISTENT'); assert.equal(same.verdict.sameSource, 1); assert.equal(same.verdict.independent, 0);
+  assert.ok(same.lines.some((l) => /^verdict: CONSISTENT/.test(l)), same.lines.join('\n'));
+  assert.ok(same.warnings.some((w) => /same source that fed it/.test(w)) && same.warnings.some((w) => /CONSISTENT, not VERIFIED/.test(w)), same.warnings.join('\n'));
   // the second source says it derives from the first: it is the same source again
-  const derived = mutate((s) => { s.research.sources.push({ id: 's2', title: 'Second sheet', url: 'https://www.rfc-editor.org/rfc/rfc1952', fetched: '2026-10-13', derives: ['s1'] }); s.research.claims.push({ id: 'c2', conf: 'spec', text: 'the published value is 3', src: ['s2'] }); s.mechanism.drive.modes[0].publish.claim = 'c2'; });
-  assert.equal(derived.verdict.sameSource, 1); assert.equal(derived.verdict.independent, 0);
-  assert.ok(derived.warnings.some((w) => /\[s1\]/.test(w)), derived.warnings.join('\n'));
-  // a claim that cites two sources, one of them the same as the input's: the overlap is enough
-  const partial = mutate((s) => { s.research.sources.push({ id: 's2', title: 'Second sheet', url: 'https://www.rfc-editor.org/rfc/rfc1952', fetched: '2026-10-13' }); s.research.claims.push({ id: 'c2', conf: 'spec', text: 'the published value is 3', src: ['s2', 's1'] }); s.mechanism.drive.modes[0].publish.claim = 'c2'; });
-  assert.equal(partial.verdict.sameSource, 1);
+  const derived = mutate((s) => { s.research.sources[1].derives = ['s1']; });
+  assert.equal(derived.verdict.state, 'CONSISTENT'); assert.ok(derived.warnings.some((w) => /\[s1\]/.test(w)), derived.warnings.join('\n'));
+  // a claim that cites two sources, one of them the one that fed the model: the overlap is enough
+  const partial = mutate((s) => { s.research.claims.find((c) => c.id === 'cpub').src = ['s2', 's1']; });
+  assert.equal(partial.verdict.state, 'CONSISTENT');
+  // a failing check is still DOES NOT PASS, and an incomplete one INCOMPLETE: CONSISTENT only softens a VERIFIED
+  assert.equal(mutate((s) => { s.mechanism.drive.modes[0].publish = { value: 4, claim: 'c1' }; }).verdict.state, 'DOES NOT PASS');
 });
+
 
 test('captions: a quantity typed in a part card must be traceable to something in the spec', () => {
   const withInfo = (lines) => mutate((s) => { s.parts[0].info = { title: 'Plate', lines, conf: ['spec'] }; });
@@ -202,7 +203,7 @@ test('the shipped examples keep passing with an honest verdict', () => {
   for (const name of ['hub', 'switch', 'enigma', 'k20a', 'rubik', 'rtx4090', 'mos6502', 'rar5', 'winrar', 'lock', 'react']) {
     const r = validateExample(name);
     assert.equal(r.errors.length, 0, name + ': ' + r.errors.join('; '));
-    assert.equal(r.verdict.state, 'VERIFIED', name);
+    assert.equal(r.verdict.state, name === 'lock' ? 'CONSISTENT' : 'VERIFIED', name);      // the lock takes every figure from one page (Lockwiki): consistent with it, not independently verified
     assert.ok(r.verdict.checked >= 2, name + ' compares fewer than 2 published figures');
   }
 });
@@ -243,14 +244,14 @@ test('a check that only converts units is reported, and is not evidence by itsel
   const r2 = mutate((s) => { s.mechanism.drive.modes[0].kind = 'convert'; });
   assert.equal(r2.verdict.state, 'ONLY CONVERSIONS');
   // one real check next to a conversion: VERIFIED, with the conversion not counted
-  const r3 = mutate((s) => { conv(s); s.mechanism.drive.modes.push({ id: 'k', label: 'three', expr: 'x - x + 3', publish: { value: 3, claim: 'c1' } }); });
+  const r3 = mutate((s) => { conv(s); s.mechanism.drive.modes.push({ id: 'k', label: 'three', expr: 'x - x + 3', publish: { value: 3, claim: 'cpub' } }); });
   assert.equal(r3.verdict.state, 'VERIFIED');
   assert.equal(r3.verdict.checked, 1);
   assert.equal(r3.verdict.conversions, 1);
 });
 
 test('calc expressions can use sqrt, abs, min, max and PI without the Math prefix', () => {
-  const r = mutate((s) => { s.mechanism.drive.modes[0].expr = 'sqrt(x * 3) + abs(-2) + max(1, 2) + min(5, 4) - 2 - 2 - 4 + PI - PI'; s.mechanism.drive.modes[0].publish = { value: 3, tol: 0.001, claim: 'c1' }; });
+  const r = mutate((s) => { s.mechanism.drive.modes[0].expr = 'sqrt(x * 3) + abs(-2) + max(1, 2) + min(5, 4) - 2 - 2 - 4 + PI - PI'; s.mechanism.drive.modes[0].publish = { value: 3, tol: 0.001, claim: 'cpub' }; });
   assert.equal(r.errors.length, 0, r.errors.join('; '));
   assert.equal(r.verdict.state, 'VERIFIED');
   const keep = mutate((s) => { s.mechanism.calc.vars.max = { v: 3, claim: 'c1' }; s.mechanism.drive.modes[0].expr = 'max'; });

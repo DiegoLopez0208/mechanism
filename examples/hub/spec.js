@@ -28,7 +28,7 @@ window.SPEC = (() => {
         { id: 'dims', conf: 'estimated', text: 'Module 0.8 mm, gear width 8 mm, shell 60 mm, axle 9.5 mm, flange and bearing sizes.', why: 'Sturmey-Archer publishes no internal drawing; sizes are chosen so the published tooth counts fit.' },
         { id: 'planets4', conf: 'estimated', text: 'Four planets.', why: 'The tooth counts allow 4 (and 5 or 2); the real number was not found in any source.' },
         { id: 'scope', conf: 'estimated', text: 'Pawls, clutch and shifter are not modelled; which member the driver and the shell lock to in each gear is simplified.', why: 'The planetary stage alone sets the ratio, so that is what is checked against the published numbers; the locking mechanism is not published in enough detail.' },
-        { id: 'cog', conf: 'estimated', text: 'Chain sprocket of 18 teeth at 12.7 mm pitch, 36-hole flanges.', why: 'The cog size and spoke count vary by model; the pitch is the standard 1/2 inch bicycle chain.' },
+        { id: 'cog', conf: 'estimated', text: 'Chain sprocket of 18 teeth at 12.7 mm pitch (pitch radius 12.7 / (2 sin(pi/18)) = 36.57 mm), 36-hole flanges.', why: 'The cog size and spoke count vary by model; the pitch is the standard 1/2 inch bicycle chain.' },
       ],
     },
     parts: [
@@ -43,7 +43,7 @@ window.SPEC = (() => {
       { id: 'flangeR', cutaway: true, name: 'Flange (right)', kind: 'flange', p: { r: 37, bore: 12.5, w: 3, n: 36, hr: 33, hd: 2.6 }, mat: 'aluminum', at: [0, 0, 30], body: 'shell', explode: [0, 0, 34], conf: 'estimated', claims: ['cog'], info: { title: 'Spoke flanges', lines: ['36 holes each (ESTIMATED)', 'the wheel hangs from these'], conf: ['estimated'] } },
       { id: 'bearingL', name: 'Ball bearing (left)', kind: 'bearing', p: { ri: 5.2, ro: 12, w: 7, balls: 9 }, mat: 'chrome', at: [0, 0, -37.5], body: 'shell', explode: [0, 0, -40], conf: 'estimated', claims: ['dims'], tour: false },
       { id: 'bearingR', cutaway: true, name: 'Ball bearing (right)', kind: 'bearing', p: { ri: 5.2, ro: 12, w: 7, balls: 9 }, mat: 'chrome', at: [0, 0, 37.5], body: 'shell', explode: [0, 0, 44], conf: 'estimated', claims: ['dims'], info: { title: 'Ball bearings', lines: ['let the shell spin on the axle', 'balls and cage modelled'], conf: ['estimated'] } },
-      { id: 'sprocket', name: 'Chain sprocket', kind: 'sprocket', p: { teeth: 18, pitch: 12.7, roller: 7.75, width: 2.5, bore: 7 }, mat: 'steel-dark', at: [0, 0, -50], body: 'driver', explode: [0, 0, -52], conf: 'estimated', claims: ['cog'], info: { title: 'Chain sprocket', lines: ['18 teeth, 12.7 mm pitch', 'pitch radius 36.5 mm from p / (2 sin(pi/n))'], conf: ['estimated'] } },
+      { id: 'sprocket', name: 'Chain sprocket', kind: 'sprocket', p: { teeth: 18, pitch: 12.7, roller: 7.75, width: 2.5, bore: 7 }, mat: 'steel-dark', at: [0, 0, -50], body: 'driver', explode: [0, 0, -52], conf: 'estimated', claims: ['cog'], info: { title: 'Chain sprocket', lines: ['18 teeth, 12.7 mm pitch', 'pitch radius 36.6 mm from p / (2 sin(pi/n))'], conf: ['estimated'] } },
       { id: 'nutL', name: 'Lock nut (left)', kind: 'nut', p: { af: 17, h: 6, bore: 4.8 }, mat: 'steel', at: [0, 0, -57], explode: [0, 0, -64], conf: 'estimated', claims: ['dims'], tour: false },
       { id: 'nutR', cutaway: true, name: 'Lock nut (right)', kind: 'nut', p: { af: 17, h: 6, bore: 4.8 }, mat: 'steel', at: [0, 0, 57], explode: [0, 0, 56], conf: 'estimated', claims: ['dims'], info: { title: 'Lock nuts', lines: ['clamp the axle to the dropouts'], conf: ['estimated'] } },
     ]),

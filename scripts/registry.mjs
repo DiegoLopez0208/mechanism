@@ -17,7 +17,7 @@ const KIT = ['kit/kin.js', 'kit/enigma.js', 'kit/cube.js', 'kit/rar5.js', 'kit/d
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const sha = (f) => crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');
 const names = fs.readdirSync(path.join(root, 'examples')).filter((n) => /^[a-z0-9][a-z0-9-]*$/.test(n) && fs.existsSync(path.join(root, 'examples', n, 'spec.js'))).sort();
-const COLOR = { VERIFIED: '#2ea043', INCOMPLETE: '#d29922', 'NOTHING CHECKED': '#8b949e', 'DOES NOT PASS': '#da3633' };
+const COLOR = { VERIFIED: '#2ea043', CONSISTENT: '#bf8700', INCOMPLETE: '#d29922', 'NOTHING CHECKED': '#8b949e', 'DOES NOT PASS': '#da3633' };
 
 const records = names.map((n) => {
   const dir = path.join(root, 'examples', n), ctx = vm.createContext({ console, TextEncoder, TextDecoder }); ctx.window = ctx;
@@ -53,8 +53,8 @@ table{border-collapse:collapse;width:100%;min-width:720px}th,td{padding:10px 12p
 th{font:600 12px/1 ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}tr:last-child td{border-bottom:0}
 td.n{font-variant-numeric:tabular-nums;text-align:right}th.n{text-align:right}.id,.h{color:var(--mute);font:12px ui-monospace,monospace}a{color:inherit}
 </style></head><body><main>
-<h1>Verified objects</h1>
-<p>Every row is the gate's own output for that spec (generated ${new Date().toISOString().slice(0, 10)} by <code>node scripts/registry.mjs</code>). VERIFIED means at least one published figure was compared with the model, all matched, none pending. "Estimated" counts claims nobody publishes. "Dimensions" counts drawn sizes compared with their source.</p>
+<h1>Verified and consistent objects</h1>
+<p>Every row is the gate's own output for that spec (generated ${new Date().toISOString().slice(0, 10)} by <code>node scripts/registry.mjs</code>). VERIFIED means at least one published figure was compared with the model, all matched, none pending, and at least one of those figures comes from a source independent of the model's inputs. CONSISTENT means everything matched but every figure shares its source with the inputs: a wrong source would pass too. "Estimated" counts claims nobody publishes. "Dimensions" counts drawn sizes compared with their source.</p>
 <div class="wrap"><table><thead><tr><th>Object</th><th>Verdict</th><th class="n">Reproduced</th><th class="n">Estimated</th><th class="n">Dimensions</th><th class="n">Parts</th><th>Recognised by a stranger</th><th>Spec</th></tr></thead><tbody>
 ${rows}
 </tbody></table></div>

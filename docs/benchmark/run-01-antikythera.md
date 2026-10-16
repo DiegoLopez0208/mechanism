@@ -48,3 +48,7 @@ All three toolkit findings and the SKILL.md wording were fixed afterwards in com
 ## Observation on the criteria (no edit to them)
 
 Criterion 5 only requires the stranger test to be run and recorded, so a model that is not recognisable still counts as Complete. For the next runs consider a second column (recognised yes/no) next to the autonomy result, as Addendum 1 already separates autonomy from artifact quality. Criterion 1 also lets a check through lost, estimated gears count as "reproduced"; the gate cannot tell a check that tests a published figure from one that tests a number the agent chose. One run is one data point, not a success rate.
+
+## Gate today (added 2026-10-16; the run used `6fd5295` and the gate of that commit)
+
+The gate now distinguishes a check that uses the source that fed the model from one that uses an independent source, and VERIFIED needs at least one of the second kind. This spec: 0 independent, 6 same source (the published periods and the tooth counts share a source), so today's state is **CONSISTENT**, not VERIFIED. The classification above (Complete on autonomy) is what the criteria said when the run was made; see Addendum 3 in `criteria.md`. This is the weakness already written under "Checks are weaker than "6 reproduced" sounds", now reported by the gate itself.

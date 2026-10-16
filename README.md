@@ -242,7 +242,7 @@ Does it work without someone holding its hand? Two objects were given to fresh a
 | Object | Autonomy | Gate | Stranger test |
 |--------|----------|------|---------------|
 | 3.5-inch floppy disk, 1.44 MB (chosen by me) | complete, 18 min 51 s | VERIFIED, 15 checks | named it (one judge, 95 %) |
-| Antikythera mechanism (asked for by a reader) | complete, 27 min | VERIFIED, 6 checks, three of them through estimated gears | did not name it ("a clock movement") |
+| Antikythera mechanism (asked for by a reader) | complete, 27 min | VERIFIED when it ran; CONSISTENT with today's gate (6 checks, none independent of its inputs, three of them through estimated gears) | did not name it ("a clock movement") |
 
 Two runs are two data points, not a success rate; the agents were subagents with a clean context, not independent sessions, and the plan is 20 objects. The logs keep every failure and the toolkit problems the agents hit were fixed afterwards (the version each run used is written in its notes). Notes: `docs/benchmark/run-01-antikythera.md`, `docs/benchmark/run-02-floppy.md`. There is also a hand-edited Antikythera (`docs/benchmark/antikythera-refined/`), labelled as such, that is not part of the result.
 
@@ -254,7 +254,7 @@ Two runs are two data points, not a success rate; the agents were subagents with
 - A single photo gives no millimetres: it needs a published size, a ruler or a datasheet.
 - **A GPU makes rendering fast; without one it is very slow.** On a laptop with a discrete GPU a normal film takes about 2 to 3 seconds per second of video and the 30 s cut about a minute (`--draft` gives a quick preview). On a machine with no GPU (software WebGL) one frame takes about 7 seconds, so a 30 s film would take over an hour: use `--still`, `lint-film.mjs` and the viewer there, and render elsewhere.
 - **Platforms.** Developed on Windows. Tested on Ubuntu 24.04 (WSL2, Node 22, Chrome and ffmpeg installed from scratch, as a normal user): the partial-clone install, all the tests and gates, stills and the film lint work. Films were not rendered on Linux (no GPU there) and nothing was tried on macOS. The tests also run on Linux in CI.
-- **VERIFIED means compared and consistent, not true.** The agent writes both the model and the published figure it is compared with. The gate does not know if a source is right; it now says when a check uses the same source that fed the model (`VERIFIED (consistency only...)` if none is independent) and warns about quantities typed in captions that nothing in the spec backs. It cannot tell if two independent sources are both wrong, or if one copies the other without saying so (`derives`).
+- **VERIFIED means compared and consistent, not true.** The agent writes both the model and the published figure it is compared with. The gate does not know if a source is right; it now says when a check uses the same source that fed the model (the state is CONSISTENT, not VERIFIED, if none is independent: the pin tumbler lock is one) and warns about quantities typed in captions that nothing in the spec backs. It cannot tell if two independent sources are both wrong, or if one copies the other without saying so (`derives`).
 - The sources can be wrong too. The spec keeps them next to each claim so you can check, and notes where a page refused to be read.
 
 ## Roadmap

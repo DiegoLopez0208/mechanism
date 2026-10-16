@@ -53,3 +53,19 @@ Written 2026-10-15, about 23:40 local time, while the first run (Antikythera) wa
 - **Request:** "Use mechanism to model the 3.5-inch floppy disk (the 1.44 MB one) from its published sources."
 - **Skill version:** commit 8845863 (the version after the fixes that run 01 found; run 01 used 6fd5295). Same criteria, same outcome definitions, same two results (autonomy and artifact quality), same budget (about two hours), same conditions (clean-context subagent, not a fully independent session; the GPU may be shared with another job).
 - Run 01 and run 02 are different versions of the skill and different objects: they are two data points, not a trend.
+
+---
+
+## Addendum 3 (2026-10-16, after runs 01 and 02; the text above is not edited)
+
+The gate changed after the two runs: **VERIFIED now needs at least one published figure from a source independent of the model's inputs**; when every figure shares its source with the inputs the state is the new **CONSISTENT** (commit after `bafecf8`; see CHANGELOG, "Gate: provenance"). The reason is a reader's question: if the agent writes both the model and the published figure, a wrong source makes the gate agree with itself.
+
+Criterion 1 above says "VERIFIED". It refers to the gate that existed when each run was made, and the classifications already published stay as they were. For the record, what today's gate says about the same specs:
+
+| Spec | Gate when it ran | Gate today | Independent / same source |
+|------|------------------|------------|---------------------------|
+| Floppy (run 02) | VERIFIED | VERIFIED | 2 / 6 (7 dimension and test-vector checks not classified) |
+| Antikythera (run 01) | VERIFIED | CONSISTENT | 0 / 6 |
+| Antikythera, hand-refined | VERIFIED | CONSISTENT | 0 / 6 (same gears, same checks) |
+
+Read against today's criterion 1, run 01 would not meet it (Partial, not Complete); run 02 still does. That is a change of the rule after the result, so it is reported next to the original result and does not replace it. From run 03 on, criterion 1 means the gate of the commit written in the run's notes.

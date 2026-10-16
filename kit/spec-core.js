@@ -288,9 +288,10 @@
     lines.push('recognisable: ' + (recog.declared ? recog.features + ' iconic features built, blind test ' + recog.blind : 'not declared'));
     if (!errors.length && checked) { lines.push('provenance: ' + prov.independent.length + ' independent, ' + prov.sameSource.length + ' same source as the inputs, ' + prov.unlinked.length + ' with no sourced inputs, ' + (checked - prov.independent.length - prov.sameSource.length - prov.unlinked.length) + ' other (dimensions, test vectors) not classified');
       if (prov.sameSource.length) warnings.push(prov.sameSource.length + ' check(s) compare the model with a figure from the same source that fed it (' + prov.sameSource.map((r) => r.label + ' [' + r.shared.join(', ') + ']').slice(0, 4).join('; ') + '): they show the two agree, not that the source is right. Compare with a figure from another source, or say in the source that it derives from another (derives: [ids])');
-      if (!prov.independent.length && prov.sameSource.length) warnings.push('no check uses a source independent of the inputs: the verdict means the model is consistent with its sources, not that the sources are right'); }
-    verdict.consistencyOnly = !errors.length && verdict.state === 'VERIFIED' && !prov.independent.length && prov.sameSource.length > 0;      // VERIFIED, but every classified check uses the source that fed the model
-    lines.push('verdict: ' + verdict.state + (verdict.consistencyOnly ? ' (consistency only: no check uses an independent source)' : '') + '   ' + checked + ' reproduced' + (conversions ? ' (+' + conversions + ' unit conversions, not counted)' : '') + ', ' + estimated + ' estimated, ' + pending + ' unchecked');
+      if (!prov.independent.length && prov.sameSource.length) warnings.push('CONSISTENT, not VERIFIED: no check uses a source independent of the inputs, so a wrong source would pass. Add a published figure from another source (or declare derives: [ids] only if it really copies)'); }
+    // VERIFIED needs at least one check whose source is independent of the inputs. When every classified check shares its source with the model's inputs the figures agree, but a wrong source would agree too: CONSISTENT.
+    if (verdict.state === 'VERIFIED' && !prov.independent.length && prov.sameSource.length > 0) verdict.state = 'CONSISTENT';
+    lines.push('verdict: ' + verdict.state + '   ' + checked + ' reproduced' + (conversions ? ' (+' + conversions + ' unit conversions, not counted)' : '') + ', ' + estimated + ' estimated, ' + pending + ' unchecked');
     return { errors, warnings, lines, analysis: an, verdict };
   };
 })(typeof window !== 'undefined' ? window : globalThis);
