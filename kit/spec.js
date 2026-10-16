@@ -361,11 +361,12 @@
       if (pn.kind === 'ratios') {
         if (!H2.panel(a, spec.fig || 'Fig', ENIG ? 'Run against the published tests' : ENGN || CUBE || CALC ? 'Computed from the geometry' : 'Measured against published', (CALC ? 'Every figure is computed from the numbers on the card and compared with what is published.' : CUBE ? 'The cube is 26 pieces that really turn; every figure below is read off them and compared with what is published.' : ENGN ? 'Every figure is computed from the drawn dimensions and compared with what the maker publishes.' : PRESS ? 'Each phase is read off the running model, then compared with the number the maker publishes.' : ENIG ? 'The machine is run on every published test and compared letter by letter.' : 'Each ratio is read off the running model, then compared with the number the maker publishes.'))) return;
         an.modes.forEach((r, i) => {
-          const cmp = an.modes.length > 5, m = modes[i], y = 540 + i * (cmp ? Math.min(168, 700 / (an.modes.length - 1)) : 168), ai = a * ramp(t, pn.t0 + 0.4 + i * 0.35, pn.t0 + 0.9 + i * 0.35), vtxt = ENIG ? r.text : ENGN || CUBE || CALC ? r.text + (m.unit ? ' ' + m.unit : '') : PRESS ? r.ratio.toFixed(2) + ' ' + (M.press.unit || 'mm') : r.ratio.toFixed(4), rf = pairFit(m.label, vtxt, cmp ? 44 : 54, cmp ? 48 : 58, W - 172), sy = cmp ? 52 : 74;      // more than five rows: tighter rows and no note line, so they all fit in the frame
+          const dns = an.modes.length > 7, cmp = an.modes.length > 5, m = modes[i], y = 540 + i * (cmp ? Math.min(168, 700 / (an.modes.length - 1)) : 168), ai = a * ramp(t, pn.t0 + 0.4 + i * 0.35, pn.t0 + 0.9 + i * 0.35), vtxt = ENIG ? r.text : ENGN || CUBE || CALC ? r.text + (m.unit ? ' ' + m.unit : '') : PRESS ? r.ratio.toFixed(2) + ' ' + (M.press.unit || 'mm') : r.ratio.toFixed(4), rf = pairFit(m.label, vtxt, dns ? 38 : cmp ? 44 : 54, dns ? 42 : cmp ? 48 : 58, W - 172 - (dns ? 200 : 0)), sy = dns ? 40 : cmp ? 52 : 74;      // more than five rows: tighter rows and no note line; more than seven: no formula line either and the tag sits beside the title, so they all fit in the frame
+          const wl = dns ? (() => { c.save(); c.font = '500 ' + rf[0] + 'px ' + MX.SERIF; const w0 = c.measureText(String(m.label)).width; c.restore(); return w0; })() : 0;
           c.save(); c.globalAlpha = ai; c.strokeStyle = T.line; c.beginPath(); c.moveTo(86, y - sy); c.lineTo(W - 86, y - sy); c.stroke(); c.restore();
-          MX.A = ai; MX.text(m.label, 86, y, { size: rf[0], font: MX.SERIF, w: 500 }); MX.text(m.formula || '', 86, y + (cmp ? 28 : 36), { size: cmp ? 19 : 21, font: MX.SANS, color: T.mute }); MX.text(cmp ? '' : m.note || '', 86, y + 66, { size: 19, font: MX.SANS, color: T.mute });
+          MX.A = ai; MX.text(m.label, 86, y, { size: rf[0], font: MX.SERIF, w: 500 }); MX.text(dns ? '' : m.formula || '', 86, y + (cmp ? 28 : 36), { size: cmp ? 19 : 21, font: MX.SANS, color: T.mute }); MX.text(cmp ? '' : m.note || '', 86, y + 66, { size: 19, font: MX.SANS, color: T.mute });
           MX.text(vtxt, W - 86, y, { size: rf[1], font: MX.SERIF, w: 500, align: 'right' });
-          if (m.publish) { const cl = claimBy[m.publish.claim]; c.save(); c.globalAlpha = ai; tagPill(c, W - 86 - 330, y + (cmp ? 36 : 52), cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + ' ' + (m.publish.text != null ? m.publish.text : m.publish.value != null ? m.publish.value : m.publish.length + ' moves') + (r.ok ? '  OK' : '  MISMATCH')); c.restore(); }
+          if (m.publish) { const cl = claimBy[m.publish.claim]; c.save(); c.globalAlpha = ai; tagPill(c, dns ? 86 + wl + 18 : W - 86 - 330, dns ? y - 6 : y + (cmp ? 36 : 52), cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + ' ' + (m.publish.text != null ? m.publish.text : m.publish.value != null ? m.publish.value : m.publish.length + ' moves') + (r.ok ? '  OK' : '  MISMATCH')); c.restore(); }
           MX.A = a;
         });
         H2.endPanel(); return;
@@ -425,7 +426,8 @@
       let y = 500;
       sources.forEach((sr, i) => {
         const ai = a * ramp(t, pn.t0 + 0.3 + i * 0.3, pn.t0 + 0.8 + i * 0.3); MX.A = ai; c.save(); c.globalAlpha = ai; c.strokeStyle = T.line; c.beginPath(); c.moveTo(86, y - 36); c.lineTo(W - 86, y - 36); c.stroke(); c.restore();
-        MX.text(sr.title, 86, y, { size: 27, font: MX.SERIF, w: 500 }); MX.text(sr.url.replace(/^https?:\/\//, '').slice(0, 78), 86, y + 30, { size: 16, font: MX.MONO, color: T.teal });
+        c.save(); c.font = '500 27px ' + MX.SERIF; const tw = c.measureText(String(sr.title)).width; c.restore();      // a long title shrinks to the width of the panel instead of running off the frame
+        MX.text(sr.title, 86, y, { size: Math.max(17, tw > W - 172 ? 27 * (W - 172) / tw : 27), font: MX.SERIF, w: 500 }); MX.text(sr.url.replace(/^https?:\/\//, '').slice(0, 78), 86, y + 30, { size: 16, font: MX.MONO, color: T.teal });
         const nl = wrap(sr.note || '', '400 18px ' + MX.SANS, W - 172); nl.forEach((ln, k) => MX.text(ln, 86, y + 58 + k * 24, { size: 18, font: MX.SANS, color: T.mute })); MX.A = a; y += 98 + nl.length * 24;
       });
       H2.endPanel();
