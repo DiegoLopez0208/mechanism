@@ -254,6 +254,7 @@ Two runs are two data points, not a success rate; the agents were subagents with
 - A single photo gives no millimetres: it needs a published size, a ruler or a datasheet.
 - **A GPU makes rendering fast; without one it is very slow.** On a laptop with a discrete GPU a normal film takes about 2 to 3 seconds per second of video and the 30 s cut about a minute (`--draft` gives a quick preview). On a machine with no GPU (software WebGL) one frame takes about 7 seconds, so a 30 s film would take over an hour: use `--still`, `lint-film.mjs` and the viewer there, and render elsewhere.
 - **Platforms.** Developed on Windows. Tested on Ubuntu 24.04 (WSL2, Node 22, Chrome and ffmpeg installed from scratch, as a normal user): the partial-clone install, all the tests and gates, stills and the film lint work. Films were not rendered on Linux (no GPU there) and nothing was tried on macOS. The tests also run on Linux in CI.
+- **VERIFIED means compared and consistent, not true.** The agent writes both the model and the published figure it is compared with. The gate does not know if a source is right; it now says when a check uses the same source that fed the model (`VERIFIED (consistency only...)` if none is independent) and warns about quantities typed in captions that nothing in the spec backs. It cannot tell if two independent sources are both wrong, or if one copies the other without saying so (`derives`).
 - The sources can be wrong too. The spec keeps them next to each claim so you can check, and notes where a page refused to be read.
 
 ## Roadmap
