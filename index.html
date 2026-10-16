@@ -9,10 +9,13 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="mechanism - inspectable models built from evidence">
 <meta property="og:description" content="The Enigma model reproduces the published test, the Rubik model flips 12 edges in the published 20 moves. A skill for agents that refuses to render numbers that do not add up.">
-<meta property="og:image" content="https://diegolopez0208.github.io/mechanism/docs/media/poster-rubik.jpg">
+<meta property="og:image" content="https://diegolopez0208.github.io/mechanism/docs/brand/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:url" content="https://diegolopez0208.github.io/mechanism/">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%99%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<meta name="theme-color" content="#0a1828">
+<link rel="icon" type="image/svg+xml" href="docs/brand/favicon.svg">
 <style>
 @font-face { font-family:'Inter'; src:url('kit/fonts/inter.woff2') format('woff2'); font-weight:100 900; font-display:swap; }
 @font-face { font-family:'Cormorant Garamond'; src:url('kit/fonts/cormorant.woff2') format('woff2'); font-weight:300 700; font-display:swap; }
@@ -250,11 +253,50 @@ footer { font-family:var(--mono); font-size:12px; letter-spacing:.04em; } footer
   .card::before { margin-bottom:8px; } .btn { padding:13px 18px; }
 }
 </style>
+<style id="brand-css">
+/* the mark: a gear solid on the left (published) and dotted on the right (estimated) */
+.mx-s { fill:none; stroke:var(--teal); stroke-width:2.6; stroke-linejoin:round; }
+.mx-e { fill:none; stroke:var(--ember); stroke-width:2.9; stroke-linecap:round; stroke-dasharray:.1 4.3; }
+.mark::before { display:none !important; }
+.mark .gear { width:30px; height:30px; flex:none; display:block; }
+nav ul a { white-space:nowrap; }
+nav ul { gap:clamp(14px, 1.9vw, 26px); }
+@media (min-width:761px) and (max-width:1120px) { nav ul { gap:12px; font-size:10.5px; letter-spacing:.08em; } nav .wrap { gap:12px; } .mark { font-size:19px; gap:8px; } .mark .gear { width:24px; height:24px; } }
+@media (min-width:761px) and (max-width:900px) { nav ul { display:none; } }
+.mark { display:flex; align-items:center; gap:11px; }
+/* splash: always the dossier colours, whatever look is saved. Only opacity and transform of whole HTML elements are animated: they run on the GPU while the page is busy starting the 3D hero */
+#splash { display:none; position:fixed; inset:0; z-index:1000; place-items:center; background:#0a1828; color:#d6e6f5; cursor:pointer; transition:opacity .45s ease; }
+.splashing #splash { display:grid; }
+#splash.leaving { opacity:0; }
+.splashing body { overflow:hidden; }
+#splash::before { content:''; position:absolute; inset:0; background:linear-gradient(rgba(110,180,230,.09) 1px, transparent 1px) 0 0/48px 48px, linear-gradient(90deg, rgba(110,180,230,.09) 1px, transparent 1px) 0 0/48px 48px; mask-image:radial-gradient(circle at 50% 46%, #000 20%, transparent 72%); }
+#splash .box { position:relative; display:grid; justify-items:center; gap:22px; padding:0 24px; text-align:center; }
+#splash .big { position:relative; width:clamp(120px, 26vmin, 200px); aspect-ratio:1; animation:sp-turn 1.6s cubic-bezier(.2,.7,.2,1) both; }
+#splash .big svg { position:absolute; inset:0; width:100%; height:100%; overflow:visible; opacity:0; }
+#splash .big .h1 { animation:sp-in .55s ease .1s forwards; }
+#splash .big .h2 { animation:sp-in .55s ease .7s forwards; }
+#splash .mx-s { stroke:#4fd1ff; }
+#splash .mx-e { stroke:#ffb347; }
+#splash .word { font:700 clamp(26px, 5vw, 40px)/1 'JetBrains Mono', 'Courier New', monospace; letter-spacing:-.02em; opacity:0; animation:sp-up .6s ease 1s forwards; }
+#splash .word i { color:#4fd1ff; font-style:normal; }
+#splash .line { max-width:420px; font:400 14px/1.5 'Inter', system-ui, sans-serif; color:#7894ae; opacity:0; animation:sp-up .6s ease 1.15s forwards; }
+#splash .sptags { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; opacity:0; animation:sp-up .6s ease 1.3s forwards; }
+#splash .sptags span { position:static; font:600 10.5px 'JetBrains Mono', 'Courier New', monospace; letter-spacing:.16em; padding:4px 10px; border:1px solid; }
+#splash .sptags .sa { color:#4fd1ff; } #splash .sptags .sb { color:#d6e6f5; } #splash .sptags .sc { color:#ffb347; }
+#splash .skip { position:absolute; bottom:22px; left:0; right:0; text-align:center; font:500 11px 'JetBrains Mono', 'Courier New', monospace; letter-spacing:.2em; color:#7894ae; opacity:.7; }
+@keyframes sp-in { to { opacity:1; } }
+@keyframes sp-turn { from { transform:rotate(-40deg) scale(.9); } to { transform:none; } }
+@keyframes sp-up { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+@media (prefers-reduced-motion: reduce) { #splash { display:none !important; } }
+</style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><path id="mx-gear" d="M28.25 11.74L29.64 6.11L34.36 6.11L35.75 11.74A20.6 20.6 0 0 1 38.88 12.58L42.91 8.4L46.99 10.75L45.38 16.34A20.6 20.6 0 0 1 47.66 18.62L53.25 17.01L55.6 21.09L51.42 25.12A20.6 20.6 0 0 1 52.26 28.25L57.89 29.64L57.89 34.36L52.26 35.75A20.6 20.6 0 0 1 51.42 38.88L55.6 42.91L53.25 46.99L47.66 45.38A20.6 20.6 0 0 1 45.38 47.66L46.99 53.25L42.91 55.6L38.88 51.42A20.6 20.6 0 0 1 35.75 52.26L34.36 57.89L29.64 57.89L28.25 52.26A20.6 20.6 0 0 1 25.12 51.42L21.09 55.6L17.01 53.25L18.62 47.66A20.6 20.6 0 0 1 16.34 45.38L10.75 46.99L8.4 42.91L12.58 38.88A20.6 20.6 0 0 1 11.74 35.75L6.11 34.36L6.11 29.64L11.74 28.25A20.6 20.6 0 0 1 12.58 25.12L8.4 21.09L10.75 17.01L16.34 18.62A20.6 20.6 0 0 1 18.62 16.34L17.01 10.75L21.09 8.4L25.12 12.58A20.6 20.6 0 0 1 28.25 11.74Z"/><circle id="mx-bore" cx="32" cy="32" r="6.4"/><clipPath id="mx-L"><rect x="0" y="0" width="32" height="64"/></clipPath><clipPath id="mx-R"><rect x="32" y="0" width="32" height="64"/></clipPath></defs></svg>
+<div id="splash" role="presentation" aria-hidden="true"><div class="box"><div class="big"><svg class="h1" viewBox="0 0 64 64" aria-hidden="true"><g clip-path="url(#mx-L)"><use href="#mx-gear" class="mx-s"/></g><use href="#mx-bore" class="mx-s"/></svg><svg class="h2" viewBox="0 0 64 64" aria-hidden="true"><g clip-path="url(#mx-R)"><use href="#mx-gear" class="mx-e"/></g></svg></div><div class="word">mechanism<i>.</i></div><div class="line">Every number says where it came from. A spec that does not add up is not rendered.</div><div class="sptags"><span class="sa">SPEC</span><span class="sb">DERIVED</span><span class="sc">ESTIMATED</span></div></div><div class="skip">CLICK OR PRESS A KEY TO SKIP</div></div>
+<script>(function(){var d=document.documentElement;try{var skip=sessionStorage.getItem('mx-splash')||location.hash||/nosplash/.test(location.search)||matchMedia('(prefers-reduced-motion: reduce)').matches;if(skip){d.classList.add('nosplash');return;}sessionStorage.setItem('mx-splash','1');}catch(e){d.classList.add('nosplash');return;}d.classList.add('splashing');var t0=Date.now(),done=false,ready=document.readyState==='complete',leave=function(){if(done)return;done=true;var el=document.getElementById('splash');if(el)el.classList.add('leaving');setTimeout(function(){d.classList.remove('splashing');},480);},soon=function(){if(ready&&Date.now()-t0>=1800)leave();};addEventListener('load',function(){ready=true;setTimeout(soon,Math.max(0,1800-(Date.now()-t0)));});['click','keydown','wheel','touchstart'].forEach(function(t){addEventListener(t,leave,{once:true,passive:true});});setTimeout(leave,4000);})();</script>
 <nav><div class="wrap">
-  <a class="mark" href="#top">mechanism<i>.</i></a>
-  <ul><li><a href="#gate">The gate</a></li><li><a href="#examples">Films</a></li><li><a href="#runs">Agent runs</a></li><li><a href="#touch">Touch it</a></li><li><a href="#how">How it works</a></li><li><a href="#install">Install</a></li></ul>
+  <a class="mark" href="#top"><svg class="gear" viewBox="0 0 64 64" aria-hidden="true"><g clip-path="url(#mx-L)"><use href="#mx-gear" class="mx-s"/></g><g clip-path="url(#mx-R)"><use href="#mx-gear" class="mx-e"/></g><use href="#mx-bore" class="mx-s"/></svg>mechanism<i>.</i></a>
+  <ul><li><a href="#gate">The gate</a></li><li><a href="#examples">Films</a></li><li><a href="#runs">Runs</a></li><li><a href="#touch">Touch it</a></li><li><a href="#how">How it works</a></li><li><a href="#install">Install</a></li></ul>
   <a class="pill" href="https://github.com/DiegoLopez0208/mechanism" target="_blank" rel="noopener">GitHub</a>
   <div class="looks" id="looks" role="group" aria-label="Look"><button data-look="paper">Paper</button><button data-look="night">Night</button><button data-look="dossier">Dossier</button><button data-look="studio">Studio</button></div>
 </div></nav>
