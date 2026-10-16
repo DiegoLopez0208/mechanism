@@ -106,6 +106,20 @@
   // the Math functions an expression may use without the Math. prefix, and the unit factors that mark a check as a mere conversion
   const MATHFN = ['sqrt', 'abs', 'min', 'max', 'pow', 'round', 'floor', 'ceil', 'log', 'log10', 'exp', 'sin', 'cos', 'tan', 'atan', 'atan2', 'hypot', 'PI'], UNIT_RE = /(^|[^0-9.])(25[.]4|2[.]54|0[.]0254|0[.]3048|0[.]4535|2[.]2046|1[.]6093|0[.]6213|3[.]2808|39[.]37)([^0-9]|$)/;
   const isConversion = (m) => m.kind === 'convert' || (m.kind == null && UNIT_RE.test(String(m.expr || '')));
+  // The unit a published figure is stated in. A dimension can have the right number and the wrong unit (10 cm where the source says 10 mm): the number check alone passes it.
+  const LEN_MM = { mm: 1, cm: 10, m: 1000, km: 1e6, um: 0.001, in: 25.4, ft: 304.8 }, UNIT_ALIAS = { millimeter: 'mm', millimeters: 'mm', millimetre: 'mm', millimetres: 'mm', centimeter: 'cm', centimeters: 'cm', centimetre: 'cm', centimetres: 'cm', meter: 'm', meters: 'm', metre: 'm', metres: 'm', micron: 'um', microns: 'um', inch: 'in', inches: 'in', '"': 'in', foot: 'ft', feet: 'ft' };
+  const canonUnit = (u) => { const s = String(u).trim().toLowerCase().replace('µ', 'u').replace(/\.$/, ''); return UNIT_ALIAS[s] || s; };
+  const claimUnit = (c, value) => {       // the claim's own unit, or the unit written next to this very number in its text
+    if (!c) return null; if (c.unit) return canonUnit(c.unit);
+    const re = /(-?\d[\d,]*\.?\d*)\s*(mm|cm|km|um|µm|millimet(?:er|re)s?|centimet(?:er|re)s?|met(?:er|re)s?|microns?|inch(?:es)?|ft|feet|in|m|")(?![a-z])/gi; let m;
+    while ((m = re.exec(String(c.text || '')))) if (Math.abs(parseFloat(m[1].replace(/,/g, '')) - value) <= Math.abs(value) * 1e-9 + 1e-12) return canonUnit(m[2]);
+    return null;
+  };
+  const unitClash = (q, c) => {            // an error text when the dimension and its claim name different units, else null
+    if (!q.unit || q.value == null) return null; const a = canonUnit(q.unit), b = claimUnit(c, q.value); if (!b || a === b) return null;
+    const conv = LEN_MM[a] && LEN_MM[b] ? ' (' + q.value + ' ' + b + ' is ' + +(q.value * LEN_MM[b] / LEN_MM[a]).toPrecision(6) + ' ' + a + ')' : '';
+    return 'says ' + q.value + ' ' + q.unit + ' but its claim says ' + q.value + ' ' + b + conv + ': the number matches and the unit does not';
+  };
   function analyzeCalc(M, out) {
     const cc = M.calc, V = cc.vars || {}, names = Object.keys(V), vals = names.map((k) => (V[k] !== null && typeof V[k] === 'object' ? V[k].v : V[k]));
     out.calc = { vars: V };
@@ -201,6 +215,7 @@
             if (typeof q.value !== 'number' || !isFinite(q.value)) errors.push('part ' + d.id + ': params.' + k + '.value is not a finite number');
             else if (!(typeof tol === 'number' && isFinite(tol) && tol >= 0)) errors.push('part ' + d.id + ': params.' + k + ' has an invalid tolerance');
             else if (typeof drawn !== 'number') errors.push('part ' + d.id + ': ' + k + ' is not a number, it cannot be compared with its source');
+            else if (unitClash(q, cl[q.claim])) errors.push('part ' + d.id + ': params.' + k + ' ' + unitClash(q, cl[q.claim]));
             else if (Math.abs(drawn - q.value) > tol) errors.push('part ' + d.id + ': ' + k + ' is drawn at ' + drawn + ' but the source says ' + q.value + ' (tolerance ' + tol + ')');
             else if (q.conf !== 'estimated') paramRows.push({ part: d.id, key: k, drawn, value: q.value });
           }

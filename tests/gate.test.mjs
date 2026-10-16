@@ -99,6 +99,24 @@ test('nothing compared is NOT verified', () => {
   assert.ok(r.warnings.some((w) => /not a verification/.test(w)));
 });
 
+test('params: the right number in the wrong unit is rejected (10 cm where the source says 10 mm)', () => {
+  const withP = (p, fn) => mutate((s) => { s.parts[0].params = p; if (fn) fn(s); });
+  const dim = (unit, value = 10) => ({ w: { value, unit, conf: 'spec', claim: 'c1', tol: 0.01 } });
+  const bad = withP(dim('cm'));      // the claim text says "a width of 10 mm": same number, other unit
+  assert.ok(bad.errors.some((e) => /params\.w says 10 cm but its claim says 10 mm \(10 mm is 1 cm\)/.test(e)), bad.errors.join('; '));
+  assert.notEqual(bad.verdict.state, 'VERIFIED');
+  assert.equal(withP(dim('mm')).errors.length, 0);                 // the same unit passes
+  assert.equal(withP(dim('MM')).errors.length, 0);                 // case and spelling do not matter
+  assert.equal(withP(dim('millimetres')).errors.length, 0);
+  assert.equal(withP({ w: { value: 10, conf: 'spec', claim: 'c1', tol: 0.01 } }).errors.length, 0);   // no unit declared: nothing to compare
+  const viaField = withP(dim('in'), (s) => { s.research.claims[0].unit = 'mm'; });      // the claim states its unit in a field
+  assert.ok(viaField.errors.some((e) => /says 10 in but its claim says 10 mm \(10 mm is 0\.393701 in\)/.test(e)), viaField.errors.join('; '));
+  const inches = withP(dim('mm', 0.5), (s) => { s.research.claims[0].text = 'a width of 0.5 in'; });
+  assert.ok(inches.errors.some((e) => /says 0\.5 mm but its claim says 0\.5 in/.test(e)), inches.errors.join('; '));
+  const other = withP(dim('cm'), (s) => { s.research.claims[0].text = 'a width of 25 mm and a height of 10 cm'; });      // the unit written next to this number is cm
+  assert.equal(other.errors.length, 0, other.errors.join('; '));
+});
+
 test('params: a drawn dimension is compared with its source', () => {
   const withP = (p) => mutate((s) => { s.parts[0].params = p; });
   const ok = withP({ w: { value: 10, unit: 'mm', conf: 'spec', claim: 'c1', tol: 0.01 } });
