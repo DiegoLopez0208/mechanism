@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 0.8.0 - 2026-10-16
+
+The first two unassisted agent runs, a visual preflight, and the toolkit problems those runs found.
+
+- **Agent runs** (`docs/benchmark/`): the 3.5-inch floppy disk and the Antikythera mechanism, each modelled by a fresh agent with only the skill. The criteria were fixed before the results; the logs keep every failure. Antikythera passes the gate but was not recognised by a blind judge; the floppy was. One run is one data point.
+- **Visual preflight** (`scripts/preflight.mjs`): steps through the whole timeline without rendering an MP4 and reports a camera inside a part, parts or the object out of frame, texts that overlap or run past the edge, and flat parts whose mesh does not cover its outline. A diagnostic: it exits 0 unless `--strict`.
+- **Gate:** a dimension whose unit differs from its claim's (10 cm against a claim of 10 mm) now fails before rendering; two gears of different size on one body is an error with the advice (one body per gear plus `same` links), where it used to take the first gear's teeth silently.
+- **Toolkit:** `plate` takes rectangular holes and `profile` takes polygon holes; `stranger.mjs` works on any page and saves the still under a neutral name; `new.mjs` accepts a folder that already holds a log; `render.mjs` prints the film length and the wall time apart.
+- **Films:** long texts now fit the frame in the panels and the intro card (30 preflight warnings on the normal cuts became 12, none of them a failure); the receipt of the lock fits its ten rows; the K20A shots no longer spill past both sides; the RTX 4090 has its rear fan past the end of a shorter board (cited to a review) and 60 parts instead of 66. The affected films were re-rendered.
+- **Skill:** sources that are scans, the preflight step, one tooth count per body, renders in the background, and a note that anything on a part that fades needs the same `cutaway`.
+- **Site:** a section for the agent runs, video URLs with the release version so a browser does not keep an old copy, and the lists brought up to date.
+
 ## 0.7.0 - 2026-10-14
 
 A film about React, and every film re-rendered with the new look.

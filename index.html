@@ -118,6 +118,15 @@ section + section { border-top:1px solid var(--line); }
 .chip.plain { color:var(--mute); border-color:var(--line); }
 .card p { color:var(--mute); margin:0 0 14px; font-size:15px; }
 .dl { display:flex; gap:18px; flex-wrap:wrap; }
+.runfacts { list-style:none; margin:0 0 16px; padding:0; border-top:1px solid var(--line); }
+.runfacts li { display:flex; justify-content:space-between; gap:16px; padding:8px 0; border-bottom:1px solid var(--line); font-size:13px; color:var(--mute); }
+.runfacts li b { color:var(--ink); font-weight:600; text-align:right; }
+.runfacts li code { font-size:12px; }
+.runnote { margin-top:54px; padding:26px 30px; border:1px solid var(--line); border-left:3px solid var(--ember); display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.5fr); gap:18px 40px; }
+.runnote h3 { font-size:24px; margin:0; line-height:1.15; }
+.runnote p { margin:0 0 10px; color:var(--mute); font-size:15px; }
+.runnote p:last-child { margin:0; }
+@media (max-width:820px) { .runnote { grid-template-columns:1fr; padding:20px; } }
 .dl a { font:500 12px 'Inter'; letter-spacing:.16em; text-transform:uppercase; color:var(--teal); border-bottom:1px solid currentColor; padding-bottom:2px; }
 
 /* ---- touch it: live viewers in an iframe ---- */
@@ -245,7 +254,7 @@ footer { font-family:var(--mono); font-size:12px; letter-spacing:.04em; } footer
 <body>
 <nav><div class="wrap">
   <a class="mark" href="#top">mechanism<i>.</i></a>
-  <ul><li><a href="#gate">The gate</a></li><li><a href="#examples">Films</a></li><li><a href="#touch">Touch it</a></li><li><a href="#how">How it works</a></li><li><a href="#install">Install</a></li></ul>
+  <ul><li><a href="#gate">The gate</a></li><li><a href="#examples">Films</a></li><li><a href="#runs">Agent runs</a></li><li><a href="#touch">Touch it</a></li><li><a href="#how">How it works</a></li><li><a href="#install">Install</a></li></ul>
   <a class="pill" href="https://github.com/DiegoLopez0208/mechanism" target="_blank" rel="noopener">GitHub</a>
   <div class="looks" id="looks" role="group" aria-label="Look"><button data-look="paper">Paper</button><button data-look="night">Night</button><button data-look="dossier">Dossier</button><button data-look="studio">Studio</button></div>
 </div></nav>
@@ -256,7 +265,7 @@ footer { font-family:var(--mono); font-size:12px; letter-spacing:.04em; } footer
     <h1>Build it from <em>evidence.</em><br>Take it apart.<br>Film it.</h1>
     <p class="lead">Give it a real object. It looks the numbers up, writes a spec where every number says where it came from, and renders a film, a viewer and a 3D model. If the numbers do not add up, it does not render.</p>
     <div class="btns"><a class="btn fill" href="#examples">Watch the films</a><a class="btn" href="examples/enigma/index.html?explore" target="_blank">Type on the Enigma</a><a class="btn" href="#install">Install</a></div>
-    <div class="facts"><div><b>15</b><span>real objects</span></div><div><b>7</b><span>kinds of check</span></div><div><b>1</b><span>gate that says no</span></div></div>
+    <div class="facts"><div><b>15</b><span>real objects</span></div><div><b>7</b><span>kinds of check</span></div><div><b>1</b><span>gate that says no</span></div><div><b>2</b><span><a href="#runs">unassisted agent runs</a></span></div></div>
   </div>
   <div class="stage3d" id="stage3d">
     <div class="ring"></div><div class="ring b"></div>
@@ -266,7 +275,7 @@ footer { font-family:var(--mono); font-size:12px; letter-spacing:.04em; } footer
     <div class="hint">Move to orbit &middot; scroll to take it apart &middot; click to turn</div>
   </div>
 </div>
-  <div class="wrap"><dl class="titleblock"><div><dt>Subject</dt><dd>mechanism</dd></div><div><dt>Revision</dt><dd>0.7.0</dd></div><div><dt>Gate</dt><dd>refuses unsourced numbers</dd></div><div><dt>Verified</dt><dd>11 objects</dd></div><div><dt>Licence</dt><dd>MIT</dd></div></dl></div>
+  <div class="wrap"><dl class="titleblock"><div><dt>Subject</dt><dd>mechanism</dd></div><div><dt>Revision</dt><dd>0.8.0</dd></div><div><dt>Gate</dt><dd>refuses unsourced numbers</dd></div><div><dt>Verified</dt><dd>11 objects</dd></div><div><dt>Licence</dt><dd>MIT</dd></div></dl></div>
 </header>
 
 <div class="proof"><div class="wrap">
@@ -355,6 +364,33 @@ footer { font-family:var(--mono); font-size:12px; letter-spacing:.04em; } footer
   </div>
 </div></section>
 
+<section id="runs" data-label="Agent runs"><div class="wrap">
+  <div class="head rv"><h2>Then we let an agent do it alone.</h2><p>Two objects nobody modelled in advance, each given to a fresh agent with only the skill and one sentence. The criteria were written before the results, the logs keep every failure, and one of the two films did not pass the stranger test.</p></div>
+  <div class="grid">
+    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-floppy.jpg" src="https://github.com/DiegoLopez0208/mechanism/releases/download/media/floppy-short.mp4?v=0.8.0"></video><div class="shine"></div></div>
+      <h3>3.5-inch floppy disk</h3><span class="chip ok">Complete, recognised</span>
+      <p>"Use mechanism to model the 3.5-inch floppy disk (the 1.44 MB one) from its published sources." The capacity comes out of tracks, sides, sectors and bytes, and the "1.44 MB" label out of how that is divided. The standard was a scan with no text layer: the agent read it page by page.</p>
+      <ul class="runfacts"><li>Time<b>18 min 51 s</b></li><li>Gate<b>VERIFIED, 15 checks reproduced</b></li><li>Stranger test<b>named it, 95 % (one judge)</b></li><li>Skill version<b><code>8845863</code></b></li></ul>
+      <div class="dl"><a href="https://github.com/DiegoLopez0208/mechanism/blob/main/docs/benchmark/run-02-floppy.md" target="_blank" rel="noopener">Notes and limits</a><a href="https://github.com/DiegoLopez0208/mechanism/blob/main/docs/benchmark/floppy/BENCHMARK-LOG.md" target="_blank" rel="noopener">Agent log</a><a href="https://github.com/DiegoLopez0208/mechanism/blob/main/docs/benchmark/floppy/spec.js" target="_blank" rel="noopener">spec.js</a><a href="https://github.com/DiegoLopez0208/mechanism/releases/download/media/floppy.glb">GLB</a></div></article>
+    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-antikythera.jpg" src="https://github.com/DiegoLopez0208/mechanism/releases/download/media/antikythera-autonomous-short.mp4?v=0.8.0"></video><div class="shine"></div></div>
+      <h3>Antikythera mechanism</h3><span class="chip warn">Complete, not recognised</span>
+      <p>Asked for by a reader of the first post. Six published periods reproduced from the tooth counts. But three of the six checks pass through lost gears whose teeth are estimated, so they only show the reconstruction agrees with itself. A fresh judge saw "a clock movement".</p>
+      <ul class="runfacts"><li>Time<b>27 min</b></li><li>Gate<b>VERIFIED, 6 reproduced, 4 estimated</b></li><li>Stranger test<b>"a clock movement", 70 %</b></li><li>Skill version<b><code>6fd5295</code></b></li></ul>
+      <div class="dl"><a href="https://github.com/DiegoLopez0208/mechanism/blob/main/docs/benchmark/run-01-antikythera.md" target="_blank" rel="noopener">Notes and limits</a><a href="https://github.com/DiegoLopez0208/mechanism/blob/main/docs/benchmark/antikythera/BENCHMARK-LOG.md" target="_blank" rel="noopener">Agent log</a><a href="https://github.com/DiegoLopez0208/mechanism/blob/main/docs/benchmark/antikythera/spec.js" target="_blank" rel="noopener">spec.js</a><a href="https://github.com/DiegoLopez0208/mechanism/releases/download/media/antikythera.glb">GLB</a></div></article>
+    <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-antikythera-refined.jpg" src="https://github.com/DiegoLopez0208/mechanism/releases/download/media/antikythera-human-refined-short.mp4?v=0.8.0"></video><div class="shine"></div></div>
+      <h3>Antikythera, hand-refined</h3><span class="chip plain">Edited by hand, not the run</span>
+      <p>The same gears and the same six checks. What changed is only what you see: a closed wooden case with bronze plates, the zodiac and the Egyptian calendar in Greek, hands, a Moon-phase ball, a crank, and spiral dials on the back. All of that is drawn, not sourced, and the spec says so. One judge named it, the other said "perpetual calendar".</p>
+      <ul class="runfacts"><li>Gate<b>VERIFIED, unchanged</b></li><li>Stranger test<b>1 of 2 judges named it</b></li><li>Decor<b>all ESTIMATED</b></li></ul>
+      <div class="dl"><a href="https://github.com/DiegoLopez0208/mechanism/blob/main/docs/benchmark/antikythera-refined/README.md" target="_blank" rel="noopener">What changed</a><a href="https://github.com/DiegoLopez0208/mechanism/blob/main/docs/benchmark/antikythera-refined/spec.js" target="_blank" rel="noopener">spec.js</a></div></article>
+  </div>
+  <div class="runnote rv">
+    <h3>What two runs do not show.</h3>
+    <div><p>Two runs are two data points, not a success rate. I wrote the skill, chose one of the two objects and started the agents. They were fresh subagents with no context, not fully independent sessions, and the GPU was shared during the first run.</p>
+      <p>Everything the agents did is in the logs, including the failures. The toolkit problems they hit (a gear train that silently took one tooth count per axis, holes that could not be rectangular, a stranger test that only worked on this repository's own examples) were fixed afterwards, and the version each run used is written next to it. The plan is 20 objects; these are the first two.</p>
+      <p><a class="dl" href="https://github.com/DiegoLopez0208/mechanism/blob/main/docs/benchmark/criteria.md" target="_blank" rel="noopener"><span style="font:500 12px 'Inter';letter-spacing:.16em;text-transform:uppercase;color:var(--teal);border-bottom:1px solid currentColor;padding-bottom:2px">Read the criteria, fixed before the results</span></a></p></div>
+  </div>
+</div></section>
+
 <section id="touch" data-label="Touch it"><div class="wrap live3d">
   <div class="rv">
     <div class="eyebrow">Touch it</div>
@@ -421,7 +457,7 @@ node scripts/render.mjs examples/my-object/index.html</div>
 
 <section id="next" data-label="What is next"><div class="wrap">
   <div class="head rv"><h2>On the bench.</h2><p>Objects whose numbers can be computed and checked against what is published.</p></div>
-  <div class="road rv"><span class="done">Enigma I</span><span class="done">Rubik's cube, 20-move superflip</span><span class="done">4-cylinder engine, firing order and sound</span><span class="done">Three-speed hub</span><span class="done">Key switch</span><span class="done">MOS 6502, pinout and die</span><span class="done">WinRAR, software: 87 bytes rebuilt</span><span class="done">WinRAR unpacking, from RFC 1951</span><span class="done">Pin tumbler lock, KW1 key</span><span class="done">RTX 4090, cores x clock = TFLOPS</span><span>Pin-tumbler lock, 6^5 keys</span><span>Bicycle drivetrain</span></div>
+  <div class="road rv"><span class="done">Enigma I</span><span class="done">Rubik's cube, 20-move superflip</span><span class="done">4-cylinder engine, firing order and sound</span><span class="done">Three-speed hub</span><span class="done">Key switch</span><span class="done">MOS 6502, pinout and die</span><span class="done">WinRAR, software: 87 bytes rebuilt</span><span class="done">WinRAR unpacking, from RFC 1951</span><span class="done">Pin tumbler lock, KW1 key</span><span class="done">RTX 4090, cores x clock = TFLOPS</span><span class="done">3.5-inch floppy, capacity from the format (agent run)</span><span class="done">Antikythera, six periods from the teeth (agent run)</span><span>Bicycle drivetrain</span><span>The next 18 objects of the agent test</span></div>
 </div></section>
 
 <footer><div class="wrap"><span>mechanism, MIT. three.js. Sound from CC0 recordings (see THIRD_PARTY.md). Inspired by <a href="https://github.com/wheresryan22/anatomy" target="_blank" rel="noopener">Anatomy</a>.</span><span><a href="https://github.com/DiegoLopez0208/mechanism" target="_blank" rel="noopener">github.com/DiegoLopez0208/mechanism</a></span></div></footer>
@@ -440,7 +476,8 @@ node scripts/render.mjs examples/my-object/index.html</div>
   const SHORTS = ['lock', 'winrar', 'hub', 'enigma', 'rar5', 'switch', 'k20a', 'rubik', 'rtx4090', 'mos6502', 'react'];      // objects with a 30 s cut (render.mjs --length short)
   let LEN = 'short'; try { LEN = localStorage.getItem('mx-len') || 'short'; } catch (e) {}
   const MEDIA = 'https://github.com/DiegoLopez0208/mechanism/releases/download/media/';
-  const vurl = (p) => { const f = p.split('/').pop(), base = f.replace(/[.]mp4$/, ''), sh = LEN === 'short' && SHORTS.includes(base); return file ? (sh ? 'out/' + base + '-short.mp4' : p) : MEDIA + (sh ? base + '-short.mp4' : f); };      // from disk: the full renders in out/; on the web: the 720p copies, kept as assets of the media release so the repository stays light
+  const REV = '0.8.0';      // changes with every release: the media assets keep their URL when they are replaced, and a browser may keep the old copy, so the version goes in the query
+  const vurl = (p) => { const f = p.split('/').pop(), base = f.replace(/[.]mp4$/, ''), sh = LEN === 'short' && SHORTS.includes(base); return file ? (sh ? 'out/' + base + '-short.mp4' : p) : MEDIA + (sh ? base + '-short.mp4' : f) + '?v=' + REV; };      // from disk: the full renders in out/; on the web: the 720p copies, kept as assets of the media release so the repository stays light
   const setVideo = (v) => { const src = vurl(v.dataset.paper), was = v.currentTime, playing = !v.paused; if (!v.src.endsWith(src)) { v.src = src; v.addEventListener('loadedmetadata', function f() { v.currentTime = was || 0; if (playing) v.play().catch(() => {}); v.removeEventListener('loadedmetadata', f); }); } };
   const apply = (t) => { if (!LOOKS.includes(t)) t = 'paper'; root.dataset.theme = t; document.querySelectorAll('#looks button').forEach((b) => b.classList.toggle('on', b.dataset.look === t)); try { localStorage.setItem('mx-theme', t); } catch (e) {} document.querySelectorAll('video[data-paper]').forEach(setVideo); if (window.heroTheme) window.heroTheme(t); loadViewer(false); };
   document.querySelectorAll('#looks button').forEach((b) => b.addEventListener('click', () => apply(b.dataset.look)));

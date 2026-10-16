@@ -235,6 +235,17 @@ Real recordings, not synthesis: keys, metal, glass, plastic and rubber impacts (
 | `examples/` | The objects above. |
 | `docs/`, `index.html` | The landing page (its hero is the same parts running live in three.js). |
 
+## Agent runs
+
+Does it work without someone holding its hand? Two objects were given to fresh agents with only the skill and one sentence, under criteria written before the results (`docs/benchmark/criteria.md`):
+
+| Object | Autonomy | Gate | Stranger test |
+|--------|----------|------|---------------|
+| 3.5-inch floppy disk, 1.44 MB (chosen by me) | complete, 18 min 51 s | VERIFIED, 15 checks | named it (one judge, 95 %) |
+| Antikythera mechanism (asked for by a reader) | complete, 27 min | VERIFIED, 6 checks, three of them through estimated gears | did not name it ("a clock movement") |
+
+Two runs are two data points, not a success rate; the agents were subagents with a clean context, not independent sessions, and the plan is 20 objects. The logs keep every failure and the toolkit problems the agents hit were fixed afterwards (the version each run used is written in its notes). Notes: `docs/benchmark/run-01-antikythera.md`, `docs/benchmark/run-02-floppy.md`. There is also a hand-edited Antikythera (`docs/benchmark/antikythera-refined/`), labelled as such, that is not part of the result.
+
 ## Limits, stated plainly
 
 - Mechanisms so far: gear trains (one degree of freedom), presses and slides, rotor ciphers, crank-slider engines, the Rubik cube and calculated figures. No general linkages yet.
@@ -247,7 +258,7 @@ Real recordings, not synthesis: keys, metal, glass, plastic and rubber impacts (
 
 ## Roadmap
 
-pin-tumbler lock (6^5 keys), bicycle drivetrain. The rule is the same for all: numbers that can be computed and checked against what is published.
+bicycle drivetrain, and the next 18 objects of the agent test. The rule is the same for all: numbers that can be computed and checked against what is published.
 
 ## Inspiration
 
