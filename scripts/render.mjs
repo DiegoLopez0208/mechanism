@@ -67,6 +67,6 @@ try {
     const r = spawnSync(FFMPEG, ['-y', '-i', vtmp, '-ss', String(FROM), '-t', String(TO - FROM), '-i', wav, '-af', loudAf(wav), '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', OUT], { encoding: 'utf8' });
     if (r.status !== 0) throw new Error('ffmpeg fallo: ' + r.stderr.slice(-500));
     rmSync(vtmp, { force: true }); rmSync(wav, { force: true });
-    console.log('listo:', OUT, `(${((Date.now() - t0) / 1000).toFixed(0)} s)`);
+    console.log('listo:', OUT, `(film ${(TO - FROM).toFixed(1)} s, rendered in ${((Date.now() - t0) / 1000).toFixed(0)} s of wall time)`);
   }
 } finally { cleanup(); }

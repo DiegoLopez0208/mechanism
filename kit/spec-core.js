@@ -146,6 +146,10 @@
     if (M.calc) { analyzeCalc(M, out); return out; }
     if (!M.links || !M.links.length) return out;
     const byBody = {}; spec.parts.forEach((d) => { const b = d.body || d.id; (byBody[b] = byBody[b] || []).push(d); });
+    Object.keys(byBody).forEach((b) => {      // the kinematics keeps ONE tooth count per body: two gears of different size on one body would silently take the first one's
+      const ts = Array.from(new Set(byBody[b].map(teethOf).filter(Boolean)));
+      if (ts.length > 1) out.problems.push('body ' + b + ' carries gears with ' + ts.join(' and ') + ' teeth, but the gear train keeps one tooth count per body: every mesh on it would use ' + ts[0] + '. Give each gear its own body and join the coaxial ones with { t: \'same\', a: \'<body>\', b: \'<body>\' }');
+    });
     const gearOf = (b) => (byBody[b] || []).find((d) => teethOf(d)) || (byBody[b] || [])[0];
     const teeth = {}; Object.keys(byBody).forEach((b) => { const d = (byBody[b] || []).find((q) => teethOf(q)); if (d) teeth[b] = teethOf(d); });
     const bodies = Array.from(new Set([].concat(M.bodies || [], M.links.flatMap((l) => [l.a, l.b, l.carrier].filter(Boolean)), M.free)));

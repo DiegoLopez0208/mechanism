@@ -117,6 +117,15 @@ test('params: the right number in the wrong unit is rejected (10 cm where the so
   assert.equal(other.errors.length, 0, other.errors.join('; '));
 });
 
+test('gear train: two gears of different size on one body is an error, not a silent first-one-wins', () => {
+  const dir = path.join(root, 'examples', 'hub'), data = path.join(dir, 'data.js'), ctx = load(fs.existsSync(data) ? [data, path.join(dir, 'spec.js')] : [path.join(dir, 'spec.js')]);
+  const ok = ctx.MX.spec.validate(ctx.SPEC);
+  assert.equal(ok.errors.length, 0, ok.errors.join('; '));
+  ctx.SPEC.parts.find((p) => p.id === 'ring').body = 'sun';      // the ring (60 teeth) now shares a body with the sun gear (20 teeth)
+  const bad = ctx.MX.spec.validate(ctx.SPEC);
+  assert.ok(bad.errors.some((e) => /body sun carries gears with 20 and 60 teeth/.test(e) && /own body/.test(e) && /same/.test(e)), bad.errors.join('; '));
+});
+
 test('params: a drawn dimension is compared with its source', () => {
   const withP = (p) => mutate((s) => { s.parts[0].params = p; });
   const ok = withP({ w: { value: 10, unit: 'mm', conf: 'spec', claim: 'c1', tol: 0.01 } });

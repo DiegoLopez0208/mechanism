@@ -15,7 +15,8 @@ if (!name || !/^[a-z0-9][a-z0-9-]*$/.test(name)) { console.error('uso: node scri
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), work = opt('dir', null), dir = work ? path.resolve(work, name) : path.join(root, 'examples', name), title = opt('title', name), fig = opt('fig', 'Fig 1');
 // --dir <folder>: the object goes in a folder of YOUR project (never inside the skill folder: agents cannot write there), and its page points at the kit by absolute URL
 const rel = work ? dir.split(path.sep).join('/') : 'examples/' + name, kitUrl = pathToFileURL(path.join(root, 'kit') + path.sep).href;
-if (fs.existsSync(dir)) { console.error('ya existe ' + rel); process.exit(1); }
+const taken = ['spec.js', 'index.html', 'run.js'].filter((f) => fs.existsSync(path.join(dir, f)));      // a folder that already holds your notes or a log is fine; one that holds the object itself is not
+if (taken.length) { console.error('ya existe ' + rel + ' (tiene ' + taken.join(', ') + '): elige otro nombre o borra esos archivos'); process.exit(1); }
 fs.mkdirSync(dir, { recursive: true });
 
 const hub = fs.readFileSync(path.join(root, 'examples/hub/index.html'), 'utf8');
