@@ -15,7 +15,11 @@
     window.MX_THEME = theme;
     for (const s of list) {
       await load(s);
-      if (/(^|\/)core\.js(?:\?.*)?$/.test(s)) await load(base + 'presentation.js');
+      if (/(^|\/)core\.js(?:\?.*)?$/.test(s)) {
+        await load(base + 'presentation.js');
+        await load(base + 'workflow-engine.js');
+        await load(base + 'paper-engine.js');
+      }
     }
   })().catch((e) => { console.error(e); document.title = 'ERROR ' + e.message; });
 })();

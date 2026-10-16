@@ -25,3 +25,19 @@ test('unsupported WebCodecs returns false before painting (safe JPEG fallback)',
   const context = { window: { __paint() { throw new Error('must not paint'); } }, VideoFrame: class {}, document: { getElementById: () => ({ width: 720, height: 900 }) }, VideoEncoder: class { static async isConfigSupported() { return { supported: false }; } } };
   assert.equal(await vm.runInNewContext(`(${installEncoder.toString()})({fps:30})`, context), false);
 });
+test('CPU frames have explicit limited-range BT.709 planes; GPU input is unchanged', async () => {
+  for (const rgb of [[255,0,0],[255,255,255],[0,0,0]]) for (const cpu of [false,true]) {
+    let frame,reads=0,paints=0;
+    const pixels=Uint8ClampedArray.from([...rgb,255,...rgb,255,...rgb,255,...rgb,255]);
+    const canvas={width:2,height:2,getContext:()=>({getContextAttributes:()=>({willReadFrequently:cpu}),getImageData(){reads++;return{data:pixels};}})};
+    const window={__paint(){paints++;return canvas;}};
+    const context={window,document:{getElementById:()=>canvas},VideoFrame:class{constructor(source,init){this.source=source;this.init=init;}close(){}},
+      VideoEncoder:class{static async isConfigSupported(){return{supported:true};}configure(){}encode(value){frame=value;}close(){}}};
+    assert.equal(await vm.runInNewContext('('+installEncoder.toString()+')({fps:30,bitrate:3000000,blur:1,shutter:.5})',context),true);
+    await window.__video.step(0,0);assert.equal(paints,1);assert.equal(reads,cpu?1:0);
+    if(!cpu){assert.equal(frame.source,canvas);continue;}
+    assert.equal(frame.init.format,'I420');assert.equal(frame.init.colorSpace.matrix,'bt709');assert.equal(frame.init.colorSpace.fullRange,false);
+    const [y,u,v]=rgb[0]===0?[16,128,128]:rgb[1]===255?[235,128,128]:[63,102,240];
+    assert.deepEqual(Array.from(frame.source),[y,y,y,y,u,v]);
+  }
+});

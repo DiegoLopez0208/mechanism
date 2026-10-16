@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Replace the first presentation prototypes with independent engines: Workflow is a Canvas2D industrial process scene; Paper is pure vector technical drawing with front/top/side orthographic views. Neither engine instantiates WebGL or composites Studio frames. Reuse evidence/model data, not the original scene rendering. Tests prohibit WebGL creation in both 2D engines and require byte-identical repeated CPU frames. Studio retains the product renderer.
+
 - Presentations: name the normal director Studio; add Workflow (model-driven process stations) and Paper (real mesh contours/silhouettes, numbered details and evidence annotations). Four independent backgrounds: Graphite, Blueprint, Porcelain and Ivory. CLI, URL and spec selection; 1.5x 3D supersampling for opted-in presentations; crisp Workflow/Paper overlays and synchronized deterministic timelines/audio. Existing films remain unchanged without opt-in. Add configuration, layout and browser tests; run them in CI.
 
 - Repeatability and regression: seed the GTAO denoiser's startup texture (the pass does not rotate noise between frames), preserve its sample/filter settings, and test bounded residual raster rounding. Four compact lossless golden frames per example on Windows/Linux, explicit regeneration, CI comparisons, and deliberately broken text/decor controls. No vendor rebuild or new dependency.

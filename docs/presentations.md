@@ -2,6 +2,22 @@
 
 Studio, Workflow and Paper are independent of the Graphite, Blueprint, Porcelain and Ivory backgrounds. Existing films keep the legacy look/timeline unless a presentation is explicitly selected. The landing page and published media are unchanged.
 
+## Independent engines (revision 2)
+
+The first prototype reused Studio's shaded object under two new overlays. That did not meet the requested separation and is superseded. The current implementations share configuration, evidence, a deterministic clock/audio contract and small drawing helpers, not a common rendered scene:
+
+| Engine | Renderer | Scene and motion | Studio images |
+|---|---|---|---|
+| Studio | WebGL product renderer | Real object, materials, light, assembly, operation and camera shots | Native |
+| Workflow | `kit/workflow-engine.js`, CPU Canvas2D | Independent factory/process scene, operation stations, conveyors, moving data carriers and rotating mechanism symbols | Never |
+| Paper | `kit/paper-engine.js`, CPU Canvas2D vector paths | Drafting sheet, front/top/side orthographic construction views, progressive strokes, numbered details and analytical exploded translation | Never |
+
+Workflow dispatches before any figure/mesh/stage compilation. Paper reuses parametric mesh geometry as model data through a mathematical scene adapter; it never constructs `WebGLRenderer`, lights a scene, draws materials or blits Studio's canvas. Hard edges and view-dependent silhouettes are projected once and cached; paths move analytically during the technical explosion. Paper retains the geometry-area preflight check. Camera/3D screen occupancy checks do not apply to these 2D engines.
+
+The browser tests deliberately throw if Workflow or Paper requests a WebGL context. They also require byte-identical repeated frames from both CPU canvas engines, exercise all twelve combinations and the three aspect ratios, and check text bounds. The final full suite passed **76/76**, with zero skips, in 154.93 seconds. Studio and all 44 legacy goldens remain unchanged. Revised films and their own measurements live outside the repository in `mechanism-benchmark/presentation-engines-v2/`; the historical prototype measurements below do not describe those revised films.
+
+Workflow/Paper keep their own playback canvas with `?explore`; they do not fall back to Studio's orbit viewer. Their output is film/stills. Use Studio to export STL/GLB. `boot.js` loads all three presentation modules after core; direct script-tag consumers should load `presentation.js`, then both engine modules. No runtime compilation, dependencies or vendor rebuild is required.
+
 ## Selection
 
 ```sh
@@ -10,21 +26,37 @@ node scripts/render.mjs examples/react/index.html --method workflow --background
 node scripts/render.mjs examples/lock/index.html --method paper --background ivory --length short --aspect 9:16 --encoder browser --out work/paper.mp4
 ```
 
-The corresponding URL is `?method=paper&background=ivory&length=short&aspect=9:16`. A spec may set `presentation: { method: 'paper', background: 'ivory' }`; URL/CLI options take precedence. Invalid names are rejected. With no explicit background, Studio uses Porcelain, Workflow Blueprint and Paper Ivory. Legacy `--style`/`--theme` options still work; they are not method names. Selecting a new presentation overrides the legacy palette. An interactive `?explore` keeps the existing viewer and applies the background, not the new film timeline.
+The corresponding URL is `?method=paper&background=ivory&length=short&aspect=9:16`. A spec may set `presentation: { method: 'paper', background: 'ivory' }`; URL/CLI options take precedence. Invalid names are rejected. With no explicit background, Studio uses Porcelain, Workflow Blueprint and Paper Ivory. Legacy `--style`/`--theme` options still work; they are not method names. Selecting a new engine overrides the legacy palette. `?explore` retains the orbit viewer only for Studio; the two 2D engines retain their own canvas playback.
 
-`boot.js` loads `presentation.js` automatically after `core.js`. Pages loading scripts directly should include it in that position. Its configuration, text wrapping and timeline planner also run in Node/vm without browser globals.
+`boot.js` loads `presentation.js`, `workflow-engine.js` and `paper-engine.js` after `core.js`. Direct script-tag pages should include those in order. Configuration, text wrapping, timeline planning, factory layout and orthographic projection helpers also run in Node/vm without browser globals.
 
 ## Behavior
 
 - **Studio** names the existing normal 3D director: assembly, operation, explosion, part tour, evidence and closing card. The selected background supplies a clean sans-serif card and palette. The original short duration is retained (31 seconds for lock).
-- **Workflow** builds stations from `mechanism.steps.label(i)` and advances the actual simulation on the corresponding step timeline. For mechanisms without steps, it follows the drive modes selected for that cut, preserving their original mode indices. It does not infer a dependency graph from arbitrary geometry. States are previous/active/next; progress and animated transfers illustrate the sequence, not measured execution latency. Large sequences page through station groups. The demo uses the existing React model/evidence, not invented process measurements.
-- **Paper** follows actual tour parts, revealing mesh edges and camera-dependent silhouettes. It shows numbered anchored callouts, a projected vector detail and existing source-backed parameter values. Estimated parts use dashed amber drawing lines; confidence and drawn-size comparisons remain distinct. The exploded assembly is fitted from its posed bounds, then reassembled at the close. Details are explicitly not to scale.
+- **Workflow** builds a factory/process scene from `mechanism.steps.label(i)`, or the declared drive modes when there are no steps. It does not infer dependencies or a physical factory from arbitrary object geometry. Moving data carriers and operation indicators are explicitly illustrative, not measured execution latency or additional hardware evidence. Large sequences page through station groups. The demo uses existing React model/evidence data.
+- **Paper** follows actual tour parts using orthographic vector paths. It shows front/top/side construction outlines, numbered anchored callouts, projected details and existing source-backed parameter values. Estimated parts use dashed amber lines; confidence and drawn-size comparisons remain distinct. The construction explodes and reassembles analytically. Views are explicitly not to scale; these are construction outlines, without hidden-surface removal.
 
 Workflow/Paper durations are 30/60/90 seconds for short/normal/extended. The short selects up to four Paper tour parts (normal/extended up to eight). Their closing card uses the gate's actual verdict and published comparisons; a successful animation is not an independent evidence check. Sources and full evidence remain in the original spec/normal dossier. These directors are alternative explanations, not replacements for the complete evidence document.
 
-New presentations render 3D at 1.5x (1620×2880 for 1080×1920 delivery), retain MSAA 4x, and downsample before composing overlays. `stage.renderScale` accepts 1–2. Workflow/Paper use no temporal averaging of their overlays and use deterministic state/timing and synchronized sound events. Higher raster resolution is not a claim of more detailed or better-sourced geometry.
+Studio renders 3D at 1.5x (1620×2880 for 1080×1920 delivery), retains MSAA 4x, and downsamples before composing overlays. `stage.renderScale` accepts 1–2. Workflow/Paper rasterize their own vector scenes at delivery resolution with no temporal averaging, deterministic state and synchronized sound events. Higher raster resolution is not a claim of more detailed or better-sourced geometry.
 
-## Local validation, 2026-10-16
+## Revision 2 export validation
+
+| Engine demo | Duration | File size | Mean local SSIM | Mean RGB error / 255 | Channel bias R / G / B |
+|---|---:|---:|---:|---:|---|
+| Studio / lock | 31 s | 17.44 MiB | 0.998390 | 0.613 | +0.122 / -0.011 / -0.071 |
+| Workflow / React | 30 s | 6.53 MiB | 0.995891 | 0.668 | +0.918 / +0.032 / +0.018 |
+| Paper / lock | 30 s | 5.76 MiB | 0.998581 | 0.770 | -0.073 / +0.002 / -0.870 |
+
+Eight Chromium-decoded samples per film were compared with fresh lossless engine frames. These are export-fidelity measurements, not a numerical rating of artistic quality. Both revised films meet error <=2/255 and absolute bias <1/255. Decoded contact sheets were inspected. ffprobe and actual Chromium playback confirm 1080×1920, 30 fps, exact video durations, yuv420p/TV/BT.709/sRGB transfer, stereo AAC and non-silent advancing playback. No full subjective listening or hosted CI run is claimed.
+
+An important export regression was caught before delivery: Chromium's CPU-backed RGB canvas encoding produced different YUV range values from the original GPU canvas path. Overwriting VUI tags alone crushed dark backgrounds and clipped the paper background (Workflow error 14.79, Paper 13.97/255). The final encoder explicitly converts CPU RGB pixels to limited-range BT.709 I420, with averaged 2×2 chroma and an explicit `VideoFrameBufferInit.colorSpace`. This uses the [WebCodecs buffer-frame API](https://www.w3.org/TR/webcodecs/#videoframe-interface); the measured correction is local evidence, not a guarantee inferred from tags. The deterministic drawing canvas is unchanged. A temporary GPU-staging experiment was superseded by this explicit buffer conversion.
+
+Unit tests verify actual Y/U/V values for black, white and red inputs. A real CPU Workflow clip is decoded against its lossless reference in the render test suite, preventing a return to the range mismatch. The GPU/Studio input path is unchanged. Final revised exports took approximately 42 seconds for Workflow and 77 seconds for Paper while other local work was active; these are observed export costs, not isolated speed benchmarks. Paper caches its own vector view layers at stable poses; it never caches a Studio image.
+
+Workflow preflight sampled every second and Paper every two seconds: zero failures/warnings on these demos. Text checks apply to both; camera checks are inapplicable. Paper preserves the source-mesh area-ratio diagnostic. The first concurrent full test attempt during rendering hit a browser launch failure and its test harness retained late launches. The concurrency test now awaits all launch attempts before cleanup, preserving every assertion; the failed attempt was stopped by its identified PID tree and retained in the local logs. The subsequent isolated full suite passed all 76 tests, including five concurrent browser launches, actual CPU-frame colour regression and legacy visual regressions.
+
+## Archived first-prototype validation, 2026-10-16 (superseded)
 
 Three review MP4s were generated outside the repository. No push, upload or published-media replacement was performed.
 

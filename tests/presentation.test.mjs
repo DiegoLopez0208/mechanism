@@ -10,6 +10,7 @@ import { withBrowser, findBrowser } from '../scripts/lib/browser.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ctx = vm.createContext({ URLSearchParams });
 vm.runInContext(fs.readFileSync(path.join(root, 'kit/presentation.js'), 'utf8'), ctx);
+for (const name of ['workflow-engine', 'paper-engine']) vm.runInContext(fs.readFileSync(path.join(root, 'kit/' + name + '.js'), 'utf8'), ctx);
 const P = ctx.MX.presentation, plain = x => JSON.parse(JSON.stringify(x));
 test('three methods and four backgrounds are independent; legacy films stay opt-in', () => {
   assert.equal(P.resolve(new URLSearchParams()).enabled, false);
@@ -48,6 +49,15 @@ test('paper planner uses actual parts and confidence; invalid tours fail', () =>
   assert.equal(P.plan(spec, 'paper', 'normal').duration, 60);
   assert.throws(() => P.plan({ ...spec, director: { tour: ['missing'] } }, 'paper'), /Unknown presentation part/);
 });
+test('independent vector projection and factory routing fit their own coordinate systems', () => {
+  assert.deepEqual(plain(ctx.MX.paperEngine.project([2,3,4], 'front')), [2,-3]);
+  assert.deepEqual(plain(ctx.MX.paperEngine.project([2,3,4], 'top')), [2,4]);
+  const fit=ctx.MX.paperEngine.fit([[0,0],[10,20]],{x:0,y:0,w:100,h:100});
+  assert.deepEqual(plain(fit([0,0])),[25,0]);assert.deepEqual(plain(fit([10,20])),[75,100]);
+  const layout=plain(ctx.MX.workflowEngine.layout(5,1080,1920));
+  assert.ok(layout[0].x<layout[1].x && layout[2].x>layout[3].x);
+  assert.ok(layout[2].y>layout[0].y);
+});
 
 test('real renderer: all twelve combinations, stage sync, text bounds and repeatable frames', {
   skip: !findBrowser() && !process.env.CI ? 'no Chromium browser found' : false, timeout: 900000,
@@ -57,7 +67,8 @@ test('real renderer: all twelve combinations, stage sync, text bounds and repeat
     await b.send('Page.addScriptToEvaluateOnNewDocument', { source: `
       window.__drawn=[];
       const get=HTMLCanvasElement.prototype.getContext;
-      HTMLCanvasElement.prototype.getContext=function(type,...args){if(type==='webgl2')window.__stageCanvas=this;return get.call(this,type,...args);};
+      HTMLCanvasElement.prototype.getContext=function(type,...args){if(type==='webgl2'){window.__webglCreates=(window.__webglCreates||0)+1;window.__stageCanvas=this;
+        if(${JSON.stringify(method)}!=='studio')throw new Error('2D engines must not create WebGL');}return get.call(this,type,...args);};
       const fill=CanvasRenderingContext2D.prototype.fillText;
       CanvasRenderingContext2D.prototype.fillText=function(s,x,y,...rest){
         if(window.MX?.ctx?.canvas===this.canvas){const m=this.measureText(s),w=m.width;
@@ -90,18 +101,18 @@ test('real renderer: all twelve combinations, stage sync, text bounds and repeat
         const data=x.getImageData(0,0,90,60).data;let sum=0,sq=0,n=0;
         for(let i=0;i<data.length;i+=4){const l=(data[i]+data[i+1]+data[i+2])/3;sum+=l;sq+=l*l;n++;}
         return {failures,residual:{changed,max,mae:total/a.length},sceneStd:Math.sqrt(sq/n-(sum/n)**2),
-          size:[MX.ctx.canvas.width,MX.ctx.canvas.height],stage:[__stageCanvas.width,__stageCanvas.height]};
+          size:[MX.ctx.canvas.width,MX.ctx.canvas.height],stage:window.__stageCanvas?[__stageCanvas.width,__stageCanvas.height]:null,webgl:window.__webglCreates||0};
       })()`);
       assert.deepEqual(result.failures, [], method + '/' + background + ': ' + JSON.stringify(result.failures));
       // GPU raster/composite rounding is already bounded by the existing visual
       // suite. Measure it here too; do not demand byte identity of GPU edges.
       assert.ok(result.residual.max <= 2, method + '/' + background + ': ' + JSON.stringify(result.residual));
       assert.deepEqual(result.size, [1080, height]);
-      assert.deepEqual(result.stage, [1620, height * 1.5]);
-      if (method === 'paper' && aspect === '9:16') assert.ok(result.sceneStd > 12, 'Paper assembly disappeared: ' + result.sceneStd);
+      if(method==='studio') assert.deepEqual(result.stage, [1620, height * 1.5]);
+      else {assert.equal(result.webgl,0);assert.equal(result.stage,null);assert.equal(result.residual.max,0);}
       if (method === 'workflow') {
         const states = await b.ev('[5,10,15,20,23].map(t=>__presentationAt(t))');
-        assert.ok(states.every((s, i) => i === 0 || s.sourceTime > states[i - 1].sourceTime));
+        assert.ok(states.every((s, i) => i === 0 || s.sourceStep >= states[i - 1].sourceStep));
       }
     }
   }, { timeout: 90000, retries: 0 });

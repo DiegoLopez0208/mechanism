@@ -65,204 +65,36 @@
     return { t, index, item: plan.items[index], progress: clamp((t - plan.begin - index * plan.slot) / plan.slot), intro: t < plan.begin, closing: t >= plan.end };
   };
 
-  function text(c, str, x, y, size, width, color, weight = 500) {
-    c.font = weight + ' ' + size + 'px ' + MX.SANS; c.fillStyle = color; c.textAlign = 'left'; c.textBaseline = 'alphabetic';
-    const lines = P.wrap(str, width, s => c.measureText(s).width);
-    lines.forEach((s, i) => c.fillText(s, x, y + i * size * 1.25));
-    return lines.length * size * 1.25;
-  }
-  function box(c, x, y, w, h, fill, stroke, radius = 16) {
-    c.beginPath(); c.roundRect(x, y, w, h, radius); c.fillStyle = fill; c.fill();
-    if (stroke) { c.strokeStyle = stroke; c.lineWidth = 1.5; c.stroke(); }
-  }
-  function line(c, a, b, color, width = 2, progress = 1) {
-    c.beginPath(); c.moveTo(...a); c.lineTo(a[0] + (b[0] - a[0]) * progress, a[1] + (b[1] - a[1]) * progress); c.strokeStyle = color; c.lineWidth = width; c.stroke();
-  }
-  // Cache actual model edges, not a decorative bounding box. Project them after
-  // the figure's pose is applied, so a moving part and its drawing stay attached.
-  function silhouetteEdges(geometry) {
-    const pos = geometry.attributes.position, idx = geometry.index, count = idx ? idx.count : pos.count, edges = new Map(), TH = g.THREE;
-    for (let i = 0; i < count; i += 3) {
-      const v = [0, 1, 2].map(j => new TH.Vector3().fromBufferAttribute(pos, idx ? idx.getX(i + j) : i + j));
-      const normal = v[1].clone().sub(v[0]).cross(v[2].clone().sub(v[0])).normalize().toArray();
-      const keys = v.map(p => p.toArray().map(n => Math.round(n * 1e5)).join(','));
-      for (let j = 0; j < 3; j++) {
-        const next = (j + 1) % 3, key = [keys[j], keys[next]].sort().join('/');
-        if (!edges.has(key)) edges.set(key, { points: [...v[j].toArray(), ...v[next].toArray()], normals: [] });
-        edges.get(key).normals.push(normal);
-      }
-    }
-    return Array.from(edges.values());
-  }
-  function edgeCache(parts) {
-    const TH = g.THREE;
-    return parts.map(part => {
-      const meshes = []; part.group.traverse(mesh => {
-        if (!mesh.isMesh || !mesh.geometry || mesh.userData.presentationEdge) return;
-        const geo = new TH.EdgesGeometry(mesh.geometry, 35), pos = geo.attributes.position;
-        meshes.push({ mesh, points: pos.array.slice(), silhouette: silhouetteEdges(mesh.geometry) }); geo.dispose();
-      }); return { part, meshes };
-    });
-  }
-  function drawEdges(c, cache, camera, W, H, fraction, color, weight = 1.25) {
-    const TH = g.THREE, v = new TH.Vector3();
-    for (const { part, meshes } of cache) {
-      if (!part.group.visible) continue;
-      c.beginPath(); c.setLineDash(part.spec.conf === 'estimated' ? [5, 4] : []);
-      for (const { mesh, points, silhouette } of meshes) {
-        const eye = camera.position.clone().applyMatrix4(mesh.matrixWorld.clone().invert());
-        const outline = silhouette.filter(e => {
-          const faces = e.normals.map(n => n[0] * (eye.x - e.points[0]) + n[1] * (eye.y - e.points[1]) + n[2] * (eye.z - e.points[2]) > 0);
-          return faces.length === 1 || faces.some(f => f !== faces[0]);
-        }).flatMap(e => e.points);
-        const vertices = [...points, ...outline], limit = Math.floor(vertices.length / 6 * fraction) * 6;
-        for (let i = 0; i < limit; i += 6) {
-          const ends = [];
-          for (let j = 0; j < 6; j += 3) { v.set(vertices[i + j], vertices[i + j + 1], vertices[i + j + 2]).applyMatrix4(mesh.matrixWorld).project(camera); ends.push([(v.x * .5 + .5) * W, (-v.y * .5 + .5) * H, v.z]); }
-          if (ends.some(p => p[2] > 1 || p[2] < -1)) continue;
-          c.moveTo(ends[0][0], ends[0][1]); c.lineTo(ends[1][0], ends[1][1]);
-        }
-      }
-      c.strokeStyle = part.spec.conf === 'estimated' ? MX.rgba(MX.THEME.ember, .55) : color; c.lineWidth = weight; c.stroke();
-    }
-    c.setLineDash([]);
-  }
-  P.run = ({ config, spec, F, W, H, length, validation, analysis, views, script, modeStart, modeEnd, workflowTime, modeIndices }) => {
-    const plan = P.plan(spec, config.method, length, modeIndices), T = MX.THEME, st = F.st;
-    const edges = config.method === 'paper' ? edgeCache(F.parts) : null;
-    const title = config.method === 'paper' ? 'ASSEMBLY STUDY' : 'PROCESS ENGINEERING';
-    const sources = ((spec.research || {}).sources || []), claimed = ((spec.research || {}).claims || []);
-    const paperTop = H * (H < 1600 ? .60 : .66);
-    const view = Object.assign({}, views.iso, { cx: W / 2, cy: config.method === 'paper' ? (265 + paperTop - 70) / 2 : H * .345, zoom: views.iso.zoom * .8, dof: 0 });
-    if (config.method === 'paper') {
-      F.apply({ t: 0, e: .65, mech: script(modeStart).mech, view }, false); st.scene.updateMatrixWorld(true);
-      const TH = g.THREE, bounds = new TH.Box3(); F.parts.forEach(p => bounds.expandByObject(p.group));
-      const center = bounds.getCenter(new TH.Vector3());
-      view.tx = center.x; view.ty = center.y; view.tz = center.z; F.setView(view);
-      const points = [];
-      for (const x of [bounds.min.x, bounds.max.x]) for (const y of [bounds.min.y, bounds.max.y]) for (const z of [bounds.min.z, bounds.max.z]) {
-        const v = new TH.Vector3(x, y, z).project(st.camera); points.push([(v.x * .5 + .5) * W, (-v.y * .5 + .5) * H]);
-      }
-      const xs = points.map(p => p[0]), ys = points.map(p => p[1]), left = Math.min(...xs), right = Math.max(...xs), top = Math.min(...ys), bottom = Math.max(...ys);
-      const k = Math.min(1, (W - 160) / (right - left), (paperTop - 265 - 120) / (bottom - top));
-      view.zoom *= k;
-    }
-    const inspect = (t) => P.at(plan, t);
-    const draw = (c, t) => {
-      const a = inspect(t), closing = smooth((t - plan.end) / 1.2), item = a.item;
-      const sourceTime = config.method === 'workflow' ? workflowTime(a) : modeStart + clamp((t - plan.begin) / (plan.end - plan.begin)) * (modeEnd - modeStart - .05);
-      const original = script(sourceTime), v = Object.assign({}, view, { yaw: view.yaw + (config.method === 'paper' ? 0 : 5 * Math.sin(t * .15)) });
-      const state = Object.assign({}, original, { t, view: v, focus: null, focusSet: null, focusA: 0, assemble: null, explodeK: null, e: 0 });
-      if (config.method === 'paper') {
-        state.e = smooth((t - 2) / 3) * (1 - closing) * .65;
-        state.focus = a.intro || a.closing ? null : item.id; state.focusA = state.focus ? .65 : 0; state.dimTo = .5;
-        state.mech = script(modeStart).mech;
-        state.assemble = id => ({ k: 1, alpha: F.byId[id].spec.cutaway && id !== item.id ? .12 : 1 });
-      }
-      F.apply(state); st.scene.updateMatrixWorld(true);
-      c.save(); c.fillStyle = T.paper; c.fillRect(0, 0, W, H);
-      if (config.method === 'paper') {
-        c.strokeStyle = MX.rgba(T.ink, .045); c.lineWidth = 1;
-        for (let x = 60; x < W; x += 60) line(c, [x, 260], [x, H - 370], c.strokeStyle, 1);
-        c.globalAlpha = smooth((t - 1.2) / 2); st.blit(c); c.globalAlpha = 1;
-        drawEdges(c, a.intro || a.closing ? edges : edges.filter(e => e.part.id === item.id), st.camera, W, H, a.intro ? smooth(t / 2) : smooth(a.progress * 4), MX.rgba(T.ink, .45));
-      } else st.blit(c);
-      // All typography is composed after the 3D scene, at delivery resolution.
-      c.fillStyle = MX.rgba(T.paper, .97); c.fillRect(0, 0, W, 265);
-      text(c, config.method.toUpperCase() + '  /  ' + title, 72, 85, 20, W - 144, T.teal, 700);
-      text(c, spec.title, 72, 155, 48, W - 144, T.ink, 700);
-      line(c, [72, 245], [W - 72, 245], T.line);
-      if (!a.closing) {
-        if (config.method === 'workflow') drawWorkflow(c, a, plan, W, H, T);
-        else drawPaper(c, a, plan, F, W, H, T, edges);
-      }
-      if (a.closing) {
-        box(c, 60, H * .52, W - 120, H * .48 - 80, T.paper, T.plateEdge);
-        let y = H * .52 + 58;
-        y += text(c, 'THE RESULT', 90, y, 20, W - 180, T.teal, 700) + 24;
-        y += text(c, validation.verdict?.state || 'NOTHING CHECKED', 90, y, 42, W - 180, T.ink, 700) + 18;
-        const checks = analysis.modes.filter(m => m.publish && m.ok === true).length;
-        y += text(c, checks + ' published comparisons reproduced', 90, y, 28, W - 180, T.ink) + 18;
-        const estimated = claimed.filter(c => c.conf === 'estimated').length;
-        y += text(c, estimated + ' estimated claims; see the spec for limits.', 90, y, 24, W - 180, T.mute) + 18;
-        const source = sources[0]; if (source) text(c, 'SOURCE  ' + source.title, 90, y, 22, W - 180, T.mute);
-      }
-      text(c, (spec.fig || spec.id) + '  /  ' + config.background.toUpperCase(), 72, H - 42, 17, W - 144, T.mute);
-      c.restore(); MX.A = 1;
-    };
-    const info = g.__specInfo;
-    g.__specInfo = () => Object.assign({}, info(), { duration: plan.duration, method: config.method, background: config.background,
+  P.util = {
+    clamp, smooth,
+    text(c, str, x, y, size, width, color, weight = 500) {
+      c.font = weight + ' ' + size + 'px ' + MX.SANS; c.fillStyle = color; c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+      const lines = P.wrap(str, width, s => c.measureText(s).width);
+      lines.forEach((s, i) => c.fillText(s, x, y + i * size * 1.25));
+      return lines.length * size * 1.25;
+    },
+    line(c, a, b, color, width = 2) {
+      c.beginPath(); c.moveTo(...a); c.lineTo(...b); c.strokeStyle = color; c.lineWidth = width; c.stroke();
+    },
+    box(c, x, y, w, h, fill, stroke, radius = 12) {
+      c.beginPath(); c.roundRect(x, y, w, h, radius); c.fillStyle = fill; c.fill();
+      if (stroke) { c.strokeStyle = stroke; c.lineWidth = 1.5; c.stroke(); }
+    },
+  };
+  // Shared data/clock/audio contract only. Each engine owns its entire drawing.
+  P.mount = ({ plan, spec, validation, config, W, H, engine, draw, shapeCheck = () => [], diagnostics = () => ({}) }) => {
+    const inspect = t => P.at(plan, t);
+    g.__specInfo = () => ({ duration: plan.duration, parts: (spec.parts || []).length, validation: validation.lines,
+      warnings: validation.warnings, errors: validation.errors, method: config.method, background: config.background, engine,
       panels: [{ kind: 'verdict', from: plan.end, to: plan.duration }], phases: { assembled: 2, modes: plan.begin, panels: plan.end },
       shots: plan.items.map((item, i) => ({ label: item.title, t: plan.begin + (i + .6) * plan.slot })) });
-    g.__presentationAt = (t) => { const a = inspect(t); return Object.assign({}, a, { sourceTime: config.method === 'workflow' ? workflowTime(a) : modeStart }); };
-    const geom = g.__geom;
-    g.__geom = t => { const a = inspect(t); return Object.assign({}, geom(t), { focus: config.method === 'paper' && !a.intro && !a.closing ? a.item.id : null }); };
-    const audio = () => MX.sound.render({ duration: plan.duration, seed: 81, events: plan.items.map((_, i) => ({ t: plan.begin + i * plan.slot, v: 'click', f: 1100, gain: .2, sharp: .5 })), bed: { bpm: 88, root: 48, mode: 'dorian', level: .3, prog: [0, 5, 3, 4], curve: [[0, .2], [plan.begin, .35], [plan.end, .2], [plan.duration, 0]] }, room: { size: 1, wet: .15, fb: .7 }, tone: .002 });
-    MX.run({ w: W, h: H, fps: 30, duration: plan.duration, draw, audio, poster: 9, blurAt: () => 1 });
-    return plan;
+    g.__presentationAt = t => Object.assign({}, inspect(t), diagnostics(t));
+    g.__geom = t => ({ t, cam: [0, 0, 10000], near: 0, focus: null, parts: [] });
+    g.__shapeCheck = shapeCheck;
+    const audio = () => MX.sound.render({ duration: plan.duration, seed: config.method === 'workflow' ? 81 : 91,
+      events: plan.items.map((_, i) => ({ t: plan.begin + i * plan.slot, v: config.method === 'workflow' ? 'click' : 'whoosh', d: .3, f: 1100, f0: 600, f1: 1400, gain: .16, sharp: .5 })),
+      bed: { bpm: config.method === 'workflow' ? 96 : 72, root: 48, mode: 'dorian', level: .24, prog: [0, 5, 3, 4], curve: [[0, .2], [plan.begin, .3], [plan.end, .2], [plan.duration, 0]] }, room: { size: 1, wet: .15, fb: .7 }, tone: .002 });
+    MX.run({ w: W, h: H, fps: 30, duration: plan.duration, contextOptions: { willReadFrequently: true }, draw: (c, t) => draw(c, inspect(t)), audio, poster: 9, blurAt: () => 1 });
+    return { DUR: plan.duration, plan };
   };
-  function drawWorkflow(c, a, plan, W, H, T) {
-    const cols = 3, rows = H < 1600 ? 1 : 2, capacity = cols * rows, gap = 20, x0 = 72, y0 = H * .51, cw = (W - 144 - gap * 2) / 3, ch = 115;
-    const start = Math.floor(a.index / capacity) * capacity, visible = plan.items.slice(start, start + capacity);
-    visible.forEach((item, j) => {
-      const x = x0 + (j % cols) * (cw + gap), y = y0 + Math.floor(j / cols) * (ch + 28), index = start + j;
-      if (j % cols < 2 && j < visible.length - 1) {
-        line(c, [x + cw, y + ch / 2], [x + cw + gap, y + ch / 2], T.teal, 3);
-        const travel = (a.t * .6) % 1;
-        c.beginPath(); c.arc(x + cw + gap * travel, y + ch / 2, 4, 0, Math.PI * 2); c.fillStyle = T.teal; c.fill();
-      } else if (j === 2 && visible.length > 3) {
-        const yy = y + ch + 14; line(c, [x + cw / 2, y + ch], [x + cw / 2, yy], T.teal);
-        line(c, [x + cw / 2, yy], [x0 + cw / 2, yy], T.teal); line(c, [x0 + cw / 2, yy], [x0 + cw / 2, yy + 14], T.teal);
-      }
-      box(c, x, y, cw, ch, T.plate, index === a.index ? T.teal : T.plateEdge);
-      text(c, String(index + 1).padStart(2, '0') + (index < a.index ? '  /  PREVIOUS' : index === a.index ? '  /  ACTIVE' : '  /  NEXT'), x + 18, y + 28, 14, cw - 36, index === a.index ? T.teal : T.mute, 700);
-      text(c, item.title, x + 18, y + 59, 19, cw - 36, T.ink, 600);
-      if (index === a.index) { c.fillStyle = T.teal; c.fillRect(x + 16, y + ch - 8, (cw - 32) * a.progress, 3); }
-    });
-    const top = y0 + rows * (ch + 28) + 16;
-    box(c, 60, top - 24, W - 120, H - top - 64, T.paper, T.plateEdge);
-    let y = top + 16;
-    y += text(c, a.intro ? 'FOLLOW THE PROCESS' : 'STEP ' + (a.index + 1) + ' OF ' + plan.items.length, 90, y, 18, W - 180, T.teal, 700) + 20;
-    y += text(c, a.item.title, 90, y, 34, W - 180, T.ink, 700) + 14;
-    y += text(c, a.item.formula || '', 90, y, 26, W - 180, T.mute) + 18;
-    text(c, a.item.value || '', 90, y, 30, W - 180, T.teal, 700);
-  }
-  function drawPaper(c, a, plan, F, W, H, T, edges) {
-    const p = F.byId[a.item.id], anchor = F.P(...F.anchor(p.id)), top = H * (H < 1600 ? .60 : .66);
-    const to = [W - 100, top - 48];
-    if (!a.intro && !a.closing) {
-      line(c, anchor, to, T.teal, 1.5, smooth(a.progress * 4));
-      c.beginPath(); c.arc(anchor[0], anchor[1], 5, 0, Math.PI * 2); c.fillStyle = T.teal; c.fill();
-      text(c, String(a.index + 1).padStart(2, '0'), W - 140, top - 65, 32, 90, T.teal, 700);
-    }
-    box(c, 60, top, W - 120, H - top - 80, T.paper, T.plateEdge, 3);
-    let y = top + 45;
-    y += text(c, 'DETAIL ' + (a.index + 1) + ' / ' + plan.items.length + '  •  ' + String(a.item.conf || '').toUpperCase(), 90, y, 20, W - 180, T.teal, 700) + 20;
-    y += text(c, a.item.title, 90, y, H < 1200 ? 32 : 40, W - 180, T.ink, 600) + 16;
-    const details = p.info || {};
-    y += text(c, a.item.formula || 'See the model and evidence for this part.', 90, y, H < 1200 ? 23 : 27, W - 180, T.mute) + 16;
-    const size = details.sizeEvidence;
-    y += text(c, size?.label || 'DRAWN SIZE: see spec comparisons', 90, y, 20, W - 180, T.teal, 600) + 26;
-    // A magnified vector detail remains useful when the selected part is tiny
-    // in the assembly. Its geometry comes from that exact part's mesh.
-    const detail = edges.filter(e => e.part === p), points = [], TH = g.THREE;
-    for (const entry of detail) for (const { mesh, points: vertices } of entry.meshes) {
-      for (let i = 0; i < vertices.length; i += 3) {
-        const v = new TH.Vector3(vertices[i], vertices[i + 1], vertices[i + 2]).applyMatrix4(mesh.matrixWorld).project(F.st.camera);
-        points.push([(v.x * .5 + .5) * W, (-v.y * .5 + .5) * H]);
-      }
-    }
-    const room = H - 165 - y;
-    if (points.length && room > 100) {
-      const xs = points.map(p => p[0]), ys = points.map(p => p[1]), l = Math.min(...xs), r = Math.max(...xs), t = Math.min(...ys), b = Math.max(...ys);
-      const k = Math.min((W - 280) / Math.max(1, r - l), (room - 45) / Math.max(1, b - t));
-      text(c, 'PROJECTED DETAIL / NOT TO SCALE', 90, y, 15, W - 180, T.mute, 600);
-      c.save(); c.translate(W / 2, y + 35 + (room - 45) / 2); c.scale(k, k); c.translate(-(l + r) / 2, -(t + b) / 2);
-      drawEdges(c, detail, F.st.camera, W, H, smooth(a.progress * 3), T.ink, 1.5 / k); c.restore();
-      const params = Object.entries(p.spec.params || {}).filter(([, v]) => v.conf !== 'estimated' && v.value != null);
-      if (params.length) {
-        const [key, value] = params[0]; text(c, key.toUpperCase() + '  ' + value.value + ' ' + (value.unit || '') + '  /  ' + value.conf.toUpperCase(), 90, H - 115, 22, W - 180, T.teal, 600);
-      }
-    }
-  }
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -17,7 +17,9 @@ const videoDir=opt('video-dir',null);
 for(const name of names){
  const dir=path.join(output,name);mkdirSync(dir,{recursive:true});
  await withBrowser(async({send,ev,onCleanup})=>{
-  await send('Page.navigate',{url:pathToFileURL(path.resolve('examples',name,'index.html')).href+'?render=1&t=0'});
+  const url=pathToFileURL(path.resolve('examples',name,'index.html'));
+  for(const[key,value]of Object.entries({render:'1',t:'0',method:opt('method',''),background:opt('background',''),length:opt('length',''),aspect:opt('aspect','')}))if(value!=='')url.searchParams.set(key,value);
+  await send('Page.navigate',{url:url.href});
   for(let i=0;i<100;i++){await sleep(100);if(await ev('typeof __paint === "function"'))break;}
   await ev('document.fonts.ready.then(()=>true)');const info=await ev('__specInfo()');
   if(info.errors.length)throw new Error(info.errors.join('; '));

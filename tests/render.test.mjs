@@ -63,3 +63,18 @@ test('an actual page without VideoEncoder automatically falls back to JPEG', opt
     assert.match(log, /falling back to JPEG/); assert.match(log, /encoder: jpeg/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+test('CPU vector frames retain their colour through browser H.264 encoding', opts, () => {
+  const dir=mkdtempSync(path.join(os.tmpdir(),'mx-cpu-colour-'));
+  try {
+    const flags=['examples/react/index.html','--method','workflow','--background','graphite','--length','short','--aspect','4:5','--blur','1'];
+    const reference=path.join(dir,'ref.png'),video=path.join(dir,'cpu.mp4');
+    run([...flags,'--still','9','--out',reference]);
+    run([...flags,'--from','9','--to','10','--encoder','browser','--out',video]);
+    const raw=file=>{
+      const result=spawnSync(ffmpeg,['-v','error','-i',file,'-vf','scale=flags=accurate_rnd+full_chroma_int,format=rgb24','-frames:v','1','-f','rawvideo','-'],{maxBuffer:16*1024*1024});
+      assert.equal(result.status,0,result.stderr?.toString());return result.stdout;
+    };
+    const metric=comparePixels(raw(video),raw(reference),1080,1350,3);
+    assert.ok(metric.meanAbs<=2&&metric.ssim>=.98&&metric.bias.every(v=>Math.abs(v)<1),JSON.stringify(metric));
+  }finally{rmSync(dir,{recursive:true,force:true});}
+});

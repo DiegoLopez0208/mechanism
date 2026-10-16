@@ -148,7 +148,7 @@
   MX.run = (cfg) => {
     const W = cfg.w, H = cfg.h, FPS = cfg.fps || 30, DUR = cfg.duration;
     const cv = document.getElementById('c') || Object.assign(document.body.appendChild(document.createElement('canvas')), { id: 'c' });
-    cv.width = W; cv.height = H; const ctx = cv.getContext('2d'); MX.ctx = ctx;
+    cv.width = W; cv.height = H; const ctx = cv.getContext('2d', cfg.contextOptions || {}); MX.ctx = ctx;
     const acc = document.createElement('canvas'); acc.width = W; acc.height = H; const actx = acc.getContext('2d');
     const paint = (t) => { MX.ctx = ctx; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.filter = 'none'; cfg.draw(ctx, clamp(t, 0, DUR - 1e-6)); };
     // motion blur: promedio de n subtiempos dentro de un obturador (fraccion del intervalo de frame)

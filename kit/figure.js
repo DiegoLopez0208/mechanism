@@ -19,7 +19,8 @@
 
   MX.figure = (cfg) => {
     const W = cfg.w, H = cfg.h, FPS = cfg.fps || 30, axes = cfg.axes || 'plan';
-    const st = G.stage(Object.assign({ w: W, h: H }, cfg.stage || {}));
+    const stage = cfg.stage?.vectorOnly ? MX.paperEngine.stage : G.stage;
+    const st = stage(Object.assign({ w: W, h: H }, cfg.stage || {}));
     const F = { st, W, H, parts: [], byId: {}, overlays: [], axes };
     MX.P = F.P = axes === 'three' ? (x, y, z) => st.project(x, -z, y) : (x, y, z) => st.project(x, y, z);
     const toView = (v) => (axes === 'three' ? Object.assign({}, v, { ty: -v.tz, tz: v.ty }) : v);

@@ -57,14 +57,18 @@
     const presentation = MX.presentation && MX.presentation.resolve(q, spec);
     if (presentation && presentation.enabled) MX.presentation.apply(presentation);
     V.errors.forEach((e) => console.error('SPEC: ' + e)); V.warnings.forEach((w) => console.warn('SPEC: ' + w));
-    if (V.errors.length && !explore) { document.title = 'SPEC ERROR'; throw new Error('el spec no pasa la validacion:\n' + V.errors.join('\n')); }
+    if (V.errors.length && (!explore || (presentation?.enabled && presentation.method !== 'studio'))) { document.title = 'SPEC ERROR'; throw new Error('el spec no pasa la validacion:\n' + V.errors.join('\n')); }
     const M = spec.mechanism || null, drive = (M && M.drive) || { modes: [], rpm: 30 }, modes = drive.modes || [], dir = spec.director || {}, LEN = q.get('length') || dir.length || 'normal', SHORT = LEN === 'short', LONG = LEN === 'extended', PRESS = !!(M && M.press), ENIG = !!(M && M.enigma), ENGN = !!(M && M.engine), CUBE = !!(M && M.cube), CALC = !!(M && M.calc), STEPS = !!(M && M.steps), RAD = Math.PI / 180, UP = spec.up === 'z', ORI = spec.orient || (UP ? [-90, 0, 0] : null);
     const claimsOf = (k) => ((spec.research && spec.research.claims) || []).filter((c) => c.conf === k).length;
     const claims = (spec.research && spec.research.claims) || [], sources = (spec.research && spec.research.sources) || [], claimBy = Object.fromEntries(claims.map((c) => [c.id, c]));
+    if (presentation?.enabled && presentation.method === 'workflow') {
+      return MX.workflowEngine.run({ spec, validation: V, config: presentation, W, H, length: LEN });
+    }
 
     /* ---------------------------------------------------------- figura y piezas */
     let beforeHook = null;
-    const F = MX.figure({ beforeRender: (s) => { if (beforeHook) beforeHook(s); }, w: W, h: H, axes: 'three', fps: FPS, stage: Object.assign({ shadow: 0.14, floorY: spec.up === 'z' ? -0.3 : -70 }, presentation?.enabled ? { renderScale: 1.5 } : {}, spec.stage || {}),
+    const vectorOnly = presentation?.enabled && presentation.method === 'paper';
+    const F = MX.figure({ beforeRender: (s) => { if (beforeHook) beforeHook(s); }, w: W, h: H, axes: 'three', fps: FPS, stage: Object.assign({ shadow: 0.14, floorY: spec.up === 'z' ? -0.3 : -70 }, presentation?.enabled ? { renderScale: 1.5 } : {}, spec.stage || {}, { vectorOnly }),
       card: (s) => ({ fig: spec.fig || 'Fig 1', kicker: spec.kicker, title: spec.title, sub: s.sub || spec.sub, hint: s.hint || '', readout: s.readout || (F.parts.length + ' parts'), blocks: [['parts', F.parts.length], ['spec', claimsOf('spec'), T.teal], ['derived', claimsOf('derived')], ['estimated', claimsOf('estimated'), T.ember]] }) });
     const st = F.st, H2 = F.hud, byBodyPhi = an.phi || {};
     // Enigma: el cableado que se dibuja en cada rotor sale de la MISMA tabla que usa la simulacion
@@ -146,6 +150,7 @@
       root.add(grp);
     });
     F.finish();
+    if (vectorOnly) return MX.paperEngine.run({ spec, validation: V, config: presentation, F, W, H, length: LEN });
     const parts = F.parts, key = st.key;
     st.scene.updateMatrixWorld(true); const wbox = new TH.Box3(); parts.forEach((p) => wbox.expandByObject(p.group)); const ctr = wbox.getCenter(new TH.Vector3());      // centro del objeto armado, en ejes del mundo
 
@@ -612,15 +617,6 @@
     }
 
     /* ---------------------------------------------------------- arranque */
-    if (!explore && presentation?.enabled && presentation.method !== 'studio') {
-      const workflowTime = a => {
-        if (sMode >= 0) return mS[sMode] + 1 + (a.closing ? M.steps.count : a.intro ? 0 : a.index + E.sm(a.progress)) / SR;
-        const i = a.item.mode; return mS[i] + mD[i] * Math.min(.999, a.progress);
-      };
-      const modeIndices = mD.flatMap((duration, index) => duration > 0 ? [index] : []);
-      const plan = MX.presentation.run({ config: presentation, spec, F, W, H, length: LEN, validation: V, analysis: an, views: VW, script, modeStart: tM0, modeEnd: tE0, workflowTime, modeIndices });
-      return { F, an, DUR: plan.duration };
-    }
     if (presentation?.enabled) {
       const info = g.__specInfo;
       g.__specInfo = () => Object.assign({}, info(), { method: presentation.method, background: presentation.background });

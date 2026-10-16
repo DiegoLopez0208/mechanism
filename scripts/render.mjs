@@ -22,6 +22,7 @@ const ENCODER = opt('encoder', 'jpeg');
 const METHOD = opt('method', ''), BACKGROUND = opt('background', '');
 if (METHOD && !['studio', 'workflow', 'paper'].includes(METHOD)) throw new Error('--method must be studio, workflow or paper');
 if (BACKGROUND && !['graphite', 'blueprint', 'porcelain', 'ivory'].includes(BACKGROUND)) throw new Error('--background must be graphite, blueprint, porcelain or ivory');
+if (opt('export', '') && METHOD && METHOD !== 'studio') throw new Error('Model exports use --method studio; Workflow and Paper are 2D engines');
 if (!['jpeg', 'browser'].includes(ENCODER)) throw new Error('--encoder must be jpeg or browser');
 if (!(FPS > 0 && Number.isFinite(FPS))) throw new Error('--fps must be positive and finite');
 const OUT = path.resolve(opt('out', 'out/figure.mp4')), FFMPEG = process.env.FFMPEG || 'ffmpeg';
@@ -41,6 +42,7 @@ await withBrowser(async ({ send, ev: evalJs, progress, stopWatchdog, onCleanup }
   mkdirSync(path.dirname(OUT), { recursive: true });
   if (args.includes('--info')) { console.log(JSON.stringify(await evalJs('window.__specInfo ? window.__specInfo() : null'), null, 1)); return; }
   const ex = opt('export', null);
+  if (ex && !await evalJs('typeof window.__exportSTL === "function"')) throw new Error('STL/GLB exports require Studio; this page uses a 2D engine');
   if (ex) { const b = await evalJs(ex === 'glb' ? `window.__exportGLB(${Number(opt('e', 0))})` : `window.__exportSTL(${Number(opt('e', 0))})`); const f = OUT.replace(/.mp4$/, '.' + ex); writeFileSync(f, Buffer.from(b, 'base64')); console.log('modelo:', f, (Buffer.from(b, 'base64').length / 1024).toFixed(0) + ' KB'); return; }
   const SPECDUR = await evalJs('window.__specInfo ? window.__specInfo().duration : null'), DUR = Number(DUR_ARG || SPECDUR || 28), FROM = Number(opt('from', 0)), TO = Number(opt('to', DUR));
   const rem = opt('remux', null);       // --remux out/x.mp4: regenera SOLO el audio y lo pega sobre el video ya renderizado (segundos, no minutos)

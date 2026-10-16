@@ -29,11 +29,36 @@ export async function installEncoder({ fps, bitrate, blur, shutter }) {
     const bytes = new Uint8Array(chunk.byteLength); chunk.copyTo(bytes); state.queue.push(bytes); state.frames++;
   }, error(e) { state.error = String(e); } });
   try { encoder.configure(config); } catch { encoder.close(); return false; }
+  // Chromium's CPU RGB input can encode full-range YUV, unlike the product
+  // canvas path. Supply explicit limited-range BT.709 I420 planes instead of
+  // overwriting tags on differently encoded samples. No GPU staging/readback.
+  const context = canvas.getContext('2d'), cpu = !!context.getContextAttributes?.().willReadFrequently;
+  if (cpu && (canvas.width % 2 || canvas.height % 2)) { encoder.close(); return false; }
+  const w = canvas.width, h = canvas.height, size = w * h, yuv = cpu ? new Uint8Array(size * 1.5) : null;
+  const cpuFrame = (timing) => {
+    const pixels = context.getImageData(0, 0, w, h).data; let chroma = 0;
+    for (let y = 0; y < h; y += 2) for (let x = 0; x < w; x += 2) {
+      let r = 0, green = 0, b = 0;
+      for (let row = 0; row < 2; row++) for (let col = 0; col < 2; col++) {
+        const at = (y + row) * w + x + col, p = at * 4;
+        const red = pixels[p], g0 = pixels[p + 1], blue = pixels[p + 2];
+        r += red; green += g0; b += blue;
+        yuv[at] = Math.round(16 + 219 / 255 * (.2126 * red + .7152 * g0 + .0722 * blue));
+      }
+      r *= .25; green *= .25; b *= .25;
+      const luma = .2126 * r + .7152 * green + .0722 * b;
+      yuv[size + chroma] = Math.round(128 + 224 / 255 * (b - luma) / (2 * (1 - .0722)));
+      yuv[size * 1.25 + chroma++] = Math.round(128 + 224 / 255 * (r - luma) / (2 * (1 - .2126)));
+    }
+    return new VideoFrame(yuv, { ...timing, format: 'I420', codedWidth: w, codedHeight: h,
+      colorSpace: { primaries: 'bt709', transfer: 'iec61966-2-1', matrix: 'bt709', fullRange: false } });
+  };
   const check = () => { if (state.error) throw new Error(state.error); };
   window.__video = {
     async step(i, t) {
       check(); const painted = window.__paint(t, blur, shutter);
-      const frame = new VideoFrame(painted, { timestamp: Math.round(i * 1e6 / fps), duration: Math.round(1e6 / fps) });
+      const timing = { timestamp: Math.round(i * 1e6 / fps), duration: Math.round(1e6 / fps) };
+      const frame = cpu ? cpuFrame(timing) : new VideoFrame(painted, timing);
       try { encoder.encode(frame, { keyFrame: i % Math.round(fps * 2) === 0 }); } finally { frame.close(); }
       while (encoder.encodeQueueSize > 4) { check(); await new Promise((r) => setTimeout(r, 2)); }
       check();
