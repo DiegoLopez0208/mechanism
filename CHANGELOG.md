@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Gate disclosures: displayed calculations without published comparators, tooth counts outside meshing links, and unknown spec/part keys now warn. Part cards and the register distinguish confidence from size comparisons, including which dimensions remain unchecked. These warnings do not change VERIFIED/CONSISTENT or count unchecked calculations as reproduced figures.
+- Browser lifecycle: shared port-zero CDP sessions, private profiles, bounded operations/frame watchdogs, one retry for watchdog failures, and cleanup of the owned PID tree on failure or interruption. All five browser scripts use the helper.
+
 ## 0.8.1 - 2026-10-16
 
 The gate stops agreeing with itself, and the site gets a face.

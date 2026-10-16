@@ -185,6 +185,8 @@ The same spec renders three films: `--length short` (about 30 s: the plain sente
 
 ### Provenance per dimension, and a register
 
+Part confidence (`SPEC`, `MEASURED`, `DERIVED`) describes its evidence, not verification of every drawn size. Part cards now say `SIZE NOT COMPARED` or `SIZE n/m COMPARED`; the register exposes each part's compared and unchecked dimensions. The gate also warns about computed values displayed without a published comparator, teeth outside meshing links, and unknown top-level spec or part keys (for example `cutawya`). These disclosures do not change the VERIFIED/CONSISTENT rules or turn a warning into a failed comparison.
+
 A part can say where each of its sizes comes from, and the gate compares the drawn size with the source:
 
 ```js

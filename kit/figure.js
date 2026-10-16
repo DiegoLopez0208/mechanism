@@ -106,8 +106,8 @@
       c.beginPath(); c.moveTo(a1[0], a1[1]); c.lineTo(b1[0], b1[1]); c.stroke(); H2.arrow(a1, b1, 11); H2.arrow(b1, a1, 11);
       const mx = (a1[0] + b1[0]) / 2, my = (a1[1] + b1[1]) / 2; c.font = '500 22px ' + MX.MONO; const tw = c.measureText(label).width; c.fillStyle = T.paper; c.fillRect(mx - tw / 2 - 7, my - 17, tw + 14, 31); c.fillStyle = col; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(label, mx, my + 1); c.restore();
     };
-    H2.tag = (c, x, y, conf) => {                                       // pastilla discreta: fondo tenido, borde fino y texto del color de la categoria
-      c.save(); c.font = '600 12px ' + MX.SANS; if ('letterSpacing' in c) c.letterSpacing = '1.6px'; const s = CONF[conf] || String(conf).toUpperCase(), col = CCOL[conf] || T.ink, w = c.measureText(s).width + 20, r = 11;
+    H2.tag = (c, x, y, conf, sizeLabel) => {                                       // pastilla discreta: fondo tenido, borde fino y texto del color de la categoria
+      c.save(); c.font = '600 12px ' + MX.SANS; if ('letterSpacing' in c) c.letterSpacing = '1.6px'; const s = (CONF[conf] || String(conf).toUpperCase()) + (sizeLabel ? ' / ' + sizeLabel : ''), col = CCOL[conf] || T.ink, w = c.measureText(s).width + 20, r = 11;
       c.beginPath(); c.moveTo(x + r, y - 16); c.lineTo(x + w - r, y - 16); c.arc(x + w - r, y - 16 + r, r, -Math.PI / 2, Math.PI / 2); c.lineTo(x + r, y + 6); c.arc(x + r, y - 16 + r, r, Math.PI / 2, 1.5 * Math.PI); c.closePath(); c.fillStyle = MX.rgba(col, 0.13); c.fill(); c.strokeStyle = MX.rgba(col, 0.55); c.lineWidth = 1; c.stroke();
       c.fillStyle = col; c.textAlign = 'left'; c.textBaseline = 'alphabetic'; c.fillText(s, x + 10, y - 0.5); c.restore(); return w;
     };
@@ -121,7 +121,7 @@
     H2.info = (s) => {
       const p = F.byId[s.focus]; if (!p || !p.info || (s.focusA || 0) < 0.02) return; const c = MX.ctx, i = p.info, at0 = s.infoAt || [64, H - 340], lines = [i.title].concat(i.lines || []), at = [at0[0], Math.min(at0[1], H - 165 - lines.length * 30)];      // a card with many lines moves up so its source line ends above the footer
       MX.callout(F.anchor(p.id), at, lines, { alpha: s.focusA, size: 26, color: T.ink });
-      c.save(); c.globalAlpha = s.focusA; let x = at[0] + 10; const y = at[1] + lines.length * 30 + 14; [].concat(i.conf || []).forEach((k) => { x += H2.tag(c, x, y, k) + 8; }); c.restore();
+      c.save(); c.globalAlpha = s.focusA; let x = at[0] + 10; const y = at[1] + lines.length * 30 + 14; [].concat(i.conf || []).forEach((k, j) => { x += H2.tag(c, x, y, k, j === 0 && i.sizeEvidence ? i.sizeEvidence.label : null) + 8; }); c.restore();
       if (i.src) MX.text(i.src, at[0] + 10, y + 46, { size: 14, font: MX.MONO, color: T.mute, alpha: s.focusA, spacing: 0.6 });      // de donde sale lo que dice la ficha
     };
 

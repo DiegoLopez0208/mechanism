@@ -30,6 +30,56 @@ const good = () => ({
 });
 const mutate = (fn) => { const s = good(); fn(s); return MX.spec.validate(s); };
 
+test('unknown spec and part keys warn without changing the evidence verdict', () => {
+  const r = mutate(s => { s.cutawya = 0.8; s.parts[0].cutawya = 0.8; });
+  assert.equal(r.verdict.state, 'VERIFIED'); assert.equal(r.errors.length, 0);
+  assert.ok(r.warnings.some(w => w === 'unknown spec key: cutawya'));
+  assert.ok(r.warnings.some(w => /part a: unknown part key: cutawya/.test(w)));
+  for (const name of ['hub', 'switch', 'enigma', 'k20a', 'rubik', 'rtx4090', 'mos6502', 'rar5', 'winrar', 'lock', 'react'])
+    assert.ok(!validateExample(name).warnings.some(w => /unknown (spec|part) key/.test(w)), name);
+});
+test('displayed calculations without comparators are disclosed and do not earn checks', () => {
+  const r = mutate(s => { s.mechanism.drive.modes.push({ id: 'density', label: 'Density', expr: 'x / 2' }); });
+  assert.equal(r.verdict.checked, 1); assert.equal(r.verdict.state, 'VERIFIED');
+  assert.equal(r.verdict.uncheckedCalculations.length, 1);
+  assert.equal(r.verdict.uncheckedCalculations[0].id, 'density');
+  assert.ok(r.warnings.some(w => /Density.*without a published comparator/.test(w)));
+  assert.ok(r.lines.some(w => /^verdict: VERIFIED.*1 displayed without a published comparator/.test(w)));
+  assert.equal(mutate(() => {}).verdict.uncheckedCalculations.length, 0);
+});
+test('tooth counts outside meshing links are disclosed; kinematic teeth are not', () => {
+  const hub = validateExample('hub'), enigma = validateExample('enigma');
+  assert.deepEqual(Array.from(hub.verdict.uncheckedTeeth), ['sprocket']);
+  assert.deepEqual(Array.from(enigma.verdict.uncheckedTeeth).sort(), ['ratchetL', 'ratchetM', 'ratchetR']);
+  assert.ok(hub.warnings.some(w => /sprocket: tooth count is outside/.test(w)));
+});
+test('unused inputs and inputs feeding only unchecked calculations are disclosed, including MOS 6502 pin count', () => {
+  const r = mutate(s => {
+    s.mechanism.calc.vars.unused = { v: 7, label: 'seven', claim: 'c1' };
+    s.mechanism.calc.vars.densityInput = { v: 4, claim: 'c1' };
+    s.mechanism.drive.modes.push({ id: 'd', label: 'Density', expr: 'densityInput / 2' });
+  });
+  assert.equal(r.verdict.checked, 1); assert.equal(r.verdict.state, 'VERIFIED');
+  assert.deepEqual(Array.from(r.verdict.uncheckedInputs, v => v.id).sort(), ['densityInput', 'unused']);
+  assert.ok(r.warnings.some(w => /calc input unused.*not used by any calculated mode/.test(w)));
+  const mos = validateExample('mos6502');
+  assert.ok(mos.verdict.uncheckedInputs.some(v => v.id === 'pins'));
+  assert.ok(mos.warnings.some(w => /calc input pins.*no published mode comparator/.test(w)));
+});
+test('size confidence distinguishes no, partial and complete source comparisons', () => {
+  const s = good(), part = s.parts[0];
+  assert.equal(MX.spec.sizeEvidence(part).label, 'SIZE NOT COMPARED');
+  assert.deepEqual(Array.from(MX.spec.sizeEvidence({ id: 'cubie', kind: 'cubie', p: { s: 18.67 } }).unchecked), ['s']);
+  part.params = { w: { value: 10, conf: 'spec', claim: 'c1' }, h: { value: 10, conf: 'estimated', why: 'assumed' } };
+  let row = MX.spec.validate(s).verdict.sizeEvidence[0];
+  assert.equal(row.status, 'partly compared'); assert.deepEqual(Array.from(row.compared), ['w']);
+  assert.ok(row.unchecked.includes('h')); assert.equal(row.label, 'SIZE 1/4 COMPARED');
+  for (const key of Object.keys(part.p)) part.params[key] = { value: part.p[key], conf: 'spec', claim: 'c1' };
+  assert.equal(MX.spec.validate(s).verdict.sizeEvidence[0].status, 'compared');
+  part.params.w.value = 9;
+  assert.ok(!MX.spec.validate(s).verdict.sizeEvidence[0].compared.includes('w'));
+});
+
 test('the baseline spec passes and is VERIFIED', () => {
   const r = MX.spec.validate(good());
   assert.equal(r.errors.length, 0, r.errors.join('; '));
