@@ -521,6 +521,17 @@
       const sc = new TH.Scene(); parts.forEach((p) => { const cl = p.group.clone(true); cl.name = p.id; cl.position.copy(p.group.position); cl.rotation.copy(p.group.rotation); cl.traverse((m) => { if (m.isLine || m.isLineSegments) m.visible = false; if (m.isMesh && !m.geometry.index) { const g2 = m.geometry.clone(); g2.deleteAttribute('uv'); m.geometry = TH.mergeVertices(g2, 1e-3); } }); sc.add(cl); });      // geometria indexada: el GLB pesa una fraccion
       return b64(await new TH.GLTFExporter().parseAsync(sc, { binary: true }));
     };
+    g.__geom = (t) => {      // camera and parts as they are in the scene right now (call after __frame(t)); read by scripts/preflight.mjs
+      st.scene.updateMatrixWorld(true); const cam = st.camera, out = [], tr = tourAt(t);
+      parts.forEach((p) => {
+        if (!p.group.visible) return; const b = new TH.Box3().setFromObject(p.group); if (b.isEmpty()) return;
+        let al = 0; p.group.traverse((m) => { if (m.isMesh && m.visible && m.material) (Array.isArray(m.material) ? m.material : [m.material]).forEach((q) => { al = Math.max(al, q.opacity / (q.userData.bo || 1)); }); });
+        let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9, behind = false;
+        for (let i = 0; i < 8; i++) { const v = new TH.Vector3(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z).project(cam); if (v.z > 1) behind = true; const px = (v.x * 0.5 + 0.5) * W, py = (-v.y * 0.5 + 0.5) * H; x0 = Math.min(x0, px); y0 = Math.min(y0, py); x1 = Math.max(x1, px); y1 = Math.max(y1, py); }
+        out.push({ id: p.id, alpha: al, min: b.min.toArray(), max: b.max.toArray(), rect: [x0, y0, x1, y1], behind });
+      });
+      return { t, cam: cam.position.toArray(), near: cam.near, focus: tr ? tr.id : null, parts: out };
+    };
     g.__specInfo = () => ({ duration: DUR, parts: parts.length, validation: V.lines, warnings: V.warnings, errors: V.errors, phases: { assembled: ASM_END, modes: tM0, explode: tE0, tour: tT0, reassemble: tR0, panels: tP0 }, shots: [{ label: 'assembled', t: ASM_END + 0.4 }].concat(modes.map((m, k) => (mD[k] ? { label: 'mode ' + (m.id || k), t: mS[k] + mD[k] * 0.62 } : null)).filter(Boolean), [{ label: 'exploded', t: tE0 + ED + 0.2 }], tourIds.map((id, j) => ({ label: 'tour ' + id, t: tT0 + j * TD + TD * 0.62 })), [{ label: 'reassembled', t: tR0 + RD - 0.2 }]) });
 
     /* ---------------------------------------------------------- Enigma: estado animado, camino de la senal y HUD */
