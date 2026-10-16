@@ -2,8 +2,17 @@
 
 ## Unreleased
 
+## 0.8.1 - 2026-10-16
+
+The gate stops agreeing with itself, and the site gets a face.
+
 - **Gate: provenance.** Every published-figure check is now classified as independent (the source of the published figure differs from the sources of the inputs), same source, or with no sourced inputs, and the verdict says so (`provenance:` line, a warning). **VERIFIED now needs at least one independent check; when none is, the state is the new CONSISTENT** (the film's stamp, the badges and the register follow). A source can say it derives from another (`derives: [ids]`) and then counts as the same. Measured on the 11 examples and the two agent runs: the lock becomes CONSISTENT (all its figures come from one page, Lockwiki) and so would the Antikythera run (its six checks share a source with their inputs); the floppy, the RTX 4090, the hub, rar5, react and the rest keep VERIFIED.
 - **Gate: captions.** A quantity typed in a part card or in the lead text of the film (a decimal or a number with a unit) must be traceable to a claim, a dimension, a position or a published or computed value (mm, in and cm conversions and 0.3 % rounding allowed), or the gate warns. Bare integers are ignored. On the examples it finds two cases, both typed derived values: the hub's sprocket pitch radius (36.5 mm, the formula gives 36.57) and WinRAR's 41 %.
+- **Site: a mark of our own and a splash screen.** The mark is a gear drawn solid on the left and dotted on the right (what is published is solid, what is estimated is dotted and said so); it replaces the gear emoji as the favicon and the symbol in the nav, there is a 1200 x 630 card for shared links, and a splash that plays once per session (opacity and transform only, because the main thread is busy for about 3 s starting the 3D hero; it waits for the page to load, can be skipped with a click or a key, and is skipped for deep links, `?nosplash` and reduced motion).
+- **Site: nav.** The link is "Runs", labels no longer wrap, and between 761 and 1120 px the look switches are no longer cut off (already broken on the published page).
+- **Site: video URLs carry a version** so a browser does not keep an old copy of an asset that was replaced under the same name.
+- **Films:** the lock, the hub and WinRAR were re-rendered: the lock's stamp now says CONSISTENT, the hub's sprocket card says 36.6 mm (the formula gives 36.57, the card said 36.5) and WinRAR's 41 % is in a claim.
+- **Benchmark notes:** a dated addendum with what today's gate says about each agent run, without rewriting what was published before.
 
 ## 0.8.0 - 2026-10-16
 
