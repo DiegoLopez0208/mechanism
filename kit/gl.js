@@ -32,9 +32,12 @@
   //      exposure, ao, bloom, envIntensity, bgInner, bgOuter }
   G.stage = (o) => {
     const W = o.w, H = o.h, FOV = o.fov == null ? 22 : o.fov;
+    const scale = o.renderScale == null ? 1 : o.renderScale;
+    if (!Number.isFinite(scale) || scale < 1 || scale > 2) throw new Error('stage.renderScale must be between 1 and 2');
+    const RW = Math.round(W * scale), RH = Math.round(H * scale);
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     const renderer = new TH.WebGLRenderer({ canvas: cv, antialias: false, alpha: false, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
-    renderer.setPixelRatio(1); renderer.setSize(W, H, false);
+    renderer.setPixelRatio(1); renderer.setSize(RW, RH, false);
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = TH.PCFSoftShadowMap;
     renderer.toneMapping = TH.NeutralToneMapping; renderer.toneMappingExposure = o.exposure == null ? ((MX.THEME.gl && MX.THEME.gl.exposure) || 1.0) : o.exposure;
     const scene = new TH.Scene();
@@ -59,8 +62,8 @@
     floor.rotation.x = -Math.PI / 2; floor.position.y = o.floorY == null ? -14 : o.floorY; floor.receiveShadow = true; scene.add(floor);
 
     // posprocesado: render con MSAA en HalfFloat -> GTAO -> Bokeh (opcional) -> Bloom -> OutputPass (tone mapping + sRGB)
-    const rt = new TH.WebGLRenderTarget(W, H, { type: TH.HalfFloatType, samples: 4 });
-    const composer = new TH.EffectComposer(renderer, rt); composer.setPixelRatio(1); composer.setSize(W, H);
+    const rt = new TH.WebGLRenderTarget(RW, RH, { type: TH.HalfFloatType, samples: 4 });
+    const composer = new TH.EffectComposer(renderer, rt); composer.setPixelRatio(1); composer.setSize(RW, RH);
     composer.addPass(new TH.RenderPass(scene, camera));
     const ao = new RepeatableGTAO(scene, camera, W, H); ao.blendIntensity = o.ao == null ? 1.15 : o.ao;
     ao.updateGtaoMaterial({ radius: 7, distanceExponent: 1.4, thickness: 4, scale: 2.2, samples: 24, distanceFallOff: 1.2, screenSpaceRadius: false });
@@ -92,7 +95,7 @@
     const aoRender = ao.render.bind(ao);
     ao.render = function (...args) { const hidden = []; st.aoSkip.forEach((o2) => { if (o2.visible) { o2.visible = false; hidden.push(o2); } }); aoRender(...args); hidden.forEach((o2) => { o2.visible = true; }); };
     st.render = () => composer.render();
-    st.blit = (ctx) => { ctx.drawImage(cv, 0, 0); };
+    st.blit = (ctx) => { ctx.drawImage(cv, 0, 0, W, H); };
     return st;
   };
 

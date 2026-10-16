@@ -182,7 +182,7 @@
   const PH = /\b(todo|tbd|fixme|lorem ipsum|placeholder|changeme|xxx+)\b/i, PH_URL = /^https?:\/\/(www\.)?(example\.(com|org|net)|localhost|127\.0\.0\.1|test\.com|foo\.bar)(\/|:|$)/i;
   const DIMS = ['w', 'h', 'd', 'r', 'ro', 'ri', 'm', 'len', 'length', 'width', 'height', 'depth', 'thick', 'thickness', 't', 'rad', 'radius', 'teeth', 'z', 'n'];
   const RANK = { spec: 0, measured: 1, derived: 2, estimated: 3 };
-  const SPEC_KEYS = new Set('id fig kicker title sub aspect style brand stage up orient research parts mechanism director recognize'.split(' '));
+  const SPEC_KEYS = new Set('id fig kicker title sub aspect style presentation brand stage up orient research parts mechanism director recognize'.split(' '));
   const PART_KEYS = new Set('id name kind p mat at explode body orbit conf claims info params why decor decals late cutaway tour tourAt tourDim rot spin motion engine cubie role slide compress'.split(' '));
   // Confidence describes evidence for the part, not a measurement of every size.
   S.sizeEvidence = (part) => {
@@ -199,6 +199,15 @@
   S.validate = (spec) => {
     const paramRows = [], mixed = [], errors = [], warnings = [], R = spec.research || { sources: [], claims: [] }, src = {}, cl = {}, ids = new Set();
     Object.keys(spec).filter((k) => !SPEC_KEYS.has(k)).forEach((k) => warnings.push('unknown spec key: ' + k));
+    if (spec.presentation != null) {
+      const p = spec.presentation;
+      if (typeof p !== 'object' || Array.isArray(p)) errors.push('presentation must be an object');
+      else {
+        if (p.method != null && !['studio', 'workflow', 'paper'].includes(p.method)) errors.push('unknown presentation method: ' + p.method);
+        if (p.background != null && !['graphite', 'blueprint', 'porcelain', 'ivory'].includes(p.background)) errors.push('unknown presentation background: ' + p.background);
+        Object.keys(p).filter(k => !['method', 'background'].includes(k)).forEach(k => warnings.push('unknown presentation key: ' + k));
+      }
+    }
     if (!Array.isArray(spec.parts) || !spec.parts.length) { errors.push('the spec has no parts: there is nothing to model'); spec = Object.assign({}, spec, { parts: [] }); }
     if (!(R.claims || []).length) errors.push('the spec has no claims: nothing says where any number comes from');
     if (!(R.sources || []).length) errors.push('the spec has no sources');

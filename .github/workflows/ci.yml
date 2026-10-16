@@ -20,7 +20,7 @@ jobs:
       - name: Tests (the evidence gate, and the DEFLATE / RAR5 models against zlib)
         run: node --test tests/gate.test.mjs tests/kit.test.mjs tests/encoding.test.mjs tests/browser.test.mjs tests/media-server.test.mjs
       - name: Render, colour tags, audio streams and encoder fallback
-        run: node --test tests/render.test.mjs
+        run: node --test tests/render.test.mjs tests/presentation.test.mjs
       - name: Visual regression (compact lossless golden frames)
         run: |
           node scripts/visual-regression.mjs

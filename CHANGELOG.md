@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Presentations: name the normal director Studio; add Workflow (model-driven process stations) and Paper (real mesh contours/silhouettes, numbered details and evidence annotations). Four independent backgrounds: Graphite, Blueprint, Porcelain and Ivory. CLI, URL and spec selection; 1.5x 3D supersampling for opted-in presentations; crisp Workflow/Paper overlays and synchronized deterministic timelines/audio. Existing films remain unchanged without opt-in. Add configuration, layout and browser tests; run them in CI.
+
 - Repeatability and regression: seed the GTAO denoiser's startup texture (the pass does not rotate noise between frames), preserve its sample/filter settings, and test bounded residual raster rounding. Four compact lossless golden frames per example on Windows/Linux, explicit regeneration, CI comparisons, and deliberately broken text/decor controls. No vendor rebuild or new dependency.
 
 - Render: accurate full-range BT.601 JPEG to limited-range BT.709 conversion, explicit primaries/transfer tags, and an opt-in software WebCodecs H.264 path (`--encoder browser`) with capability fallback and a scene-dependent bitrate budget. Audio, clipping, exports, stills and remux remain supported. `validate-render.mjs` compares decoded Chromium pixels against lossless references, including every evidence panel. Published media is not replaced.

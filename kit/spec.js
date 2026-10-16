@@ -54,6 +54,8 @@
     const q = new URLSearchParams(location.search), asp = q.get('aspect') || spec.aspect || '4:5', [W, H] = SIZES[asp] || SIZES['4:5'], FPS = 30;
     const V = S.validate(spec), an = V.analysis, explore = q.has('explore');
     { const want = q.get('style') || q.get('theme') || spec.style || MX.THEME.name; MX.setStyle(want, spec.brand && spec.brand.accent); }      // el estilo por URL manda; si no, el del spec; la marca da el acento de los estilos que lo usan
+    const presentation = MX.presentation && MX.presentation.resolve(q, spec);
+    if (presentation && presentation.enabled) MX.presentation.apply(presentation);
     V.errors.forEach((e) => console.error('SPEC: ' + e)); V.warnings.forEach((w) => console.warn('SPEC: ' + w));
     if (V.errors.length && !explore) { document.title = 'SPEC ERROR'; throw new Error('el spec no pasa la validacion:\n' + V.errors.join('\n')); }
     const M = spec.mechanism || null, drive = (M && M.drive) || { modes: [], rpm: 30 }, modes = drive.modes || [], dir = spec.director || {}, LEN = q.get('length') || dir.length || 'normal', SHORT = LEN === 'short', LONG = LEN === 'extended', PRESS = !!(M && M.press), ENIG = !!(M && M.enigma), ENGN = !!(M && M.engine), CUBE = !!(M && M.cube), CALC = !!(M && M.calc), STEPS = !!(M && M.steps), RAD = Math.PI / 180, UP = spec.up === 'z', ORI = spec.orient || (UP ? [-90, 0, 0] : null);
@@ -62,7 +64,7 @@
 
     /* ---------------------------------------------------------- figura y piezas */
     let beforeHook = null;
-    const F = MX.figure({ beforeRender: (s) => { if (beforeHook) beforeHook(s); }, w: W, h: H, axes: 'three', fps: FPS, stage: Object.assign({ shadow: 0.14, floorY: spec.up === 'z' ? -0.3 : -70 }, spec.stage || {}),
+    const F = MX.figure({ beforeRender: (s) => { if (beforeHook) beforeHook(s); }, w: W, h: H, axes: 'three', fps: FPS, stage: Object.assign({ shadow: 0.14, floorY: spec.up === 'z' ? -0.3 : -70 }, presentation?.enabled ? { renderScale: 1.5 } : {}, spec.stage || {}),
       card: (s) => ({ fig: spec.fig || 'Fig 1', kicker: spec.kicker, title: spec.title, sub: s.sub || spec.sub, hint: s.hint || '', readout: s.readout || (F.parts.length + ' parts'), blocks: [['parts', F.parts.length], ['spec', claimsOf('spec'), T.teal], ['derived', claimsOf('derived')], ['estimated', claimsOf('estimated'), T.ember]] }) });
     const st = F.st, H2 = F.hud, byBodyPhi = an.phi || {};
     // Enigma: el cableado que se dibuja en cada rotor sale de la MISMA tabla que usa la simulacion
@@ -610,6 +612,19 @@
     }
 
     /* ---------------------------------------------------------- arranque */
+    if (!explore && presentation?.enabled && presentation.method !== 'studio') {
+      const workflowTime = a => {
+        if (sMode >= 0) return mS[sMode] + 1 + (a.closing ? M.steps.count : a.intro ? 0 : a.index + E.sm(a.progress)) / SR;
+        const i = a.item.mode; return mS[i] + mD[i] * Math.min(.999, a.progress);
+      };
+      const modeIndices = mD.flatMap((duration, index) => duration > 0 ? [index] : []);
+      const plan = MX.presentation.run({ config: presentation, spec, F, W, H, length: LEN, validation: V, analysis: an, views: VW, script, modeStart: tM0, modeEnd: tE0, workflowTime, modeIndices });
+      return { F, an, DUR: plan.duration };
+    }
+    if (presentation?.enabled) {
+      const info = g.__specInfo;
+      g.__specInfo = () => Object.assign({}, info(), { method: presentation.method, background: presentation.background });
+    }
     if (explore && ENIG) startEnigmaExplore();
     else if (explore) {
       const it = new Integrator(an, drive.rpm), live = { mode: modes[0] || null, spin: true, last: performance.now(), est: q.has('est'), on: q.has('break') };      // ?est and ?break open the viewer with those tools on

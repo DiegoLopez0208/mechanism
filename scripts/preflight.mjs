@@ -39,7 +39,9 @@ const area = (r) => Math.max(0, r[2] - r[0]) * Math.max(0, r[3] - r[1]), inter =
 
 await withBrowser(async ({ send, ev }) => {
   await send('Page.enable');
-  await send('Page.navigate', { url: pathToFileURL(path.resolve(page)).href + '?render=1&t=0' + (opt('length', '') ? '&length=' + opt('length', '') : '') });
+  const url = new URL(pathToFileURL(path.resolve(page)));
+  for (const [key, value] of Object.entries({ render: '1', t: '0', length: opt('length', ''), aspect: opt('aspect', ''), method: opt('method', ''), background: opt('background', '') })) if (value !== '') url.searchParams.set(key, value);
+  await send('Page.navigate', { url: url.href });
   for (let i = 0; i < 100; i++) { await sleep(150); if (await ev('typeof window.__frame === "function" && typeof window.__geom === "function"')) break; if (i === 99) throw new Error('the page did not expose __frame/__geom: does the spec pass the gate? run check-spec.mjs'); }
   const info = JSON.parse(await ev('JSON.stringify(window.__specInfo ? window.__specInfo() : null)'));
   if (!info) throw new Error('this page has no __specInfo() (declarative specs only)');

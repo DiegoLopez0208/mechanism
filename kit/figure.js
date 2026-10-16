@@ -61,7 +61,7 @@
       fadeKey[p.id] = key;
     }
     // estado s: { e (explosion 0..1), assemble(id) -> { k: 0..1 llegada, alpha }, focus, focusSet, focusA, vis(p), view }
-    F.apply = (s) => {
+    F.apply = (s, render = true) => {
       if (cfg.beforeRender) cfg.beforeRender(s);
       st.aoSkip.length = 0;
       F.parts.forEach((p) => {
@@ -76,7 +76,7 @@
         p.group.visible = s.vis ? s.vis(p) !== false : true;
       });
       if (s.light) { const az = s.light.az * Math.PI / 180, el = s.light.el * Math.PI / 180, r = 230; st.key.position.set(r * Math.cos(el) * Math.sin(az), r * Math.sin(el), r * Math.cos(el) * Math.cos(az)); }
-      F.setView(s.view); st.render();
+      F.setView(s.view); if (render) st.render();
     };
 
     /* ---------------------------------------------------------- camara por claves */

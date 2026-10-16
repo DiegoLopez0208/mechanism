@@ -19,6 +19,9 @@ if (!page) { console.error('uso: node scripts/render.mjs <pagina.html> [--durati
 
 const DUR_ARG = opt('duration', null), FPS = Number(opt('fps', 30)), DRAFT = args.includes('--draft'), BLUR = Number(opt('blur', DRAFT ? 1 : 4)), SHUT = Number(opt('shutter', 0.5)), CRF = opt('crf', DRAFT ? '24' : '17'), PRESET = opt('preset', DRAFT ? 'veryfast' : 'medium');
 const ENCODER = opt('encoder', 'jpeg');
+const METHOD = opt('method', ''), BACKGROUND = opt('background', '');
+if (METHOD && !['studio', 'workflow', 'paper'].includes(METHOD)) throw new Error('--method must be studio, workflow or paper');
+if (BACKGROUND && !['graphite', 'blueprint', 'porcelain', 'ivory'].includes(BACKGROUND)) throw new Error('--background must be graphite, blueprint, porcelain or ivory');
 if (!['jpeg', 'browser'].includes(ENCODER)) throw new Error('--encoder must be jpeg or browser');
 if (!(FPS > 0 && Number.isFinite(FPS))) throw new Error('--fps must be positive and finite');
 const OUT = path.resolve(opt('out', 'out/figure.mp4')), FFMPEG = process.env.FFMPEG || 'ffmpeg';
@@ -31,7 +34,9 @@ const png = (d) => Buffer.from(d.split(',')[1], 'base64');
 
 await withBrowser(async ({ send, ev: evalJs, progress, stopWatchdog, onCleanup }) => {
   await send('Page.enable');
-  await send('Page.navigate', { url: pathToFileURL(path.resolve(page)).href + '?render=1&t=0' + (opt('style', opt('theme', '')) ? '&theme=' + opt('style', opt('theme', '')) : '') + (opt('length', '') ? '&length=' + opt('length', '') : '') + (opt('aspect', '') ? '&aspect=' + opt('aspect', '') : '') });
+  const url = new URL(pathToFileURL(path.resolve(page)));
+  for (const [key, value] of Object.entries({ render: '1', t: '0', theme: opt('style', opt('theme', '')), length: opt('length', ''), aspect: opt('aspect', ''), method: METHOD, background: BACKGROUND })) if (value !== '') url.searchParams.set(key, value);
+  await send('Page.navigate', { url: url.href });
   for (let i = 0; i < 100; i++) { await sleep(150); if (await evalJs('typeof window.__frame === "function"')) break; if (i === 99) throw new Error('la pagina no expuso __frame (usa MX.run)'); }
   mkdirSync(path.dirname(OUT), { recursive: true });
   if (args.includes('--info')) { console.log(JSON.stringify(await evalJs('window.__specInfo ? window.__specInfo() : null'), null, 1)); return; }

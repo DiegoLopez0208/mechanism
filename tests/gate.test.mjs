@@ -19,6 +19,18 @@ const validateExample = (name) => {
   return ctx.MX.spec.validate(ctx.SPEC);
 };
 const MX = load().MX;
+test('presentation configuration is validated without promoting the evidence verdict', () => {
+  const example = path.join(root, 'examples/lock/spec.js'), c = load([example]);
+  const baseline = c.MX.spec.validate(c.SPEC);
+  for (const method of ['studio', 'workflow', 'paper']) for (const background of ['graphite', 'blueprint', 'porcelain', 'ivory']) {
+    const result = c.MX.spec.validate({ ...c.SPEC, presentation: { method, background } });
+    assert.deepEqual(result.errors, baseline.errors); assert.equal(result.verdict.state, baseline.verdict.state);
+  }
+  assert.ok(c.MX.spec.validate({ ...c.SPEC, presentation: 'paper' }).errors.some(e => e.includes('presentation must be')));
+  assert.ok(c.MX.spec.validate({ ...c.SPEC, presentation: { method: 'oops' } }).errors.some(e => e.includes('unknown presentation method')));
+  assert.ok(c.MX.spec.validate({ ...c.SPEC, presentation: { background: 'oops' } }).errors.some(e => e.includes('unknown presentation background')));
+  assert.ok(c.MX.spec.validate({ ...c.SPEC, presentation: { backgroudn: 'ivory' } }).warnings.some(e => e.includes('unknown presentation key')));
+});
 const good = () => ({
   id: 't', title: 'T',
   research: {

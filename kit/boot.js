@@ -13,6 +13,9 @@
     const fonts = [new FontFace('Inter', 'url(' + MX.FONT_DATA.inter + ')', { weight: '100 900' }), new FontFace('Cormorant Garamond', 'url(' + MX.FONT_DATA.cormorant + ')', { weight: '300 700' })];
     for (const f of fonts) { await f.load(); document.fonts.add(f); }
     window.MX_THEME = theme;
-    for (const s of list) await load(s);
+    for (const s of list) {
+      await load(s);
+      if (/(^|\/)core\.js(?:\?.*)?$/.test(s)) await load(base + 'presentation.js');
+    }
   })().catch((e) => { console.error(e); document.title = 'ERROR ' + e.message; });
 })();

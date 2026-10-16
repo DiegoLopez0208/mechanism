@@ -29,6 +29,22 @@ refuses to render when the numbers do not add up, and outputs a film, an interac
 
 ## What it does
 
+### Presentation methods and backgrounds
+
+Choose a method independently of its background. **Studio** is the normal 3D film (assembly, operation, exploded view and evidence); **Workflow** follows the spec's actual steps or drive modes as animated process stations; **Paper** builds a technical sheet from actual mesh contours, numbered parts, projected detail views and evidence labels.
+
+```sh
+node scripts/render.mjs examples/lock/index.html --method studio --background porcelain --length short --aspect 9:16 --encoder browser --out work/studio.mp4
+node scripts/render.mjs examples/react/index.html --method workflow --background graphite --length short --aspect 9:16 --encoder browser --out work/workflow.mp4
+node scripts/render.mjs examples/lock/index.html --method paper --background ivory --length short --aspect 9:16 --encoder browser --out work/paper.mp4
+```
+
+Methods: `studio`, `workflow`, `paper`. Backgrounds: `graphite`, `blueprint`, `porcelain`, `ivory` (all twelve combinations). Use the same names in `?method=paper&background=blueprint` or `presentation: { method: 'paper', background: 'ivory' }` in the spec. Query options override the spec. Old `style`/`theme` films retain their appearance when no presentation option is supplied. In `?explore`, the selected background applies to the existing interactive 3D viewer; the new film directors apply to playback/capture.
+
+New presentations render the 3D at 1.5x and downsample to the delivery canvas, retaining MSAA 4x. `stage.renderScale` accepts 1–2 if another budget is needed. Workflow and Paper composite their typography at delivery resolution with no temporal blur. Their short/normal/extended cuts are 30/60/90 seconds; Studio retains the object's original timing. Workflow's progress is illustrative, not an execution-time measurement. Paper's details are projected, not drawings to scale; estimates remain marked and drawn dashed. Numeric evidence and verdict rules are unchanged.
+
+`boot.js` loads `kit/presentation.js` after `core.js`. Hand-written script lists that do not use boot should include it explicitly. The planner also runs in Node/vm without a DOM. No dependency or build step is added. See [presentation validation](docs/presentations.md).
+
 Ask your agent for an exploded view of something real: a machine, a chip, or **software** (a file format, a protocol, an algorithm's output). It does not draw what it can look up wrong:
 
 1. **Researches.** Searches, opens datasheets and teardowns, downloads the pictures and looks at them, measures them.
