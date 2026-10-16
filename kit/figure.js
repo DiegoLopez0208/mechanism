@@ -114,7 +114,7 @@
     // panel de papel a pantalla casi completa que entra y sale con alpha a; devuelve false si no se ve (llamar H2.endPanel() al terminar)
     H2.panel = (a, fig, title, sub) => {
       if (a <= 0.01) return false; const c = MX.ctx; c.save(); c.globalAlpha = a; c.fillStyle = T.paper; c.fillRect(34, 216, W - 68, H - 250); MX.A = a;
-      MX.text(String(fig).toUpperCase(), 86, 292, { size: 14, color: T.teal, spacing: 3, w: 600 }); MX.text(title, 86, 366, { size: title.length > 30 ? 46 : 54, font: MX.SERIF, w: 500 }); if (sub) MX.text(sub, 86, 408, { size: 20, color: T.mute, font: MX.SANS }); return true;
+      MX.text(String(fig).toUpperCase(), 86, 292, { size: 14, color: T.teal, spacing: 3, w: 600 }); MX.text(title, 86, 366, { size: title.length > 30 ? 46 : 54, font: MX.SERIF, w: 500 }); if (sub) { c.font = '20px ' + MX.SANS; const sw = c.measureText(String(sub)).width; MX.text(sub, 86, 408, { size: sw > W - 172 ? Math.max(15, 20 * (W - 172) / sw) : 20, color: T.mute, font: MX.SANS }); } return true;      // a long subtitle shrinks to the panel instead of running off the frame
     };
     H2.endPanel = () => { MX.A = 1; MX.ctx.restore(); };
     // ficha de pieza: titulo + lineas + etiquetas de confianza; la linea guia sale del centro de la pieza

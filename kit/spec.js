@@ -366,7 +366,7 @@
           c.save(); c.globalAlpha = ai; c.strokeStyle = T.line; c.beginPath(); c.moveTo(86, y - sy); c.lineTo(W - 86, y - sy); c.stroke(); c.restore();
           MX.A = ai; MX.text(m.label, 86, y, { size: rf[0], font: MX.SERIF, w: 500 }); MX.text(dns ? '' : m.formula || '', 86, y + (cmp ? 28 : 36), { size: cmp ? 19 : 21, font: MX.SANS, color: T.mute }); MX.text(cmp ? '' : m.note || '', 86, y + 66, { size: 19, font: MX.SANS, color: T.mute });
           MX.text(vtxt, W - 86, y, { size: rf[1], font: MX.SERIF, w: 500, align: 'right' });
-          if (m.publish) { const cl = claimBy[m.publish.claim]; c.save(); c.globalAlpha = ai; tagPill(c, dns ? 86 + wl + 18 : W - 86 - 330, dns ? y - 6 : y + (cmp ? 36 : 52), cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + ' ' + (m.publish.text != null ? m.publish.text : m.publish.value != null ? m.publish.value : m.publish.length + ' moves') + (r.ok ? '  OK' : '  MISMATCH')); c.restore(); }
+          if (m.publish) { const cl = claimBy[m.publish.claim]; c.save(); c.globalAlpha = ai; tagPill(c, dns ? 86 + wl + 18 : W - 86 - 330, dns ? y - 6 : y + (cmp ? 36 : 52), cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + (dns && String(m.publish.text != null ? m.publish.text : m.publish.value).length > 12 ? '' : ' ' + (m.publish.text != null ? m.publish.text : m.publish.value != null ? m.publish.value : m.publish.length + ' moves')) + (r.ok ? '  OK' : '  MISMATCH')); c.restore(); }      // a long published figure (a byte string, a bit string) would run into the value: the tag then says only that it matches
           MX.A = a;
         });
         H2.endPanel(); return;
@@ -417,7 +417,7 @@
           const ai = a * ramp(t, pn.t0 + 0.3 + i * 0.3, pn.t0 + 0.8 + i * 0.3); c.save(); c.globalAlpha = ai; c.strokeStyle = T.line; c.beginPath(); c.moveTo(86, y - 36); c.lineTo(W - 86, y - 36); c.stroke(); tagPill(c, 86, y, row.c.conf); c.restore();
           MX.A = ai; row.lines.forEach((ln, k) => MX.text(ln, 86 + 188, y + k * 29 - 2, { size: 23, font: MX.SANS, color: T.ink }));
           const srcs = (row.c.src || []).map((id) => (sources.find((qq) => qq.id === id) || { title: id }).title).join('  -  ');
-          if (srcs) MX.text(srcs, 86 + 188, y + row.lines.length * 29 + 4, { size: 16, font: MX.SANS, color: T.mute });
+          if (srcs) { c.save(); c.font = '16px ' + MX.SANS; let s2 = srcs; while (s2.length > 8 && c.measureText(s2).width > W - 86 - 274) s2 = s2.slice(0, -2); c.restore(); if (s2 !== srcs) s2 = s2.replace(/[\s-]+$/, '') + '...'; MX.text(s2, 86 + 188, y + row.lines.length * 29 + 4, { size: 16, font: MX.SANS, color: T.mute }); }      // the sources of a claim stop at the edge of the panel; the whole list is on the sources page
           MX.A = a; y += row.h;
         });
         H2.endPanel(); return;
@@ -426,8 +426,8 @@
       let y = 500;
       sources.forEach((sr, i) => {
         const ai = a * ramp(t, pn.t0 + 0.3 + i * 0.3, pn.t0 + 0.8 + i * 0.3); MX.A = ai; c.save(); c.globalAlpha = ai; c.strokeStyle = T.line; c.beginPath(); c.moveTo(86, y - 36); c.lineTo(W - 86, y - 36); c.stroke(); c.restore();
-        c.save(); c.font = '500 27px ' + MX.SERIF; const tw = c.measureText(String(sr.title)).width; c.restore();      // a long title shrinks to the width of the panel instead of running off the frame
-        MX.text(sr.title, 86, y, { size: Math.max(17, tw > W - 172 ? 27 * (W - 172) / tw : 27), font: MX.SERIF, w: 500 }); MX.text(sr.url.replace(/^https?:\/\//, '').slice(0, 78), 86, y + 30, { size: 16, font: MX.MONO, color: T.teal });
+        let stl = String(sr.title), tsz = 27; c.save(); c.font = '500 27px ' + MX.SERIF; const tw = c.measureText(stl).width; if (tw > W - 172) { tsz = Math.max(17, 27 * (W - 172) / tw); c.font = '500 ' + tsz + 'px ' + MX.SERIF; while (stl.length > 12 && c.measureText(stl).width > W - 172) stl = stl.slice(0, -2); if (stl !== String(sr.title)) stl = stl.replace(/\s+$/, '') + '...'; } c.restore();      // a long title shrinks to the width of the panel, and is cut with dots if it still does not fit
+        MX.text(stl, 86, y, { size: tsz, font: MX.SERIF, w: 500 }); MX.text(sr.url.replace(/^https?:\/\//, '').slice(0, 78), 86, y + 30, { size: 16, font: MX.MONO, color: T.teal });
         const nl = wrap(sr.note || '', '400 18px ' + MX.SANS, W - 172); nl.forEach((ln, k) => MX.text(ln, 86, y + 58 + k * 24, { size: 18, font: MX.SANS, color: T.mute })); MX.A = a; y += 98 + nl.length * 24;
       });
       H2.endPanel();
@@ -452,7 +452,8 @@
     // a plain sentence while the object assembles, and what the colours mean while the numbers run: for someone who knows nothing about it
     const drawWhat = (c, s) => {
       if (s.t == null || (!dir.what && !dir.legend)) return; const t = s.t;
-      if (dir.what) { const a = ramp(t, COLD + 0.6, COLD + 1.2) * (1 - ramp(t, ASM_END - 0.7, ASM_END - 0.1)); if (a > 0.01) { c.save(); MX.A = a; const ln = wrap(dir.what, '500 32px ' + MX.SERIF, W - 172); c.fillStyle = MX.rgba(T.paper, 0.78 * a); c.fillRect(34, H - 300, W - 68, 66 + ln.length * 44); MX.text('WHAT YOU ARE LOOKING AT', 86, H - 268, { size: 14, font: MX.MONO, color: T.teal, spacing: 3, w: 700 }); ln.forEach((l, i) => MX.text(l, 86, H - 224 + i * 44, { size: 32, font: MX.SERIF, w: 500, color: T.ink })); MX.A = 1; c.restore(); } }
+      if (dir.what) { const a = ramp(t, COLD + 0.6, COLD + 1.2) * (1 - ramp(t, ASM_END - 0.7, ASM_END - 0.1)); if (a > 0.01) { c.save(); MX.A = a; let wsz = 32, ln = wrap(dir.what, '500 32px ' + MX.SERIF, W - 172); while (wsz > 22 && 66 + ln.length * wsz * 1.375 > 205) { wsz -= 2; ln = wrap(dir.what, '500 ' + wsz + 'px ' + MX.SERIF, W - 172); }      // a long text shrinks until the box ends above the frame
+          const wlh = wsz * 1.375; c.fillStyle = MX.rgba(T.paper, 0.78 * a); c.fillRect(34, H - 300, W - 68, 66 + ln.length * wlh); MX.text('WHAT YOU ARE LOOKING AT', 86, H - 268, { size: 14, font: MX.MONO, color: T.teal, spacing: 3, w: 700 }); ln.forEach((l, i) => MX.text(l, 86, H - 224 + i * wlh, { size: wsz, font: MX.SERIF, w: 500, color: T.ink })); MX.A = 1; c.restore(); } }
       if (dir.legend) { const a = ramp(t, tM0 - 0.2, tM0 + 0.4) * (1 - ramp(t, tE0 - 0.6, tE0 - 0.1)); if (a > 0.01) { c.save(); let x = 78; dir.legend.forEach((q) => { c.font = '600 15px ' + MX.MONO; const w = c.measureText(q.text).width; c.globalAlpha = a; c.fillStyle = q.color; c.fillRect(x, 236, 14, 14); MX.A = a; MX.text(q.text, x + 22, 249, { size: 15, font: MX.MONO, w: 600, color: T.ink }); x += w + 56; }); MX.A = 1; c.restore(); } }
     };
     F.overlay((ctx, s) => { if (s.t == null) return; drawWhat(ctx, s); drawMode(ctx, s); drawCold(ctx, s); panels.forEach((pn) => { if (s.t >= pn.t0 - 0.01 && s.t <= pn.t1 + 0.01) drawPanel(ctx, pn, s.t); }); });
