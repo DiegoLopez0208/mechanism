@@ -7,6 +7,7 @@
 //   OBJECT_OFFSCREEN     WARN  the assembled or exploded object is mostly outside the frame
 //   LABEL_OVERLAP        WARN  two visible texts overlap
 //   LABEL_CLIPPED        WARN  a visible text runs past the edge of the frame
+//   GEOMETRY_AREA_MISMATCH FAIL/WARN  a flat part (plate, profile) whose mesh does not cover its outline minus its holes (a hole outside the outline, a bad bridge): FAIL above 5 %, WARN above 1 %
 // A WARN can be a deliberate choice (a close-up, a part that flies out): it never stops anything. FAIL is for what is wrong in every case.
 // Diagnostic only: the exit code is 0 unless you pass --strict.
 //
@@ -54,6 +55,7 @@ try {
   if (!info) throw new Error('this page has no __specInfo() (declarative specs only)');
   if (info.errors && info.errors.length) { console.log('spec errors:\n  ' + info.errors.join('\n  ')); done(1); }
   await ev(RECORDER);
+  if (!skip.has('shape')) JSON.parse(await ev('JSON.stringify(window.__shapeCheck ? window.__shapeCheck() : [])')).forEach((q) => note(Math.abs(q.ratio - 1) > 0.05 ? 'FAIL' : 'WARN', 'GEOMETRY_AREA_MISMATCH', q.id, 0, 'the triangulated area of "' + q.id + '" is ' + Math.round(q.ratio * 100) + '% of its outline minus its holes: a hole lies outside the outline or a bridge is wrong, so the mesh has a missing or extra piece. Open a frame of it.'));
   const cv = JSON.parse(await ev('JSON.stringify([MX.ctx.canvas.width, MX.ctx.canvas.height])')), FW = cv[0], FH = cv[1], frame = [0, 0, FW, FH], ph = info.phases;
   let samples = 0, prevText = new Map();
   for (let t = 0; t < info.duration; t += STEP) {

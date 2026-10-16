@@ -50,6 +50,13 @@
   };
   const toShape = (pts) => new TH.Shape(pts.map((p) => new TH.Vector2(p[0], p[1])));
   const circlePath = (r, x = 0, y = 0) => { const h = new TH.Path(); h.absarc(x, y, r, 0, TAU, true); return h; };
+  const rectPath = (w, hh, x = 0, y = 0) => { const h = new TH.Path(); h.moveTo(x - w / 2, y - hh / 2); h.lineTo(x - w / 2, y + hh / 2); h.lineTo(x + w / 2, y + hh / 2); h.lineTo(x + w / 2, y - hh / 2); h.closePath(); return h; };      // clockwise, like circlePath: a rectangular hole
+  // triangulated area / outline area of a flat shape (holes subtracted). Away from 1 a hole or a bridge is wrong and the mesh has a missing or extra piece: a hole outside the outline, a bridge that starts on the wrong vertex.
+  const shapeAreaRatio = (shape) => {
+    const pts = shape.extractPoints(12), faces = TH.ShapeUtils.triangulateShape(pts.shape, pts.holes), v = pts.shape.concat.apply(pts.shape, pts.holes); let tri = 0;      // triangulateShape drops the repeated last point of each contour in place: the vertex list is built after it
+    faces.forEach((f) => { const a = v[f[0]], b = v[f[1]], c = v[f[2]]; tri += Math.abs((b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y)) / 2; });
+    const exp = Math.abs(TH.ShapeUtils.area(pts.shape)) - pts.holes.reduce((q, h) => q + Math.abs(TH.ShapeUtils.area(h)), 0); return exp > 1e-9 ? tri / exp : 1;
+  };
   // normales suavizadas por angulo: las curvas se ven lisas y las aristas de los dientes quedan vivas (ExtrudeGeometry da una normal plana por triangulo)
   const creased = (geo, deg) => {
     const pos = geo.attributes.position, n = pos.count / 3, cosT = Math.cos((deg || 38) * rad), fn = new Float32Array(n * 3), key = (i) => Math.round(pos.getX(i) * 400) + ',' + Math.round(pos.getY(i) * 400) + ',' + Math.round(pos.getZ(i) * 400), map = new Map();
@@ -111,8 +118,9 @@
     const w = o.w, h = o.h, r = Math.min(o.r || 1, w / 2, h / 2), s = new TH.Shape();
     s.moveTo(-w / 2 + r, -h / 2); s.lineTo(w / 2 - r, -h / 2); s.absarc(w / 2 - r, -h / 2 + r, r, -Math.PI / 2, 0, false); s.lineTo(w / 2, h / 2 - r); s.absarc(w / 2 - r, h / 2 - r, r, 0, Math.PI / 2, false);
     s.lineTo(-w / 2 + r, h / 2); s.absarc(-w / 2 + r, h / 2 - r, r, Math.PI / 2, Math.PI, false); s.lineTo(-w / 2, -h / 2 + r); s.absarc(-w / 2 + r, -h / 2 + r, r, Math.PI, 1.5 * Math.PI, false);
-    (o.holes || []).forEach(([x, y, hr]) => s.holes.push(circlePath(hr, x, y)));
-    return grp(new TH.Mesh(extrude(s, o.t, Math.min(0.2, o.t * 0.25)), P.mat(o.mat || 'steel')), { kind: 'plate', w, h, t: o.t });
+    (o.holes || []).forEach(([x, y, hr, hh]) => s.holes.push(hh == null ? circlePath(hr, x, y) : rectPath(hr, hh, x, y)));      // [x, y, r] is a round hole, [x, y, width, height] a rectangular one
+    const g = extrude(s, o.t, Math.min(0.2, o.t * 0.25)); g.userData.areaRatio = shapeAreaRatio(s);
+    return grp(new TH.Mesh(g, P.mat(o.mat || 'steel')), { kind: 'plate', w, h, t: o.t });
   };
 
   /* ------------------------------------------------------------ rodamiento, resorte, tornilleria */
@@ -151,7 +159,12 @@
   P.block = (o) => grp(new TH.Mesh(extrude(rrect(o.w, o.d, o.r == null ? 0.4 : o.r), o.h, Math.min(0.1, o.h * 0.1)), P.mat(o.mat || 'plastic')), { kind: 'block', w: o.w, d: o.d, h: o.h });
   // cruz (+) extruida: brazos de largo "arm" y espesor "thick", altura len en z (la interfaz del vastago de un switch MX)
   // profile: a closed polygon (o.pts, [x, y] in mm, origin where the part sits) extruded by o.len: a key blade with V cuts, a cam, a tooth profile
-  P.profile = (o) => { const s = new TH.Shape(); o.pts.forEach((q, i) => (i ? s.lineTo(q[0], q[1]) : s.moveTo(q[0], q[1]))); s.closePath(); return grp(new TH.Mesh(extrude(s, o.len, o.bevel == null ? 0.05 : o.bevel), P.mat(o.mat || 'brass')), { kind: 'profile', len: o.len }); };
+  P.profile = (o) => {      // o.holes: a list of polygons (lists of [x, y]) cut out of the profile: no zero-width bridges needed
+    const s = new TH.Shape(); o.pts.forEach((q, i) => (i ? s.lineTo(q[0], q[1]) : s.moveTo(q[0], q[1]))); s.closePath();
+    (o.holes || []).forEach((poly) => { const hp = new TH.Path(); poly.forEach((q, i) => (i ? hp.lineTo(q[0], q[1]) : hp.moveTo(q[0], q[1]))); hp.closePath(); s.holes.push(hp); });
+    const g = extrude(s, o.len, o.bevel == null ? 0.05 : o.bevel); g.userData.areaRatio = shapeAreaRatio(s);
+    return grp(new TH.Mesh(g, P.mat(o.mat || 'brass')), { kind: 'profile', len: o.len });
+  };
   P.cross = (o) => { const a = o.arm / 2, t = o.thick / 2, s = new TH.Shape(); [[-a, -t], [-t, -t], [-t, -a], [t, -a], [t, -t], [a, -t], [a, t], [t, t], [t, a], [-t, a], [-t, t], [-a, t]].forEach((q, i) => (i ? s.lineTo(q[0], q[1]) : s.moveTo(q[0], q[1]))); s.closePath(); return grp(new TH.Mesh(extrude(s, o.len, 0.05), P.mat(o.mat || 'pom-red')), { kind: 'cross', arm: o.arm, thick: o.thick, len: o.len }); };
 
   /* ------------------------------------------------------------ rotores de cifrado (Enigma): rueda de entrada, rotor, reflector */

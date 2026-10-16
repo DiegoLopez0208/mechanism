@@ -17,11 +17,12 @@ after(() => { try { rmSync(tmp, { recursive: true, force: true }); } catch { /* 
 // three texts drawn in every frame at the same place: two on top of each other and one past the right edge
 const INJECT = `<script>(() => { let f; Object.defineProperty(window, '__frame', { configurable: true, get: () => f, set: (v) => { f = (...a) => { const r = v(...a), c = MX.ctx; c.save(); c.font = '30px sans-serif'; c.fillStyle = '#fff'; c.globalAlpha = 1; c.textAlign = 'left'; c.textBaseline = 'alphabetic'; c.fillText('OVERLAP-AAAAAAAA', 300, 700); c.fillText('OVERLAP-BBBBBBBB', 330, 704); c.fillText('CLIPPED-TEXT-PAST-THE-EDGE', c.canvas.width - 40, 900); c.restore(); return r; }; } }); })();</script>`;
 let n = 0;
-const variant = ({ zoom, inject } = {}) => {      // a copy of kit/ and of the lock example with the change applied
+const variant = ({ zoom, inject, part } = {}) => {      // a copy of kit/ and of the lock example with the change applied
   const dir = path.join(tmp, 'v' + n++); cpSync(path.join(root, 'kit'), path.join(dir, 'kit'), { recursive: true }); cpSync(path.join(root, 'examples', 'lock'), path.join(dir, 'examples', 'lock'), { recursive: true });
   const spec = path.join(dir, 'examples', 'lock', 'spec.js'), html = path.join(dir, 'examples', 'lock', 'index.html');
   if (zoom) { const s = readFileSync(spec, 'utf8'); assert.ok(/director: \{/.test(s), 'the lock spec has a director block'); writeFileSync(spec, s.replace('director: {', 'director: { zoom: ' + zoom + ',')); }
   if (inject) writeFileSync(html, readFileSync(html, 'utf8').replace('<canvas id="c"></canvas>', '<canvas id="c"></canvas>' + INJECT));
+  if (part) { const run = path.join(dir, 'examples', 'lock', 'run.js'); writeFileSync(run, 'window.SPEC.parts.push(' + JSON.stringify(part) + ');\n' + readFileSync(run, 'utf8')); }      // one more part in the spec before it runs
   return path.join(dir, 'examples', 'lock', 'index.html');
 };
 const run = (page, ...extra) => { const r = spawnSync(process.execPath, [PREFLIGHT, page, '--length', 'short', '--step', '1', '--json', ...extra], { encoding: 'utf8', timeout: 170000 }); let json = null; try { json = JSON.parse(r.stdout); } catch { /* not json: the assertion that follows shows stderr */ } return { status: r.status, json, stderr: r.stderr }; };
@@ -49,4 +50,17 @@ test('two texts on top of each other are LABEL_OVERLAP and one past the edge is 
   const subjects = r.json.findings.map((f) => f.code + ' ' + f.subject);
   assert.ok(subjects.some((s) => s.startsWith('LABEL_OVERLAP') && s.includes('OVERLAP-AAAAAAAA') && s.includes('OVERLAP-BBBBBBBB')), subjects.join('\n'));
   assert.ok(subjects.some((s) => s.startsWith('LABEL_CLIPPED') && s.includes('CLIPPED-TEXT')), subjects.join('\n'));
+});
+
+const testPlate = (holes) => ({ id: 'testplate', name: 'Test plate', kind: 'plate', p: { w: 20, h: 20, r: 1, t: 2, holes }, mat: 'steel', at: [0, 0, 0], explode: [0, 0, 0], conf: 'estimated', why: 'a part of the test', tour: false });
+
+test('a plate with a rectangular hole inside its outline is fine, and a round hole still works', opts, () => {
+  const r = run(variant({ part: testPlate([[0, 0, 8, 4], [6, 6, 2]]) }), '--skip', 'camera,labels,frame'); assert.ok(r.json, r.stderr);
+  assert.ok(![...codes(r)].includes('GEOMETRY_AREA_MISMATCH'), JSON.stringify(r.json.findings));
+});
+
+test('a hole that lies outside the outline is reported as GEOMETRY_AREA_MISMATCH, and is a FAIL when it is large', opts, () => {
+  const r = run(variant({ part: testPlate([[9, 0, 12, 12]]) }), '--skip', 'camera,labels,frame'); assert.ok(r.json, r.stderr);
+  const f = r.json.findings.find((x) => x.code === 'GEOMETRY_AREA_MISMATCH' && x.subject === 'testplate'); assert.ok(f, JSON.stringify(r.json.findings));
+  assert.equal(f.severity, 'FAIL'); assert.ok(r.json.fail > 0);
 });
