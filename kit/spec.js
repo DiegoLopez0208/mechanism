@@ -167,7 +167,7 @@
         VW[k].zoom *= Math.max(1, Math.min(2.4, Math.min(FW / w, FH / h)));      /* only ever enlarge: an object that already fills the stage keeps its view */
       });
     }
-    const shot = (id, o) => { const p = parts.find((x) => x.id === id), dim = Math.max(p.size.x, p.size.y, p.size.z * 0.6) * (p.spec.tourDim || 1); /* part.tourDim widens the shot of a part whose motion carries it away from where the camera aims */ const ta = p.spec.tourAt || [0, 0, 0]; return Object.assign(F.shot(id, { dx: ta[0], dy: ta[1], dz: ta[2], yaw: o.yaw, pitch: o.pitch, zoom: clamp(W * 0.5 / dim, 3.5, 140), e: 1, cy: cy - 40 }), { dof: o.dof == null ? 0.5 : o.dof }); };
+    const shot = (id, o) => { const p = parts.find((x) => x.id === id), dim = Math.max(p.size.x, p.size.y, p.size.z * 0.6) * (p.spec.tourDim || 1); /* part.tourDim widens the shot of a part whose motion carries it away from where the camera aims */ const ta = p.spec.tourAt || [0, 0, 0]; return Object.assign(F.shot(id, { dx: ta[0], dy: ta[1], dz: ta[2], yaw: o.yaw, pitch: o.pitch, zoom: clamp(W * 0.5 / dim, 1.2, 140), e: 1, cy: cy - 40 }), { dof: o.dof == null ? 0.5 : o.dof }); };
 
     /* ---------------------------------------------------------- plan del video */
     const order = parts.slice().sort((a, b) => (a.spec.late ? 1 : 0) - (b.spec.late ? 1 : 0) || a.base.z - b.base.z || parts.indexOf(a) - parts.indexOf(b)), N = order.length, step = Math.min(SHORT ? 0.12 : 0.3, (SHORT ? 2.4 : 6.2) / N), arrive = {};
@@ -288,7 +288,7 @@
     const drawEngine = (c, s) => {
       const a = s.modeA; if (!(a > 0.01)) return; const mi = s.modeI, m = modes[mi], r = an.modes[mi], x = 78, y = H - 318, th = crankDeg(s.mech.eng.theta), bw = 430, col = [T.ember, T.mute, T.teal, T.ink];
       c.save(); c.globalAlpha = a; c.fillStyle = MX.rgba(T.paper, T.dark ? 0.86 : 0.9); c.fillRect(x - 24, y - 70, W - 2 * x + 48, 262); c.fillStyle = T.teal; c.fillRect(x - 24, y - 70, 4, 262);
-      MX.A = 1; MX.text(m.label, x, y, { size: lblFit(m.label), font: MX.SERIF, w: 500, color: T.ink }); MX.text(m.formula || '', x, y + 42, { size: 21, font: MX.SANS, color: T.mute });
+      MX.A = 1; MX.text(m.label, x, y, { size: lblFit(m.label), font: MX.SERIF, w: 500, color: T.ink }); MX.text(m.formula || '', x, y + 42, { size: fmlFit(m.formula, m.publish, x), font: MX.SANS, color: T.mute });
       MX.text(r.text + (m.unit ? ' ' + m.unit : ''), W - x, y - 2, { size: valFit(r.text + (m.unit ? ' ' + m.unit : ''), m.label), font: MX.SERIF, w: 500, color: T.ink, align: 'right' });
       if (m.publish) { const cl = claimBy[m.publish.claim], w = 190; tagPill(c, W - x - w - 4, y + 44, cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + ' ' + (m.publish.text || m.publish.value)); MX.text(r.ok ? 'matches the model' : 'MISMATCH', W - x - w - 18, y + 44, { size: 19, font: MX.SANS, color: r.ok ? T.teal : T.ember, align: 'right', w: 500 }); }
       for (let k = 0; k < AE.n; k++) {
@@ -302,7 +302,7 @@
     const drawCube = (c, s) => {
       const a = s.modeA; if (!(a > 0.01)) return; const mi = s.modeI, m = modes[mi], r = an.modes[mi], run = an.cubeRuns[mi], x = 78, y = H - 318, t = s.t, nDone = cubeDone(t);
       c.save(); c.globalAlpha = a; c.fillStyle = MX.rgba(T.paper, T.dark ? 0.86 : 0.9); c.fillRect(x - 24, y - 70, W - 2 * x + 48, 262); c.fillStyle = T.teal; c.fillRect(x - 24, y - 70, 4, 262);
-      MX.A = 1; MX.text(m.label, x, y, { size: lblFit(m.label), font: MX.SERIF, w: 500, color: T.ink }); MX.text(m.formula || '', x, y + 42, { size: 21, font: MX.SANS, color: T.mute });
+      MX.A = 1; MX.text(m.label, x, y, { size: lblFit(m.label), font: MX.SERIF, w: 500, color: T.ink }); MX.text(m.formula || '', x, y + 42, { size: fmlFit(m.formula, m.publish, x), font: MX.SANS, color: T.mute });
       MX.text(r.text + (m.unit ? ' ' + m.unit : ''), W - x, y - 2, { size: valFit(r.text + (m.unit ? ' ' + m.unit : ''), m.label), font: MX.SERIF, w: 500, color: T.ink, align: 'right' });
       if (m.publish) { const cl = claimBy[m.publish.claim], w = 190; const pt = String(m.publish.text || m.publish.value || m.publish.length + ' MOVES'); tagPill(c, W - x - w - 4, y + 44, cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + (pt.length > 14 ? '' : ' ' + pt)); MX.text(r.ok ? 'matches the model' : 'MISMATCH', W - x - w - 18, y + 44, { size: 19, font: MX.SANS, color: r.ok ? T.teal : T.ember, align: 'right', w: 500 }); }
       const first = CEV.findIndex((q) => q.k === mi), cur = first < 0 ? 0 : clamp(nDone - first, 0, run.moves.length), per = 15, st0 = clamp(cur - 6, 0, Math.max(0, run.moves.length - per));
@@ -317,7 +317,7 @@
       const a = s.modeA; if (!(a > 0.01)) return; const mi = s.modeI, m0 = modes[mi], SL = m0.steps ? M.steps.label(Math.min(M.steps.count - 1, Math.floor(s.step || 0))) : null, m = SL ? Object.assign({}, m0, { label: SL.title, formula: SL.formula, publish: null, unit: '' }) : m0, r = SL ? Object.assign({}, an.modes[mi], { text: SL.value }) : an.modes[mi], x = 78, y = H - 318, V = M.calc.vars, big = (r.text + (m.unit ? ' ' + m.unit : '')).length > 11;
       c.save(); c.globalAlpha = a; c.fillStyle = MX.rgba(T.paper, T.dark ? 0.86 : 0.9); c.fillRect(x - 24, y - 70, W - 2 * x + 48, 262); c.fillStyle = T.teal; c.fillRect(x - 24, y - 70, 4, 262);
       MX.A = 1; const fit = (str, size, wfont, maxW) => { c.save(); c.font = wfont + ' ' + size + 'px ' + MX.SERIF; const w0 = c.measureText(str).width; c.restore(); return w0 > maxW ? size * maxW / w0 : size; }, valTxt = r.text + (m.unit ? ' ' + m.unit : ''), vs = fit(valTxt, big ? 46 : 64, 500, (W - 2 * x) * 0.5), ls = fit(m.label, 56, 500, (W - 2 * x) - vs * 0.62 * valTxt.length - 40);
-      MX.text(m.label, x, y, { size: Math.max(26, ls), font: MX.SERIF, w: 500, color: T.ink }); MX.text(m.formula || '', x, y + 42, { size: 21, font: MX.SANS, color: T.mute });
+      MX.text(m.label, x, y, { size: Math.max(26, ls), font: MX.SERIF, w: 500, color: T.ink }); MX.text(m.formula || '', x, y + 42, { size: fmlFit(m.formula, m.publish, x), font: MX.SANS, color: T.mute });
       MX.text(valTxt, W - x, y - 2, { size: vs, font: MX.SERIF, w: 500, color: T.ink, align: 'right' });
       if (m.publish) { const cl = claimBy[m.publish.claim], w = 190, pt = String(m.publish.text || m.publish.value); tagPill(c, W - x - w - 4, y + 44, cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + (pt.length > 14 ? '' : ' ' + pt)); MX.text(r.ok ? 'matches the model' : 'MISMATCH', W - x - w - 18, y + 44, { size: 19, font: MX.SANS, color: r.ok ? T.teal : T.ember, align: 'right', w: 500 }); }
       if (SL) {      // fase por pasos: las fichas del paso actual y una barra de avance
@@ -334,6 +334,10 @@
       });
       c.restore();
     };
+    // the two texts of a row (title left, value right) shrink together until they do not touch
+    const pairFit = (label, val, ls0, vs0, maxW) => { const c2 = MX.ctx; c2.save(); c2.font = '500 ' + ls0 + 'px ' + MX.SERIF; const wl = c2.measureText(String(label)).width; c2.font = '500 ' + vs0 + 'px ' + MX.SERIF; const wv = c2.measureText(String(val)).width; c2.restore(); const k = Math.min(1, maxW / (wl + wv + 40)); return [Math.max(24, ls0 * k), Math.max(24, vs0 * k)]; };
+    // the formula line of a mode panel stops before the "matches the model" label that sits on its right when the mode publishes a figure
+    const fmlFit = (str, pub, x) => { if (!str || !pub) return 21; const c2 = MX.ctx; c2.save(); c2.font = '500 19px ' + MX.SANS; const wc = c2.measureText('matches the model').width; c2.font = '21px ' + MX.SANS; const w0 = c2.measureText(String(str)).width; c2.restore(); const avail = W - x - 190 - 18 - wc - 16 - x; return w0 > avail ? Math.max(15, 21 * avail / w0) : 21; };
     const valFit = (str, label) => { const c2 = MX.ctx; c2.save(); c2.font = '500 ' + lblFit(label) + 'px ' + MX.SERIF; const wl = c2.measureText(String(label)).width; c2.font = '500 64px ' + MX.SERIF; const wv = c2.measureText(String(str)).width; c2.restore(); const avail = W - 2 * 78 - wl - 40; return Math.max(26, wv > avail ? 64 * avail / wv : 64); };
     const lblFit = (str) => { const c2 = MX.ctx; c2.save(); c2.font = '500 64px ' + MX.SERIF; const w0 = c2.measureText(String(str)).width; c2.restore(); return Math.max(34, w0 > 470 ? 64 * 470 / w0 : 64); };      // a phase label shrinks instead of running into its value
     const drawMode = (c, s) => {
@@ -345,7 +349,7 @@
       const a = s.modeA; if (!(a > 0.01)) return; const mi = s.modeI, m = modes[mi], r = an.modes[mi], x = 78, y = H - 318, ratio = r.ratio, drpm = drive.rpm * s.speed, hrpm = drpm * ratio;
       c.save(); c.globalAlpha = a; c.fillStyle = MX.rgba(T.paper, T.dark ? 0.86 : 0.9); c.fillRect(x - 24, y - 70, W - 2 * x + 48, 232); c.fillStyle = T.teal; c.fillRect(x - 24, y - 70, 4, 232);
       MX.A = 1; MX.text(m.label, x, y, { size: lblFit(m.label), font: MX.SERIF, w: 500, color: T.ink });
-      MX.text(m.formula || '', x, y + 42, { size: 21, font: MX.SANS, color: T.mute });
+      MX.text(m.formula || '', x, y + 42, { size: fmlFit(m.formula, m.publish, x), font: MX.SANS, color: T.mute });
       MX.text(ratio.toFixed(3) + ' : 1', W - x, y - 2, { size: 64, font: MX.SERIF, w: 500, color: T.ink, align: 'right' });
       if (m.publish) { const cl = claimBy[m.publish.claim], w = 190; tagPill(c, W - x - w - 4, y + 44, cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + ' ' + m.publish.text); MX.text(r.ok ? 'matches the model' : 'MISMATCH', W - x - w - 18, y + 44, { size: 19, font: MX.SANS, color: r.ok ? T.teal : T.ember, align: 'right', w: 500 }); }
       const bar = (yy, label, v, mx, col) => { MX.text(label, x, yy + 5, { size: 15, font: MX.SANS, color: T.mute, spacing: 2.2, w: 600 }); c.fillStyle = MX.rgba(T.ink, 0.12); c.fillRect(x + 150, yy - 8, 430, 12); c.fillStyle = col; c.fillRect(x + 150, yy - 8, 430 * clamp(v / mx, 0, 1), 12); MX.text((Math.abs(v) < 10 ? v.toFixed(2) : Math.round(v)) + ' rpm', x + 600, yy + 5, { size: 18, font: MX.SANS, color: T.ink, w: 500 }); };
@@ -357,11 +361,11 @@
       if (pn.kind === 'ratios') {
         if (!H2.panel(a, spec.fig || 'Fig', ENIG ? 'Run against the published tests' : ENGN || CUBE || CALC ? 'Computed from the geometry' : 'Measured against published', (CALC ? 'Every figure is computed from the numbers on the card and compared with what is published.' : CUBE ? 'The cube is 26 pieces that really turn; every figure below is read off them and compared with what is published.' : ENGN ? 'Every figure is computed from the drawn dimensions and compared with what the maker publishes.' : PRESS ? 'Each phase is read off the running model, then compared with the number the maker publishes.' : ENIG ? 'The machine is run on every published test and compared letter by letter.' : 'Each ratio is read off the running model, then compared with the number the maker publishes.'))) return;
         an.modes.forEach((r, i) => {
-          const m = modes[i], y = 540 + i * 168, ai = a * ramp(t, pn.t0 + 0.4 + i * 0.35, pn.t0 + 0.9 + i * 0.35);
-          c.save(); c.globalAlpha = ai; c.strokeStyle = T.line; c.beginPath(); c.moveTo(86, y - 74); c.lineTo(W - 86, y - 74); c.stroke(); c.restore();
-          MX.A = ai; MX.text(m.label, 86, y, { size: 54, font: MX.SERIF, w: 500 }); MX.text(m.formula || '', 86, y + 36, { size: 21, font: MX.SANS, color: T.mute }); MX.text(m.note || '', 86, y + 66, { size: 19, font: MX.SANS, color: T.mute });
-          MX.text(ENIG ? r.text : ENGN || CUBE || CALC ? r.text + (m.unit ? ' ' + m.unit : '') : PRESS ? r.ratio.toFixed(2) + ' ' + (M.press.unit || 'mm') : r.ratio.toFixed(4), W - 86, y, { size: 58, font: MX.SERIF, w: 500, align: 'right' });
-          if (m.publish) { const cl = claimBy[m.publish.claim]; c.save(); c.globalAlpha = ai; tagPill(c, W - 86 - 330, y + 52, cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + ' ' + (m.publish.text != null ? m.publish.text : m.publish.value != null ? m.publish.value : m.publish.length + ' moves') + (r.ok ? '  OK' : '  MISMATCH')); c.restore(); }
+          const cmp = an.modes.length > 5, m = modes[i], y = 540 + i * (cmp ? Math.min(168, 700 / (an.modes.length - 1)) : 168), ai = a * ramp(t, pn.t0 + 0.4 + i * 0.35, pn.t0 + 0.9 + i * 0.35), vtxt = ENIG ? r.text : ENGN || CUBE || CALC ? r.text + (m.unit ? ' ' + m.unit : '') : PRESS ? r.ratio.toFixed(2) + ' ' + (M.press.unit || 'mm') : r.ratio.toFixed(4), rf = pairFit(m.label, vtxt, cmp ? 44 : 54, cmp ? 48 : 58, W - 172), sy = cmp ? 52 : 74;      // more than five rows: tighter rows and no note line, so they all fit in the frame
+          c.save(); c.globalAlpha = ai; c.strokeStyle = T.line; c.beginPath(); c.moveTo(86, y - sy); c.lineTo(W - 86, y - sy); c.stroke(); c.restore();
+          MX.A = ai; MX.text(m.label, 86, y, { size: rf[0], font: MX.SERIF, w: 500 }); MX.text(m.formula || '', 86, y + (cmp ? 28 : 36), { size: cmp ? 19 : 21, font: MX.SANS, color: T.mute }); MX.text(cmp ? '' : m.note || '', 86, y + 66, { size: 19, font: MX.SANS, color: T.mute });
+          MX.text(vtxt, W - 86, y, { size: rf[1], font: MX.SERIF, w: 500, align: 'right' });
+          if (m.publish) { const cl = claimBy[m.publish.claim]; c.save(); c.globalAlpha = ai; tagPill(c, W - 86 - 330, y + (cmp ? 36 : 52), cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + ' ' + (m.publish.text != null ? m.publish.text : m.publish.value != null ? m.publish.value : m.publish.length + ' moves') + (r.ok ? '  OK' : '  MISMATCH')); c.restore(); }
           MX.A = a;
         });
         H2.endPanel(); return;
