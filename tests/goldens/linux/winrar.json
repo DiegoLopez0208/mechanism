@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "width": 360,
+  "height": 450,
+  "channels": 3,
+  "frames": [
+    {
+      "label": "mode unpack",
+      "t": 23.986828516377653
+    },
+    {
+      "label": "exploded",
+      "t": 62.39749518304431
+    },
+    {
+      "label": "claims",
+      "t": 87.99749518304431
+    },
+    {
+      "label": "receipt",
+      "t": 111.3224951830443
+    }
+  ]
+}

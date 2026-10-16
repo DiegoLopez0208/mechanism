@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "width": 360,
+  "height": 450,
+  "channels": 3,
+  "frames": [
+    {
+      "label": "mode sexy",
+      "t": 18.11473846153846
+    },
+    {
+      "label": "exploded",
+      "t": 48.621538461538464
+    },
+    {
+      "label": "claims",
+      "t": 70.92153846153846
+    },
+    {
+      "label": "receipt",
+      "t": 88.24653846153845
+    }
+  ]
+}

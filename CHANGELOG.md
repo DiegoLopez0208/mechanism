@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Repeatability and regression: seed the GTAO denoiser's startup texture (the pass does not rotate noise between frames), preserve its sample/filter settings, and test bounded residual raster rounding. Four compact lossless golden frames per example on Windows/Linux, explicit regeneration, CI comparisons, and deliberately broken text/decor controls. No vendor rebuild or new dependency.
+
 - Render: accurate full-range BT.601 JPEG to limited-range BT.709 conversion, explicit primaries/transfer tags, and an opt-in software WebCodecs H.264 path (`--encoder browser`) with capability fallback and a scene-dependent bitrate budget. Audio, clipping, exports, stills and remux remain supported. `validate-render.mjs` compares decoded Chromium pixels against lossless references, including every evidence panel. Published media is not replaced.
 
 - Gate disclosures: displayed calculations without published comparators, tooth counts outside meshing links, and unknown spec/part keys now warn. Part cards and the register distinguish confidence from size comparisons, including which dimensions remain unchecked. These warnings do not change VERIFIED/CONSISTENT or count unchecked calculations as reproduced figures.

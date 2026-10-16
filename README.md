@@ -170,6 +170,10 @@ The director builds the film by itself: staggered assembly, a cutaway while the 
 
 ### The look
 
+Frames use a repeatable GTAO denoiser texture. The vendored GTAO pass does not rotate its noise every frame; its original simplex texture was randomized when a stage was created. The texture factory is now seeded without changing the AO settings or the application's randomness. Tiny GPU raster/compositing differences can still affect edge samples; the tests bound them rather than claiming every full-resolution PNG is byte-identical.
+
+`npm test` includes four visual golden frames per example (mode, exploded view, claims and receipt), plus controls that deliberately introduce text overflow and a floating decor part. The lossless references are zlib-compressed 360x450 RGB, with separate Windows/Linux sets to account for native fonts. Compare with `node scripts/visual-regression.mjs`; intentionally regenerate with `node scripts/visual-regression.mjs --update` (optional example names limit the set). Review the changed frames before accepting new goldens. CI only compares them and never regenerates them. The regression threshold combines mean SSIM, the worst 8x8 tile and the fraction of changed tiles so a small displaced part is not hidden by the background. These sampled frames do not certify every instant of a film.
+
 Every film is drawn as a **dossier**: a blue engineering drawing with a grid and ruler ticks, monospaced type, and a data block that counts how many numbers are SPEC, DERIVED and ESTIMATED. It is the look of evidence, not of a pretty explainer. The same engine can draw three other styles, chosen with `--style` (or `?style=` in the viewers) and defined as one table entry each in `MX.styles` (`kit/core.js`):
 
 | Style | Look |

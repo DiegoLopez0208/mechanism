@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "width": 360,
+  "height": 450,
+  "channels": 3,
+  "frames": [
+    {
+      "label": "mode addr",
+      "t": 14.704380952380953
+    },
+    {
+      "label": "exploded",
+      "t": 51.85238095238096
+    },
+    {
+      "label": "claims",
+      "t": 77.45238095238096
+    },
+    {
+      "label": "receipt",
+      "t": 94.77738095238095
+    }
+  ]
+}

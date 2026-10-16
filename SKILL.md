@@ -112,6 +112,8 @@ Node 22+, Edge or Chrome, `ffmpeg`, `uv` (Python tools for measuring photos). No
 
 ## Limits
 
+For toolkit changes, run `npm test` and `node scripts/visual-regression.mjs`. Golden frames are sampled regression evidence, not approval of every frame. Regenerate explicitly with `node scripts/visual-regression.mjs --update` only after reviewing the change; never regenerate to make a defect disappear. Stage initialization uses seeded denoiser noise. Full-resolution GPU edge samples can retain tiny bounded rounding differences even when geometry and time are identical. See `docs/perf-quality.md` for measurements and limits.
+
 - It cannot get millimetres from a single photo without a scale: use a published size, a coin or ruler in the picture, or the datasheet. A catalog collage scales every piece to fit its slot, so even ratios between objects are not real.
 - Interiors need photos. If none exist, the interior is estimated and says so.
 - Rendering is heavy: about 2 to 3 seconds of wall time per second of film on a discrete GPU, much more on an integrated one (the scripts force the high-performance GPU; check `UNMASKED_RENDERER_WEBGL` if it is slow). Also checked on Ubuntu 24.04 (install, gates, stills, lint); a machine with no GPU renders a frame in about 7 s, so there use stills and the lint, not a film. Not tried on macOS.

@@ -12,6 +12,21 @@
   G.v = (x, y, z) => new TH.Vector3(x, z, -y);
   TH.ColorManagement.enabled = true;
 
+  // GTAOPass creates its denoiser's simplex-noise texture with Math.random at
+  // construction, not once per rendered frame. Seed only that synchronous
+  // texture factory; keep UUIDs unique and leave application randomness alone.
+  class RepeatableGTAO extends TH.GTAOPass {
+    _generateNoise(...args) {
+      const random = Math.random; let seed = 0x6d78616f, texture;
+      try {
+        Math.random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+        texture = super._generateNoise(...args);
+      } finally { Math.random = random; }
+      texture.uuid = TH.MathUtils.generateUUID();
+      return texture;
+    }
+  }
+
   /* ------------------------------------------------------------ escenario */
   // o: { w, h, fov (grados; 0 = ortografica), shadow (opacidad de la sombra en el suelo), floorY, key: [x,y,z],
   //      exposure, ao, bloom, envIntensity, bgInner, bgOuter }
@@ -47,7 +62,7 @@
     const rt = new TH.WebGLRenderTarget(W, H, { type: TH.HalfFloatType, samples: 4 });
     const composer = new TH.EffectComposer(renderer, rt); composer.setPixelRatio(1); composer.setSize(W, H);
     composer.addPass(new TH.RenderPass(scene, camera));
-    const ao = new TH.GTAOPass(scene, camera, W, H); ao.blendIntensity = o.ao == null ? 1.15 : o.ao;
+    const ao = new RepeatableGTAO(scene, camera, W, H); ao.blendIntensity = o.ao == null ? 1.15 : o.ao;
     ao.updateGtaoMaterial({ radius: 7, distanceExponent: 1.4, thickness: 4, scale: 2.2, samples: 24, distanceFallOff: 1.2, screenSpaceRadius: false });
     ao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 12 }); composer.addPass(ao);
     const bokeh = new TH.BokehPass(scene, camera, { focus: 600, aperture: 0, maxblur: 0.01 }); bokeh.enabled = false; composer.addPass(bokeh);

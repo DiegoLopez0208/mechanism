@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "width": 360,
+  "height": 450,
+  "channels": 3,
+  "frames": [
+    {
+      "label": "mode fp32",
+      "t": 15.748666666666669
+    },
+    {
+      "label": "exploded",
+      "t": 48.296666666666674
+    },
+    {
+      "label": "claims",
+      "t": 80.49666666666667
+    },
+    {
+      "label": "receipt",
+      "t": 97.82166666666666
+    }
+  ]
+}

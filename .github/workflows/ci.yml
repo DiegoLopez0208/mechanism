@@ -21,6 +21,10 @@ jobs:
         run: node --test tests/gate.test.mjs tests/kit.test.mjs tests/encoding.test.mjs tests/browser.test.mjs tests/media-server.test.mjs
       - name: Render, colour tags, audio streams and encoder fallback
         run: node --test tests/render.test.mjs
+      - name: Visual regression (compact lossless golden frames)
+        run: |
+          node scripts/visual-regression.mjs
+          node --test --test-name-pattern="local SSIM|injected text" tests/visual.test.mjs
       - name: Every shipped example passes its own gate
         shell: bash      # pipefail: a failing gate must not be hidden by tail
         run: |
