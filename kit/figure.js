@@ -119,7 +119,7 @@
     H2.endPanel = () => { MX.A = 1; MX.ctx.restore(); };
     // ficha de pieza: titulo + lineas + etiquetas de confianza; la linea guia sale del centro de la pieza
     H2.info = (s) => {
-      const p = F.byId[s.focus]; if (!p || !p.info || (s.focusA || 0) < 0.02) return; const c = MX.ctx, i = p.info, at = s.infoAt || [64, H - 340], lines = [i.title].concat(i.lines || []);
+      const p = F.byId[s.focus]; if (!p || !p.info || (s.focusA || 0) < 0.02) return; const c = MX.ctx, i = p.info, at0 = s.infoAt || [64, H - 340], lines = [i.title].concat(i.lines || []), at = [at0[0], Math.min(at0[1], H - 165 - lines.length * 30)];      // a card with many lines moves up so its source line ends above the footer
       MX.callout(F.anchor(p.id), at, lines, { alpha: s.focusA, size: 26, color: T.ink });
       c.save(); c.globalAlpha = s.focusA; let x = at[0] + 10; const y = at[1] + lines.length * 30 + 14; [].concat(i.conf || []).forEach((k) => { x += H2.tag(c, x, y, k) + 8; }); c.restore();
       if (i.src) MX.text(i.src, at[0] + 10, y + 46, { size: 14, font: MX.MONO, color: T.mute, alpha: s.focusA, spacing: 0.6 });      // de donde sale lo que dice la ficha

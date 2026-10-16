@@ -423,12 +423,12 @@
         H2.endPanel(); return;
       }
       if (!H2.panel(a, spec.fig || 'Fig', 'Sources', 'Opened ' + ((sources[0] && sources[0].fetched) || '') + '. Where a page refused us, it says so.')) return;
-      let y = 500;
+      let y = 500; const nls = sources.map((sr) => wrap(sr.note || '', '400 18px ' + MX.SANS, W - 172)), shr = Math.max(0, Math.min(28, (nls.reduce((q, l) => q + 98 + l.length * 24, 0) - (H - 110 - 500)) / Math.max(1, sources.length)));      // many sources: the rows come closer together so the last one ends above the footer
       sources.forEach((sr, i) => {
         const ai = a * ramp(t, pn.t0 + 0.3 + i * 0.3, pn.t0 + 0.8 + i * 0.3); MX.A = ai; c.save(); c.globalAlpha = ai; c.strokeStyle = T.line; c.beginPath(); c.moveTo(86, y - 36); c.lineTo(W - 86, y - 36); c.stroke(); c.restore();
         let stl = String(sr.title), tsz = 27; c.save(); c.font = '500 27px ' + MX.SERIF; const tw = c.measureText(stl).width; if (tw > W - 172) { tsz = Math.max(17, 27 * (W - 172) / tw); c.font = '500 ' + tsz + 'px ' + MX.SERIF; while (stl.length > 12 && c.measureText(stl).width > W - 172) stl = stl.slice(0, -2); if (stl !== String(sr.title)) stl = stl.replace(/\s+$/, '') + '...'; } c.restore();      // a long title shrinks to the width of the panel, and is cut with dots if it still does not fit
         MX.text(stl, 86, y, { size: tsz, font: MX.SERIF, w: 500 }); MX.text(sr.url.replace(/^https?:\/\//, '').slice(0, 78), 86, y + 30, { size: 16, font: MX.MONO, color: T.teal });
-        const nl = wrap(sr.note || '', '400 18px ' + MX.SANS, W - 172); nl.forEach((ln, k) => MX.text(ln, 86, y + 58 + k * 24, { size: 18, font: MX.SANS, color: T.mute })); MX.A = a; y += 98 + nl.length * 24;
+        const nl = nls[i]; nl.forEach((ln, k) => MX.text(ln, 86, y + 58 + k * 24, { size: 18, font: MX.SANS, color: T.mute })); MX.A = a; y += 98 - shr + nl.length * 24;
       });
       H2.endPanel();
     };
