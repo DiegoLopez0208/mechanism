@@ -126,6 +126,43 @@ test('gear train: two gears of different size on one body is an error, not a sil
   assert.ok(bad.errors.some((e) => /body sun carries gears with 20 and 60 teeth/.test(e) && /own body/.test(e) && /same/.test(e)), bad.errors.join('; '));
 });
 
+test('provenance: a check that uses the source that fed the model is consistency, not independent evidence', () => {
+  const base = MX.spec.validate(good());
+  assert.equal(base.verdict.state, 'VERIFIED');          // the state does not change: the label does
+  assert.equal(base.verdict.sameSource, 1); assert.equal(base.verdict.independent, 0); assert.equal(base.verdict.consistencyOnly, true);
+  assert.ok(base.lines.some((l) => /^verdict: VERIFIED \(consistency only/.test(l)), base.lines.join('\n'));
+  assert.ok(base.warnings.some((w) => /same source that fed it/.test(w)) && base.warnings.some((w) => /no check uses a source independent/.test(w)), base.warnings.join('\n'));
+  // the published figure now comes from another source: independent
+  const indep = mutate((s) => { s.research.sources.push({ id: 's2', title: 'Second sheet', url: 'https://www.rfc-editor.org/rfc/rfc1952', fetched: '2026-10-13' }); s.research.claims.push({ id: 'c2', conf: 'spec', text: 'the published value is 3', src: ['s2'] }); s.mechanism.drive.modes[0].publish.claim = 'c2'; });
+  assert.equal(indep.errors.length, 0, indep.errors.join('; '));
+  assert.equal(indep.verdict.independent, 1); assert.equal(indep.verdict.sameSource, 0); assert.equal(indep.verdict.consistencyOnly, false);
+  assert.ok(!indep.warnings.some((w) => /same source/.test(w)), indep.warnings.join('\n'));
+  assert.ok(indep.lines.some((l) => /^provenance: 1 independent, 0 same source/.test(l)), indep.lines.join('\n'));
+  // the second source says it derives from the first: it is the same source again
+  const derived = mutate((s) => { s.research.sources.push({ id: 's2', title: 'Second sheet', url: 'https://www.rfc-editor.org/rfc/rfc1952', fetched: '2026-10-13', derives: ['s1'] }); s.research.claims.push({ id: 'c2', conf: 'spec', text: 'the published value is 3', src: ['s2'] }); s.mechanism.drive.modes[0].publish.claim = 'c2'; });
+  assert.equal(derived.verdict.sameSource, 1); assert.equal(derived.verdict.independent, 0);
+  assert.ok(derived.warnings.some((w) => /\[s1\]/.test(w)), derived.warnings.join('\n'));
+  // a claim that cites two sources, one of them the same as the input's: the overlap is enough
+  const partial = mutate((s) => { s.research.sources.push({ id: 's2', title: 'Second sheet', url: 'https://www.rfc-editor.org/rfc/rfc1952', fetched: '2026-10-13' }); s.research.claims.push({ id: 'c2', conf: 'spec', text: 'the published value is 3', src: ['s2', 's1'] }); s.mechanism.drive.modes[0].publish.claim = 'c2'; });
+  assert.equal(partial.verdict.sameSource, 1);
+});
+
+test('captions: a quantity typed in a part card must be traceable to something in the spec', () => {
+  const withInfo = (lines) => mutate((s) => { s.parts[0].info = { title: 'Plate', lines, conf: ['spec'] }; });
+  const warn = (r) => r.warnings.filter((w) => /traceable to nothing/.test(w));
+  assert.equal(warn(withInfo(['Width 10 mm, 3 steps'])).length, 0);                    // 10 is a dimension and a claim; a bare integer is not a quantity
+  assert.equal(warn(withInfo(['Width 0.394 in'])).length, 0);                          // 10 mm is 0.3937 in: a unit conversion is allowed
+  assert.equal(warn(withInfo(['Pin 7: SYNC', 'Byte 29: 03'])).length, 0);              // ids and byte indexes are bare integers
+  const bad = withInfo(['Width 12 mm', 'Pitch radius 36.5 mm']);
+  assert.equal(warn(bad).length, 1, bad.warnings.join('\n'));
+  assert.ok(/12 in "Width 12 mm"/.test(warn(bad)[0]) && /36\.5/.test(warn(bad)[0]), warn(bad)[0]);
+  assert.equal(bad.errors.length, 0);                                                  // a warning, never an error
+  assert.equal(bad.verdict.captions.untraceable, 2);
+  assert.equal(withInfo(['Width 12 mm']).verdict.state, 'VERIFIED');
+  const lead = mutate((s) => { s.director = { what: 'A plate 12 mm wide.' }; });       // the lead text of the film is checked too
+  assert.equal(warn(lead).length, 1, lead.warnings.join('\n'));
+});
+
 test('params: a drawn dimension is compared with its source', () => {
   const withP = (p) => mutate((s) => { s.parts[0].params = p; });
   const ok = withP({ w: { value: 10, unit: 'mm', conf: 'spec', claim: 'c1', tol: 0.01 } });

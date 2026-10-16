@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Gate: provenance.** Every published-figure check is now classified as independent (the source of the published figure differs from the sources of the inputs), same source, or with no sourced inputs, and the verdict says so (`provenance:` line, a warning, and `VERIFIED (consistency only...)` when no check is independent). A source can say it derives from another (`derives: [ids]`) and then counts as the same. The state of the verdict does not change. Measured on the 11 examples and the two agent runs: the lock and the Antikythera have no independent check (all their figures come from one page or share a source with their inputs); the floppy, the RTX 4090, the hub, rar5 and react have some.
+- **Gate: captions.** A quantity typed in a part card or in the lead text of the film (a decimal or a number with a unit) must be traceable to a claim, a dimension, a position or a published or computed value (mm, in and cm conversions and 0.3 % rounding allowed), or the gate warns. Bare integers are ignored. On the examples it finds two cases, both typed derived values: the hub's sprocket pitch radius (36.5 mm, the formula gives 36.57) and WinRAR's 41 %.
+
 ## 0.8.0 - 2026-10-16
 
 The first two unassisted agent runs, a visual preflight, and the toolkit problems those runs found.
