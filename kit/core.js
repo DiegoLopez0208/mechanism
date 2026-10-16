@@ -161,6 +161,7 @@
       }
       ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.drawImage(acc, 0, 0);
     };
+    g.__paint = (t, n, shutter) => { frame(t, n, shutter); return cv; };      // the frame on the canvas with no encoding: for an encoder that takes the canvas itself (WebCodecs)
     g.__frame = (t, n, shutter, fmt) => { frame(t, n, shutter); return fmt === 'jpg' ? cv.toDataURL('image/jpeg', 0.97) : cv.toDataURL('image/png'); };
     g.__audioWav = () => {
       const raw = cfg.audio ? cfg.audio() : new Float32Array(Math.floor(DUR * (cfg.sr || 44100))), sr = (raw && raw.sr) || cfg.sr || 44100, ch = raw && raw.L ? [raw.L, raw.R] : [raw], N = ch[0].length, nch = ch.length;

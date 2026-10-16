@@ -106,7 +106,7 @@ The skill then runs from the plugin folder, and your objects go in your own proj
 Or by hand, as a plain skill:
 
 ```bash
-# macOS / Linux: a partial clone, 4 MB (the repo also holds the films, the site and a long history, 85 MB or more, which you do not need to use the skill)
+# macOS / Linux: a sparse clone (omit site/media and most history; tests include compact golden frames)
 git clone --depth 1 --filter=blob:none --sparse https://github.com/DiegoLopez0208/mechanism ~/.claude/skills/mechanism
 git -C ~/.claude/skills/mechanism sparse-checkout set kit scripts examples data tools tests
 # Windows (PowerShell)
@@ -134,6 +134,12 @@ node scripts/render.mjs examples/my-object/index.html --remux out/my-object.mp4 
 ```
 
 ## How it works
+
+Rendering supports `--encoder jpeg` (the compatibility default) and `--encoder browser` (software H.264 through WebCodecs, copied into MP4). The browser path automatically falls back to JPEG when VideoEncoder or H.264 is unavailable. Its bitrate scales with frame size, fps and part count; `--bitrate <bits/s>` overrides it. Both paths preserve stereo sound, two-pass loudness normalization and clip timing. The JPEG path now converts full-range BT.601 samples to limited-range BT.709 with accurate rounding; both paths carry colour metadata in the H.264 stream as well as the container.
+
+Every browser script uses an isolated profile and an OS-selected CDP port. Render operations have a 30-second watchdog (`--timeout <seconds>`); the browser tree is stopped by its own PID and a stalled attempt is retried once from frame zero. `BROWSER_TIMEOUT_MS` configures the shared helper in the other tools. `CDP_PORT` is no longer used. For GPU-less CI, `BROWSER_SOFTWARE=1` explicitly selects SwiftShader.
+
+Reproduce encoder quality outside published media with `node scripts/validate-render.mjs lock winrar --out <work>/quality --encoder browser`. It saves lossless references and decoded frames from modes, tours and every claims/sources/receipt panel, reports RGB error/bias and local-window SSIM, and leaves visual review marked pending. Add `--video-dir <work>/films` to compare already rendered full films at the same times. A metric is not a visual approval.
 
 One spec in, everything out:
 

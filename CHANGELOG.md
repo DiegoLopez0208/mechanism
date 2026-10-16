@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Render: accurate full-range BT.601 JPEG to limited-range BT.709 conversion, explicit primaries/transfer tags, and an opt-in software WebCodecs H.264 path (`--encoder browser`) with capability fallback and a scene-dependent bitrate budget. Audio, clipping, exports, stills and remux remain supported. `validate-render.mjs` compares decoded Chromium pixels against lossless references, including every evidence panel. Published media is not replaced.
+
 - Gate disclosures: displayed calculations without published comparators, tooth counts outside meshing links, and unknown spec/part keys now warn. Part cards and the register distinguish confidence from size comparisons, including which dimensions remain unchecked. These warnings do not change VERIFIED/CONSISTENT or count unchecked calculations as reproduced figures.
 - Browser lifecycle: shared port-zero CDP sessions, private profiles, bounded operations/frame watchdogs, one retry for watchdog failures, and cleanup of the owned PID tree on failure or interruption. All five browser scripts use the helper.
 

@@ -9,6 +9,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, writeFileSync, rmSync, renameSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
+import { bitrateFor, installEncoder, videoArgs } from './lib/encoding.mjs';
 import { withBrowser } from './lib/browser.mjs';
 
 const args = process.argv.slice(2);
@@ -17,6 +18,9 @@ const opt = (k, d) => { const i = args.indexOf('--' + k); return i >= 0 ? args[i
 if (!page) { console.error('uso: node scripts/render.mjs <pagina.html> [--duration 28] [--fps 30] [--blur 4] [--out out/x.mp4] [--still t]'); process.exit(1); }
 
 const DUR_ARG = opt('duration', null), FPS = Number(opt('fps', 30)), DRAFT = args.includes('--draft'), BLUR = Number(opt('blur', DRAFT ? 1 : 4)), SHUT = Number(opt('shutter', 0.5)), CRF = opt('crf', DRAFT ? '24' : '17'), PRESET = opt('preset', DRAFT ? 'veryfast' : 'medium');
+const ENCODER = opt('encoder', 'jpeg');
+if (!['jpeg', 'browser'].includes(ENCODER)) throw new Error('--encoder must be jpeg or browser');
+if (!(FPS > 0 && Number.isFinite(FPS))) throw new Error('--fps must be positive and finite');
 const OUT = path.resolve(opt('out', 'out/figure.mp4')), FFMPEG = process.env.FFMPEG || 'ffmpeg';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // loudnorm de dos pasadas (medir, luego aplicar lineal): en una sola pasada el audio dinamico queda unos 4 LU por debajo del objetivo
@@ -39,16 +43,49 @@ await withBrowser(async ({ send, ev: evalJs, progress, stopWatchdog, onCleanup }
   const still = opt('still', null);
   if (still != null) { const f = OUT.replace(/\.mp4$/, `-still-${still}.png`); writeFileSync(f, png(await evalJs(`window.__frame(${Number(still)}, ${BLUR}, ${SHUT})`))); console.log('still:', f); }
   else {
-    // el video se codifica MIENTRAS se renderiza (frames JPEG al 97 % por un pipe a ffmpeg); al final solo se pega el audio
+    if (!(Number.isFinite(FROM) && Number.isFinite(TO) && FROM >= 0 && TO > FROM && TO <= DUR)) throw new Error('invalid clip interval');
+    const size = await evalJs('({ width: MX.ctx.canvas.width, height: MX.ctx.canvas.height, parts: window.SPEC?.parts?.length || 0 })');
+    const bitrate = Number(opt('bitrate', bitrateFor({ ...size, fps: FPS, draft: DRAFT })));
+    if (!(bitrate > 0 && Number.isFinite(bitrate))) throw new Error('--bitrate must be positive and finite');
+    const browser = ENCODER === 'browser' && await evalJs(`(${installEncoder.toString()})(${JSON.stringify({ fps: FPS, bitrate, blur: BLUR, shutter: SHUT })})`);
+    if (ENCODER === 'browser' && !browser) console.warn('VideoEncoder/H.264 unavailable; falling back to JPEG');
+    console.log(`encoder: ${browser ? 'browser (software), bitrate ' + bitrate : 'jpeg'}`);
     const vtmp = OUT.replace(/.mp4$/, '.video-' + process.pid + '.mp4');
-    const enc = spawn(FFMPEG, ['-y', '-v', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-', '-c:v', 'libx264', '-crf', CRF, '-preset', PRESET, '-pix_fmt', 'yuv420p', vtmp], { stdio: ['pipe', 'ignore', 'inherit'] }); let encDone = new Promise((res) => enc.on('close', res));
-    const detach = onCleanup(() => { enc.stdin.destroy(); enc.kill(); });
+    const enc = spawn(FFMPEG, videoArgs({ browser, fps: FPS, crf: CRF, preset: PRESET, out: vtmp }), { stdio: ['pipe', 'ignore', 'inherit'] });
+    let encError = null; enc.on('error', (e) => { encError = e; }); enc.stdin.on('error', (e) => { encError = e; });
+    const encDone = new Promise((res) => enc.on('close', res));
+    const write = async (buf) => {
+      if (encError) throw encError;
+      if (!enc.stdin.write(buf)) await new Promise((res, rej) => {
+        const done = () => { enc.stdin.off('error', fail); res(); }, fail = (e) => { enc.stdin.off('drain', done); rej(e); };
+        enc.stdin.once('drain', done); enc.stdin.once('error', fail);
+      });
+    };
+    const detachEncoder = onCleanup(() => { enc.stdin.destroy(); enc.kill(); });
     const total = Math.round((TO - FROM) * FPS), t0 = Date.now(); progress();
-    for (let i = 0; i < total; i++) {
-      const buf = png(await evalJs(`window.__frame(${(FROM + i / FPS).toFixed(5)}, ${BLUR}, ${SHUT}, 'jpg')`)); if (!enc.stdin.write(buf)) await new Promise((res) => enc.stdin.once('drain', res));
-      progress(); if (i % 60 === 0) console.log(`frame ${i}/${total}  ${((Date.now() - t0) / 1000).toFixed(0)} s`);
+    try {
+      for (let i = 0; i < total; i++) {
+        const t = (FROM + i / FPS).toFixed(5);
+        if (browser) {
+          await evalJs(`window.__video.step(${i}, ${t})`);
+          if (i % 15 === 14) await write(Buffer.from(await evalJs('window.__video.drain()'), 'base64'));
+        } else await write(png(await evalJs(`window.__frame(${t}, ${BLUR}, ${SHUT}, 'jpg')`)));
+        progress();
+        if (i % 60 === 0) console.log(`frame ${i}/${total}  ${((Date.now() - t0) / 1000).toFixed(0)} s`);
+      }
+      if (browser) {
+        const count = await evalJs('window.__video.finish()');
+        if (count !== total) throw new Error(`encoder returned ${count}/${total} frames`);
+        await write(Buffer.from(await evalJs('window.__video.drain()'), 'base64'));
+      }
+      enc.stdin.end(); const code = await encDone;
+      if (encError) throw encError;
+      if (code !== 0) throw new Error('ffmpeg video encoder failed: ' + code);
+    } catch (e) {
+      enc.stdin.destroy(); enc.kill(); await encDone; rmSync(vtmp, { force: true }); throw e;
     }
-    enc.stdin.end(); await encDone; detach(); stopWatchdog(); console.log('audio...');
+    detachEncoder(); stopWatchdog();
+    console.log(`video: ${total} frames, ${((Date.now() - t0) / total).toFixed(2)} ms/frame`); console.log('audio...');
     const wav = path.join(path.dirname(OUT), '.audio-' + process.pid + '.wav'); writeFileSync(wav, Buffer.from(await evalJs('window.__audioWav()'), 'base64'));
     // loudnorm a -16 LUFS: suena parejo en el telefono y en el escritorio
     const r = spawnSync(FFMPEG, ['-y', '-i', vtmp, '-ss', String(FROM), '-t', String(TO - FROM), '-i', wav, '-af', loudAf(wav), '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', OUT], { encoding: 'utf8' });

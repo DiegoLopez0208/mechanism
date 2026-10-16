@@ -10,13 +10,17 @@ permissions:
 jobs:
   gate:
     runs-on: ubuntu-latest
+    env:
+      BROWSER_SOFTWARE: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - name: Tests (the evidence gate, and the DEFLATE / RAR5 models against zlib)
-        run: node --test tests/gate.test.mjs tests/kit.test.mjs
+        run: node --test tests/gate.test.mjs tests/kit.test.mjs tests/encoding.test.mjs tests/browser.test.mjs tests/media-server.test.mjs
+      - name: Render, colour tags, audio streams and encoder fallback
+        run: node --test tests/render.test.mjs
       - name: Every shipped example passes its own gate
         shell: bash      # pipefail: a failing gate must not be hidden by tail
         run: |
