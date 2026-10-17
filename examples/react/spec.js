@@ -119,6 +119,8 @@
       calc: { vars },
       drive: { modes },
     },
+    // what the Workflow presentation draws: the same two trees the model compared and the nodes it says change (nothing typed here, all from the model above)
+    workflowScene: { kind: 'reconcile', before: tree(0), after: tree(1), updated: DIFF.updated },
     director: { outro: { url: 'github.com/DiegoLopez0208/mechanism', line: 'a skill for Claude Code and other coding agents' },  cold: { dur: 8, question: 'You click a button and a number changes. What does React do to the page?' }, what: 'A React component, its code on top. When you click, React builds a new description of the page, compares it with the old one, and touches only the DOM nodes that differ. Green: left alone. Gold: changed. Checked against the real React 18.3.1.', legend: [{ color: '#7ed321', text: 'left alone' }, { color: '#e3b341', text: 'changed' }, { color: '#d98a4a', text: 'the update' }], views: { iso: { yaw: -12, pitch: 24 }, front: { yaw: 0, pitch: 10 }, side: { yaw: 16, pitch: 20 }, three: { yaw: -6, pitch: 28 } }, modeDur: 3.4, tour: ['rb2g', 'rc2g', 'code'], short: { modes: ['unfold', 'touch', 'alone'], tour: ['rc2g', 'code'] } },
   };
 })();

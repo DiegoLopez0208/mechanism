@@ -182,7 +182,7 @@
   const PH = /\b(todo|tbd|fixme|lorem ipsum|placeholder|changeme|xxx+)\b/i, PH_URL = /^https?:\/\/(www\.)?(example\.(com|org|net)|localhost|127\.0\.0\.1|test\.com|foo\.bar)(\/|:|$)/i;
   const DIMS = ['w', 'h', 'd', 'r', 'ro', 'ri', 'm', 'len', 'length', 'width', 'height', 'depth', 'thick', 'thickness', 't', 'rad', 'radius', 'teeth', 'z', 'n'];
   const RANK = { spec: 0, measured: 1, derived: 2, estimated: 3 };
-  const SPEC_KEYS = new Set('id fig kicker title sub aspect style presentation brand stage up orient research parts mechanism director recognize'.split(' '));
+  const SPEC_KEYS = new Set('id fig kicker title sub aspect style presentation brand stage up orient research parts mechanism director recognize workflowScene paperScene'.split(' '));
   const PART_KEYS = new Set('id name kind p mat at explode body orbit conf claims info params why decor decals late cutaway tour tourAt tourDim rot spin motion engine cubie role slide compress'.split(' '));
   // Confidence describes evidence for the part, not a measurement of every size.
   S.sizeEvidence = (part) => {

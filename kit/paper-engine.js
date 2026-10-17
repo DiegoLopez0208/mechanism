@@ -90,8 +90,83 @@
     }
     return fit;
   }
+  /* ---- the section scene: how a pin tumbler lock works, drawn as a technical section from the published keying table.
+   * Every number comes from spec.paperScene (the table the gate checks); this code only draws and animates it. */
+  const sg = (x, a, b) => Math.max(0, Math.min(1, (x - a) / (b - a)));
+  const label = (c, s, x, y, size, color, weight = 600, align = 'center') => { c.font = weight + ' ' + size + 'px ' + MX.SANS; c.textAlign = align; c.textBaseline = 'alphabetic'; c.fillStyle = color; c.fillText(s, x, y); };
+  const pill = (c, s, x, y, size, fill, color) => { c.font = '700 ' + size + 'px ' + MX.SANS; const w = c.measureText(s).width + size * 1.3; box(c, x - w / 2, y - size * 1.05, w, size * 1.6, fill, null, size * .8); label(c, s, x, y, size, color, 700); };
+  const inch = v => v.toFixed(3).replace(/^0/, '');
+  const sceneSteps = (scene) => {
+    const total = i => scene.depth[scene.code[i] - 1] + scene.pin[scene.code[i] - 1], base = total(0), wrongSum = scene.depth[scene.wrong[2] - 1] + scene.pin[scene.code[2] - 1];
+    return [
+      { index: 0, title: 'The lock, cut open', formula: 'A side section: the housing above, the plug below, and between them the shear line (' + inch(scene.plug) + ' in). Five spring-loaded pin stacks cross it.', value: scene.code.length + ' pin stacks', conf: 'derived' },
+      { index: 1, title: 'Without the key', formula: 'The springs push every driver pin down into the plug. The stacks cross the shear line, so the plug cannot turn.', value: 'LOCKED', conf: 'derived' },
+      { index: 2, title: 'The right key goes in', formula: 'Each cut lets a stack rise by a different amount. Key pin plus cut depth is ' + inch(base) + ' in for all five.', value: inch(base) + ' in', conf: 'derived' },
+      { index: 3, title: 'Every split on the shear line', formula: 'The gap between key pin and driver pin lands on the line within ' + inch(Math.abs(base - scene.plug)) + ' in. Nothing crosses it: the plug turns.', value: 'FREE', conf: 'derived' },
+      { index: 4, title: 'A wrong key', formula: 'One cut is three steps off (cut ' + scene.wrong[2] + ' instead of cut ' + scene.code[2] + '). That split sits ' + inch(Math.abs(wrongSum - scene.plug)) + ' in from the line and the plug stays locked.', value: 'LOCKED', conf: 'derived' },
+    ];
+  };
+  const hatch = (c, x, y, w, h, dir, gap, color) => {      // diagonal section lines inside a rectangle
+    c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip(); c.strokeStyle = color; c.lineWidth = 1.3; c.beginPath();
+    for (let o = -h; o < w + h; o += gap) { c.moveTo(x + o, dir > 0 ? y + h : y); c.lineTo(x + o + h * dir, dir > 0 ? y : y + h); } c.stroke(); c.restore();
+  };
+  function section(c, a, k) {
+    const { scene, T, W, H, FS } = k, IN = scene.inch, cx = i => (scene.first + i * scene.pitch) * IN, S = scene.plug * IN, N = scene.code.length, tall = H >= 1600;
+    const idx = a.intro ? -1 : a.closing ? 3 : a.index, p = a.closing || a.intro ? 1 : a.progress, ink = T.ink, AMBER = T.dark ? '#f2c14e' : '#b45f06', ON = T.dark ? '#14191f' : '#ffffff';
+    const kk = Math.min((W - 140) / 40, H * (tall ? .39 : .4) / 31), left = (W - 40 * kk) / 2, top = H * .17, X = x => left + (x + 3) * kk, Y = y => top + (scene.cap + 4.5 - y) * kk;
+    const OUT = -scene.tip - 4, drawn = a.intro ? sg(a.t, 0, 1.6) : 1;
+    let dx = OUT, code = scene.code;      // which key is in and how far (key shoulder at dx, in mm)
+    if (idx === 2) dx = OUT * (1 - smooth(sg(p, .06, .94)));
+    else if (idx === 3) dx = 0;
+    else if (idx === 4) { if (p < .22) dx = OUT * smooth(p / .22); else { code = scene.wrong; dx = OUT * (1 - smooth(sg(p, .22, .78))); } }
+    const prof = scene.profile(code), lift = i => { const xk = cx(i) - dx; return xk < 0 || xk >= scene.tip ? 0 : prof(xk); };
+    const pinH = i => scene.pin[scene.code[i] - 1] * IN, split = i => lift(i) + pinH(i), drv = scene.driver;
+    c.save(); c.beginPath(); c.rect(X(-3) - 6, Y(scene.cap + 4.5) - 4, 40 * kk + 12, (scene.cap + 4.5 + 2.4) * kk); c.clip();
+    // housing and plug in section: hatched walls between the chambers, a cap above, a base below
+    const wall = (a0, a1, y0, y1, dir, col) => { const x0 = X(a0), w = X(a1) - x0, yy = Y(y1), h = Y(y0) - Y(y1); c.save(); c.globalAlpha = drawn; hatch(c, x0, yy, w, h, dir, 11, MX.rgba(col, .5)); c.strokeStyle = ink; c.lineWidth = 2.4; c.strokeRect(x0, yy, w, h); c.restore(); };
+    for (let q = 0; q <= N; q++) { const a0 = q === 0 ? -3 : cx(q - 1) + scene.chamber / 2, a1 = q === N ? 37 : cx(q) - scene.chamber / 2; wall(a0, a1, S, scene.cap, 1, T.mute); wall(a0, a1, scene.keyway, S, -1, T.teal); }
+    wall(-3, 37, scene.cap, scene.cap + 3, 1, T.mute); wall(-3, 37, -1.6, 0, -1, T.teal);
+    c.save(); c.globalAlpha = drawn; c.strokeStyle = T.teal; c.lineWidth = 2.6; c.setLineDash([14, 8]); c.beginPath(); c.moveTo(X(-3), Y(S)); c.lineTo(X(37), Y(S)); c.stroke(); c.restore();      // the shear line
+    // pin stacks: key pin, driver pin and the spring above them
+    for (let i = 0; i < N; i++) {
+      const s = split(i), x = X(cx(i)), w = scene.pinR * 2 * kk, show = drawn * (a.intro ? sg(a.t, .7 + i * .12, 1.2 + i * .12) : 1);
+      c.save(); c.globalAlpha = show;
+      const kb = Y(lift(i)), ks = Y(s), dt = Y(s + drv), cap = Y(scene.cap);
+      c.beginPath(); c.roundRect(x - w / 2, ks, w, kb - ks, 4); c.fillStyle = MX.rgba(T.teal, .22); c.fill(); c.strokeStyle = ink; c.lineWidth = 2.2; c.stroke();
+      c.beginPath(); c.roundRect(x - w / 2, dt, w, ks - dt, 4); c.fillStyle = T.plate; c.fill(); c.strokeStyle = ink; c.lineWidth = 2.2; c.stroke();
+      c.beginPath(); const coils = 9, sw = w * .45; c.moveTo(x, dt); for (let q = 1; q <= coils; q++) c.lineTo(x + (q % 2 ? sw : -sw), dt + (cap - dt) * q / (coils + 1)); c.lineTo(x, cap); c.strokeStyle = MX.rgba(ink, .75); c.lineWidth = 1.8; c.stroke();
+      c.restore();
+      if (idx >= 1 && show > .9) {      // where the split of each stack is: on the line (check) or a pin crosses it (warning)
+        const onLine = Math.abs(s - S) < .12, across = (s < S - .12 && s + drv > S) || (s > S + .12 && lift(i) < S);
+        if (onLine || across) { c.beginPath(); c.arc(x, Y(S), 12, 0, Math.PI * 2); c.fillStyle = onLine ? T.teal : AMBER; c.fill();
+          if (onLine) { c.beginPath(); c.moveTo(x - 5, Y(S)); c.lineTo(x - 1, Y(S) + 4); c.lineTo(x + 6, Y(S) - 5); c.strokeStyle = ON; c.lineWidth = 3; c.lineCap = 'round'; c.lineJoin = 'round'; c.stroke(); } else label(c, '!', x, Y(S) + 7, 19, ON, 800); }
+      }
+    }
+    // the key: a real profile polygon with the V cuts, sliding in from the left
+    if (dx > OUT + .2) { c.save(); c.beginPath(); c.moveTo(X(dx), Y(0)); c.lineTo(X(scene.tip + dx), Y(0)); for (let xk = scene.tip; xk >= 0; xk -= .1) c.lineTo(X(xk + dx), Y(prof(xk))); c.lineTo(X(dx), Y(prof(0))); c.closePath();
+      c.fillStyle = T.plate; c.fill(); c.strokeStyle = ink; c.lineWidth = 2.6; c.lineJoin = 'round'; c.stroke(); c.restore(); }
+    c.restore();
+    // drafting callouts, one by one in the first stage
+    const reveal = n => idx > 0 ? 1 : idx === 0 ? sg(p, .04 + n * .13, .2 + n * .13) : 0;
+    const call = (s, tx, ty, px, py, n, side) => { const u = reveal(n); if (u <= 0) return; c.save(); c.globalAlpha = u; c.strokeStyle = T.teal; c.lineWidth = 1.6; c.beginPath(); c.moveTo(tx, ty - 8); c.lineTo(px, py); c.stroke(); c.beginPath(); c.arc(px, py, 5, 0, Math.PI * 2); c.fillStyle = T.teal; c.fill();
+      c.font = '700 ' + 21 * FS + 'px ' + MX.SANS; const w = c.measureText(s).width + 22, x0 = side === 'right' ? tx - w : tx; box(c, x0, ty - 26 * FS, w, 36 * FS, T.paper, T.plateEdge, 6); label(c, s, x0 + 11, ty - 1, 21 * FS, T.ink, 700, 'left'); c.restore(); };
+    call('HOUSING', W - 74, Y(scene.cap - 2.5), X(33), Y(scene.cap - 2.5), 0, 'right'); call('PLUG', W - 74, Y(10.6), X(33), Y(10.6), 1, 'right'); call('SHEAR LINE  ' + inch(scene.plug) + ' in', W - 74, Y(S) - 34 * kk / 23, X(35.5), Y(S), 2, 'right');
+    call('SPRING', 74, Y(scene.cap + 1.7) + 6, X(cx(0)), Y(scene.cap - 2), 3, 'left'); call('DRIVER PIN', 74, Y(15.2), X(cx(0)), Y(split(0) + drv * .62), 4, 'left'); call('KEY PIN', 74, Y(3.2), X(cx(0)), Y(lift(0) + pinH(0) * .5), 5, 'left');
+    if (idx >= 2 || a.closing) { c.save(); c.globalAlpha = idx === 2 ? sg(p, .1, .5) : 1; label(c, 'KEY', X(cx(N - 1) + 9), Y(2.4), 22 * FS, T.mute, 700, 'left'); c.restore(); }
+    // the table under the drawing: cut depth + key pin height = the same sum in every column
+    const ty = Y(-1.6) + 46 * (tall ? 1 : .8), row = 56 * FS, sumOf = i => scene.depth[code[i] - 1] + scene.pin[scene.code[i] - 1];
+    if (idx >= 2) { c.save(); c.globalAlpha = idx > 2 ? 1 : sg(p, .5, .9);
+      [['CUT', i => scene.depth[code[i] - 1]], ['PIN', i => scene.pin[scene.code[i] - 1]], ['SUM', sumOf]].forEach(([name, f], r) => { const yy = ty + r * row; label(c, name, 74, yy, 21 * FS, T.mute, 700, 'left');
+        for (let i = 0; i < N; i++) { const v = f(i), good = Math.abs(sumOf(i) - scene.plug) < .0035, changed = code[i] !== scene.code[i]; label(c, inch(v), X(cx(i)), yy, 26 * FS, r === 2 ? (good ? T.teal : AMBER) : r === 0 && changed ? AMBER : ink, r === 2 ? 800 : 600); } });
+      label(c, 'in  ·  plug ' + inch(scene.plug) + ' in, within ' + inch(.003), W - 74, ty + 2 * row, 20 * FS, T.mute, 600, 'right'); c.restore(); }
+    const msg = idx === 1 ? ['PLUG BLOCKED', AMBER, sg(p, .35, .6)] : idx === 3 || a.closing ? ['PLUG FREE TO TURN', T.teal, a.closing ? 1 : sg(p, .2, .45)] : idx === 4 && p > .8 ? ['PLUG BLOCKED', AMBER, sg(p, .8, .92)] : null;
+    if (msg) { c.save(); c.globalAlpha = msg[2]; pill(c, msg[0], W / 2, top - 22, 30 * FS, msg[1], ON); c.restore(); }
+    return Y(-1.6) + (tall ? 290 : 190);      // where the caption starts: constant, so nothing jumps between stages
+  }
   E.run=({spec,validation,config,F,W,H,length})=>{
     const plan=P.plan(spec,'paper',length),T=MX.THEME,cache=meshEdges(F.parts);
+    const scene=spec.paperScene&&spec.paperScene.kind==='pin-section'?spec.paperScene:null;
+    if(scene){plan.items=sceneSteps(scene);plan.slot=(plan.end-plan.begin)/plan.items.length;}
     const pose={t:0,e:0,mech:{ang:()=>0,step:0,phase:0},view:{yaw:0,pitch:0,zoom:1}};
     F.apply(pose,false);F.st.scene.updateMatrixWorld(true);const entries=worldLines(cache),TH=g.THREE;
     const origins=F.parts.map(p=>new TH.Vector3().setFromMatrixPosition(p.group.matrixWorld));
@@ -119,7 +194,24 @@
         }
         text(c,'PAPER / TECHNICAL DRAWING',72,91,19,W-144,T.teal,700);
         text(c,spec.title,72,148,compact?36:44,W-144,T.ink,500);
-        text(c,'ORTHOGRAPHIC STUDY • NOT TO SCALE',72,204,17,W-144,T.mute);
+        if(!scene)text(c,'ORTHOGRAPHIC STUDY • NOT TO SCALE',72,204,17,W-144,T.mute);
+        if(scene){
+          text(c,'SECTION VIEW • DIMENSIONS FROM THE PUBLISHED KEYING TABLE',72,204,17,W-144,T.mute);
+          const capY=section(c,a,{scene,T,W,H,plan,FS:compact?1:1.15});
+          if(!a.closing){
+            let y=capY;
+            y+=text(c,'STEP '+String(a.index+1).padStart(2,'0')+' / '+plan.items.length,72,y,19,W-144,T.teal,700)+16;
+            y+=text(c,a.item.title,72,y,compact?32:40,W-144,T.ink,600)+14;
+            text(c,a.item.formula,72,y,compact?22:26,W-144,T.mute);
+          }else{
+            text(c,'DRAWING REVIEW / '+(validation.verdict?.state||'NOTHING CHECKED'),72,capY+20,compact?28:36,W-144,T.ink,700);
+            text(c,(validation.verdict?.estimated||0)+' estimated claims • the pin diameter and driver length are estimates',72,capY+75,22,W-144,T.mute);
+          }
+          line(c,[45,H-110],[W-45,H-110],T.plateEdge,1.5);line(c,[W*.58,H-110],[W*.58,H-45],T.plateEdge,1);
+          text(c,String(spec.fig||spec.id).toUpperCase()+' / '+config.background.toUpperCase(),72,H-72,17,W*.5,T.ink,600);
+          text(c,'SHEET '+String(a.index+1).padStart(2,'0')+' / '+String(plan.items.length).padStart(2,'0'),W*.60,H-72,17,W*.32,T.mute);
+          c.restore();return;
+        }
         const main={x:100,y:255,w:W-200,h:H*(compact?.25:.30)};
         for(let x=100;x<=W-100;x+=50)line(c,[x,main.y],[x,main.y+main.h],MX.rgba(T.ink,.035),1);
         for(let y=main.y;y<=main.y+main.h;y+=50)line(c,[100,y],[W-100,y],MX.rgba(T.ink,.035),1);
