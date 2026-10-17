@@ -210,7 +210,7 @@
   let backCache = null;
   function backdrop(c, T, W, H) {
     const k = W + "x" + H + "/" + T.paper + "/" + (MX.SS || 1);
-    if (!backCache || backCache.k !== k) { const SS = MX.SS || 1, cv = document.createElement("canvas"); cv.width = W * SS; cv.height = H * SS; const x = cv.getContext("2d"); x.scale(SS, SS); paintBackdrop(x, T, W, H); backCache = { k, cv }; }
+    if (!backCache || backCache.k !== k) { const SS = MX.SS || 1, cv = document.createElement("canvas"); cv.width = W * SS; cv.height = H * SS; const x = cv.getContext("2d", { willReadFrequently: true }); x.scale(SS, SS); paintBackdrop(x, T, W, H); backCache = { k, cv }; }
     c.drawImage(backCache.cv, 0, 0, W, H);
   }
   function paintBackdrop(c, T, W, H) {
