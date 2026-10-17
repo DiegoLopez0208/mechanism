@@ -252,7 +252,7 @@
     modes.forEach((m, k) => { if (!mD[k]) return; const t = mS[k]; keys.push([t + 0.5, Object.assign({}, k % 2 ? cyc[k % 4] : cyc[(k + 1) % 4]), [0.45, 0, 0.2, 1]]); keys.push([t + mD[k] - 0.2, Object.assign({}, cyc[(k + 2) % 4], { yaw: cyc[(k + 2) % 4].yaw + 8 })]); });
     keys.push([tE0 + ED, VW.expl, [0.4, 0, 0.15, 1]]);
     const YP = dir.tourAngles || [[-38, 20], [-20, 12], [-58, 26], [-30, 8], [-48, 30]];      // director.tourAngles: [[yaw, pitch], ...] for objects whose natural view is not the default one
-    tourIds.forEach((id, j) => { const ts = tT0 + j * TD, [y, p] = YP[j % YP.length]; keys.push([ts + 0.3, shot(id, { yaw: y, pitch: p }), [0.5, 0, 0.15, 1]]); keys.push([ts + TD - 0.1, shot(id, { yaw: y + 9, pitch: p - 3, dof: 0.8 }), [0.2, 0, 0.8, 1]]); });
+    tourIds.forEach((id, j) => { const ts = tT0 + j * TD, [y, p] = YP[j % YP.length]; keys.push([ts + 0.3, shot(id, { yaw: y, pitch: p }), E.settle]); keys.push([ts + TD - 0.1, shot(id, { yaw: y + 9, pitch: p - 3, dof: 0.8 }), [0.2, 0, 0.8, 1]]); });
     keys.push([tR0 + RD, Object.assign({}, VW.iso, { zoom: VW.iso.zoom * 0.88 }), [0.4, 0, 0.2, 1]], [DUR, Object.assign({}, VW.iso, { zoom: VW.iso.zoom * 0.8, yaw: -26 })]);
     keys.sort((a, b) => a[0] - b[0]);
     for (let i = 1; i < keys.length; i++) if (keys[i][0] <= keys[i - 1][0]) keys[i][0] = keys[i - 1][0] + 0.01;

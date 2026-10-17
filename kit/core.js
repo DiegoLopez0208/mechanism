@@ -26,6 +26,8 @@
   MX.E.outElastic = (t) => { t = clamp(t, 0, 1); return t === 0 || t === 1 ? t : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * (2 * Math.PI / 3)) + 1; };
   MX.E.outExpo = (t) => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * clamp(t, 0, 1)));
   MX.E.ioExpo = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t < 0.5 ? Math.pow(2, 20 * t - 10) / 2 : (2 - Math.pow(2, -20 * t + 10)) / 2);
+  // camera arrival that settles like a damped spring (ratio .8: one small overshoot, no bounce) and lands exactly on 1; u is the 0..1 share of the move
+  MX.E.settle = (u) => { u = clamp(u, 0, 1); if (u >= 1) return 1; const w = 2 * Math.PI * 1.15, z = 0.8, wd = w * Math.sqrt(1 - z * z), s = 3.2 * u, sp = 1 - Math.exp(-z * w * s) * (Math.cos(wd * s) + z / Math.sqrt(1 - z * z) * Math.sin(wd * s)), end = 1 - Math.exp(-z * w * 3.2) * (Math.cos(wd * 3.2) + z / Math.sqrt(1 - z * z) * Math.sin(wd * 3.2)); return sp + (1 - end) * u * u * u; };
   MX.E.smooth = MX.E.bezier(0.45, 0, 0.2, 1);                         // arranque suave, frenado largo
   MX.E.snap = MX.E.bezier(0.7, 0, 0.15, 1);                           // corte de camara: arranque brusco, frenado seco
   // resorte subamortiguado: 0 -> 1 con rebote. f = frecuencia (Hz), z = amortiguamiento (0.2 rebota mucho, 0.7 casi nada)
