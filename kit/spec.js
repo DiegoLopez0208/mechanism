@@ -68,7 +68,7 @@
     /* ---------------------------------------------------------- figura y piezas */
     let beforeHook = null;
     const vectorOnly = presentation?.enabled && presentation.method === 'paper';
-    const F = MX.figure({ beforeRender: (s) => { if (beforeHook) beforeHook(s); }, w: W, h: H, axes: 'three', fps: FPS, stage: Object.assign({ shadow: 0.14, floorY: spec.up === 'z' ? -0.3 : -70 }, presentation?.enabled ? { renderScale: 1.5 } : {}, spec.stage || {}, { vectorOnly }),
+    const F = MX.figure({ beforeRender: (s) => { if (beforeHook) beforeHook(s); }, w: W, h: H, axes: 'three', fps: FPS, stage: Object.assign({ shadow: 0.14, floorY: spec.up === 'z' ? -0.3 : -70 }, presentation?.enabled ? { renderScale: 1.5 } : {}, spec.stage || {}, (() => { const ss = Number(new URLSearchParams(location.search).get('ss') || 1); return ss > 1 ? { renderScale: Math.min(2, ss) } : {}; })(), { vectorOnly }),
       card: (s) => ({ fig: spec.fig || 'Fig 1', kicker: spec.kicker, title: spec.title, sub: s.sub || spec.sub, hint: s.hint || '', readout: s.readout || (F.parts.length + ' parts'), blocks: [['parts', F.parts.length], ['spec', claimsOf('spec'), T.teal], ['derived', claimsOf('derived')], ['estimated', claimsOf('estimated'), T.ember]] }) });
     const st = F.st, H2 = F.hud, byBodyPhi = an.phi || {};
     // Enigma: el cableado que se dibuja en cada rotor sale de la MISMA tabla que usa la simulacion

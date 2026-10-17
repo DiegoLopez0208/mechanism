@@ -150,9 +150,14 @@
   MX.run = (cfg) => {
     const W = cfg.w, H = cfg.h, FPS = cfg.fps || 30, DUR = cfg.duration;
     const cv = document.getElementById('c') || Object.assign(document.body.appendChild(document.createElement('canvas')), { id: 'c' });
-    cv.width = W; cv.height = H; const ctx = cv.getContext('2d', cfg.contextOptions || {}); MX.ctx = ctx;
+    cv.width = W; cv.height = H; const octx = cv.getContext('2d', cfg.contextOptions || {});
+    // supersampling: the scene is drawn on a canvas SS times larger (same W x H coordinates through the transform) and reduced
+    // to the output with high-quality smoothing, so text and thin lines come out anti-aliased like a 2x render
+    const SS = MX.SS = Math.max(1, Math.min(3, Math.round(Number(cfg.ss || new URLSearchParams(location.search).get('ss') || 1)) || 1));
+    const hi = SS > 1 ? Object.assign(document.createElement('canvas'), { width: W * SS, height: H * SS }) : cv, ctx = SS > 1 ? hi.getContext('2d', { alpha: false }) : octx; MX.ctx = ctx;
     const acc = document.createElement('canvas'); acc.width = W; acc.height = H; const actx = acc.getContext('2d');
-    const paint = (t) => { MX.ctx = ctx; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.filter = 'none'; cfg.draw(ctx, clamp(t, 0, DUR - 1e-6)); };
+    const present = () => { if (SS === 1) return; octx.setTransform(1, 0, 0, 1, 0, 0); octx.globalAlpha = 1; octx.filter = 'none'; octx.imageSmoothingEnabled = true; octx.imageSmoothingQuality = 'high'; octx.drawImage(hi, 0, 0, W, H); };
+    const paint = (t) => { MX.ctx = ctx; ctx.setTransform(SS, 0, 0, SS, 0, 0); ctx.globalAlpha = 1; ctx.filter = 'none'; cfg.draw(ctx, clamp(t, 0, DUR - 1e-6)); present(); };
     // motion blur: promedio de n subtiempos dentro de un obturador (fraccion del intervalo de frame)
     const frame = (t, n = 1, shutter = 0.5) => {
       if (cfg.blurAt) n = Math.min(n, cfg.blurAt(t));      // adaptativo: sin movimiento no hace falta desenfoque, y cada subframe cuesta un render
@@ -161,7 +166,7 @@
         paint(t + (i / (n - 1) - 0.5) * shutter / FPS);
         if (i === 0) { actx.globalAlpha = 1; actx.clearRect(0, 0, W, H); actx.drawImage(cv, 0, 0); } else { actx.globalAlpha = 1 / (i + 1); actx.drawImage(cv, 0, 0); }
       }
-      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.drawImage(acc, 0, 0);
+      octx.setTransform(1, 0, 0, 1, 0, 0); octx.globalAlpha = 1; octx.drawImage(acc, 0, 0);
     };
     g.__paint = (t, n, shutter) => { frame(t, n, shutter); return cv; };      // the frame on the canvas with no encoding: for an encoder that takes the canvas itself (WebCodecs)
     g.__frame = (t, n, shutter, fmt) => { frame(t, n, shutter); return fmt === 'jpg' ? cv.toDataURL('image/jpeg', 0.97) : cv.toDataURL('image/png'); };

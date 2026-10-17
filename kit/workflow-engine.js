@@ -105,17 +105,22 @@
   }
   const NODE_COLORS = (T, AMBER) => ({ plain: [T.plate, T.plateEdge], kept: [MX.rgba(T.teal, .2), T.teal], changed: [MX.rgba(AMBER, .3), AMBER], scan: [MX.rgba(T.teal, .45), T.teal] });
   function drawNode(c, n, mode, scale, T, AMBER, extra, FS) {
-    if (scale <= 0) return; const [fill, edge] = NODE_COLORS(T, AMBER)[mode], w = n.w * scale, h = n.h * scale;
-    c.save(); c.globalAlpha = clamp(scale * 1.6); box(c, n.x - w / 2, n.y - h / 2, w, h, fill, edge, 10 * scale); c.lineWidth = 3; c.strokeStyle = edge; c.beginPath(); c.roundRect(n.x - w / 2, n.y - h / 2, w, h, 10 * scale); c.stroke();
+    if (scale <= 0) return; const [fill, edge] = NODE_COLORS(T, AMBER)[mode], w = n.w * scale, h = n.h * scale, hot = mode !== 'plain';
+    c.save(); c.globalAlpha = clamp(scale * 1.6);
+    const gr = c.createLinearGradient(0, n.y - h / 2, 0, n.y + h / 2); gr.addColorStop(0, MX.mix(T.plate, T.ink, .12)); gr.addColorStop(1, T.plate);
+    c.beginPath(); c.roundRect(n.x - w / 2, n.y - h / 2, w, h, 12 * scale);
+    c.shadowColor = hot ? MX.rgba(edge, .6) : 'rgba(0,0,0,.42)'; c.shadowBlur = hot ? 22 : 12; c.shadowOffsetY = hot ? 0 : 7; c.fillStyle = gr; c.fill();
+    c.shadowColor = 'transparent'; if (hot) { c.fillStyle = fill; c.fill(); }
+    c.lineWidth = hot ? 3 : 1.5; c.strokeStyle = hot ? edge : MX.rgba(T.ink, .18); c.stroke();
     label(c, n.type, n.x, n.y + h * .2, Math.max(8, h * .52), T.ink, 700);
     if (extra) label(c, extra, n.x, n.y + h / 2 + 30 * FS, 22 * FS, edge, 600);
     c.restore();
   }
   function edges(c, nodes, shown, T) {      // links from each parent to its children
     nodes.forEach(n => { if (n.parent < 0) return; const p = nodes[n.parent], s = Math.min(shown(n.i), shown(p.i)); if (s <= 0) return;
-      c.strokeStyle = MX.rgba(T.mute, .7 * s); c.lineWidth = 3; c.beginPath();
+      c.strokeStyle = MX.rgba(T.mute, .55 * s); c.lineWidth = 2.5; c.lineCap = 'round'; c.beginPath();
       if (n.depth === 2) { const prev = p.kids[0] === n.i ? p : nodes[p.kids[p.kids.indexOf(n.i) - 1]]; c.moveTo(p.x, prev.y + prev.h / 2); c.lineTo(p.x, n.y - n.h / 2); }
-      else { const my = (p.y + n.y) / 2; c.moveTo(p.x, p.y + p.h / 2); c.lineTo(p.x, my); c.lineTo(n.x, my); c.lineTo(n.x, n.y - n.h / 2); }
+      else { const y0 = p.y + p.h / 2, y1 = n.y - n.h / 2, my = (y0 + y1) / 2; c.moveTo(p.x, y0); c.bezierCurveTo(p.x, my, n.x, my, n.x, y1); }
       c.stroke(); });
   }
   function cursor(c, x, y, s, T) {
@@ -125,7 +130,7 @@
   // one camera transform around the scene: each stage pushes toward what it is about, zoom in log space, settled by a spring
   function camera(c, a, k) {
     const { W, H } = k, idx = a.intro ? -1 : a.closing ? 4 : a.index, tall = H >= 1600, rowY = H * (tall ? .475 : .465);
-    const key = i => i === 0 ? [1.06, W * .4, H * .2] : i === 1 ? [1.04, W * .5, H * .42] : i === 2 ? [1.07, W * .5, rowY + 30] : i === 3 ? [1.05, W * .6, H * .3] : [1, W / 2, H / 2];
+    const key = i => i === 0 ? [1.06, W * .4, H * .2] : i === 1 ? [1.03, W * .5, H * .42] : i === 2 ? [1.02, W * .5, rowY + 30] : i === 3 ? [1.05, W * .6, H * .3] : [1, W / 2, H / 2];
     const from = key(idx - 1), to = key(idx), el = a.intro ? 0 : (a.closing ? a.t - k.plan.end : a.progress * k.plan.slot), u = a.intro ? 1 : Math.min(1.08, P.motion.spring(el, 1.1, .85));
     const z = P.motion.zoom(from[0], to[0], u) + (a.intro ? 0 : .012 * Math.sin(a.t * .9)), fx = from[1] + (to[1] - from[1]) * u, fy = from[2] + (to[2] - from[2]) * u;
     c.translate(fx, fy); c.scale(z, z); c.translate(-fx, -fy);
@@ -138,19 +143,24 @@
     // ---- the page: a small browser window with the real elements
     const win = { x: 70, y: H * .118, w: W - 140, h: H * (tall ? .262 : .27) }, bar = 54 * K + 8;
     c.save(); c.globalAlpha = smooth(a.t / .9);
-    box(c, win.x, win.y, win.w, win.h, T.plate, T.plateEdge, 18); box(c, win.x, win.y, win.w, bar, MX.mix(T.plate, T.ink, .08), null, 18);
-    [0, 1, 2].forEach(j => { c.beginPath(); c.arc(win.x + 34 + j * 28, win.y + bar / 2, 8, 0, Math.PI * 2); c.fillStyle = T.plateEdge; c.fill(); });
+    c.save(); c.shadowColor = 'rgba(0,0,0,.5)'; c.shadowBlur = 40; c.shadowOffsetY = 22; box(c, win.x, win.y, win.w, win.h, T.plate, null, 22); c.restore();
+    box(c, win.x, win.y, win.w, win.h, T.plate, MX.rgba(T.ink, .14), 22); box(c, win.x, win.y, win.w, bar, MX.mix(T.plate, T.ink, .07), null, 22); c.fillStyle = MX.mix(T.plate, T.ink, .07); c.fillRect(win.x, win.y + bar - 22, win.w, 22);
+    line(c, [win.x, win.y + bar], [win.x + win.w, win.y + bar], MX.rgba(T.ink, .1), 1.5);
+    ['#ff5f57', '#febc2e', '#28c840'].forEach((col, j) => { c.beginPath(); c.arc(win.x + 34 + j * 28, win.y + bar / 2, 8, 0, Math.PI * 2); c.fillStyle = MX.rgba(col, .85); c.fill(); });
     label(c, 'THE PAGE  ·  real DOM nodes', win.x + 120, win.y + bar / 2 + 8, 22 * FS, T.mute, 700, 'left');
-    const bx = win.x + 44, top = win.y + bar + 26 * K, committed = st(3) >= .55;
+    const bx = win.x + 44, top = win.y + bar + Math.max(26 * K, (win.h - bar - 250 * K) / 2), committed = st(3) >= .55;
     const el = [{ x: win.x + 24, y: win.y + bar + 8, w: win.w - 48, h: win.h - bar - 24 }, { x: bx, y: top, w: 320 * K, h: 70 * K }, { x: bx, y: top + 88 * K, w: 400 * K, h: 62 * K }, { x: bx, y: top + 168 * K, w: 150 * K, h: 70 * K }, { x: win.x + win.w - 320 * K, y: top, w: 270 * K, h: 238 * K }];
-    el.forEach((r, i) => { const t3 = i === 2 && committed; c.save(); c.setLineDash(i === 0 || i === 4 ? [10, 8] : []); c.lineWidth = t3 ? 4 : 2; c.strokeStyle = t3 ? AMBER : MX.rgba(T.mute, i === 0 ? .35 : .55);
-      if (t3) { c.fillStyle = MX.rgba(AMBER, .13); c.beginPath(); c.roundRect(r.x, r.y, r.w, r.h, 12); c.fill(); } c.beginPath(); c.roundRect(r.x, r.y, r.w, r.h, 12); c.stroke(); c.restore(); });
+    el.forEach((r, i) => { if (i === 0 || i === 3) return; const t3 = i === 2 && committed; c.save(); c.beginPath(); c.roundRect(r.x, r.y, r.w, r.h, 14);
+      c.fillStyle = t3 ? MX.rgba(AMBER, .14) : MX.rgba(T.ink, .045); c.fill(); c.lineWidth = t3 ? 4 : 1.5; c.strokeStyle = t3 ? AMBER : MX.rgba(T.ink, .1);
+      if (t3) { c.shadowColor = MX.rgba(AMBER, .55); c.shadowBlur = 30; } c.stroke(); c.restore(); });
     label(c, scene.before.children[0].text, bx + 22, top + 50 * K, 46 * FS, T.ink, 800, 'left');
     const flash = seg(st(3), .55, .8);
     label(c, committed ? pAfter : pBefore, bx + 22, top + 88 * K + 44 * K, 40 * FS, committed && flash < 1 ? AMBER : T.ink, 700, 'left');
     const pressed = st(0) > .5 && st(0) < .66, bt = el[3];
-    box(c, bt.x, bt.y + (pressed ? 4 : 0), bt.w, bt.h - (pressed ? 4 : 0), MX.rgba(T.teal, pressed ? .55 : .28), T.teal, 14);
-    label(c, scene.before.children[2].text, bt.x + bt.w / 2, bt.y + bt.h * .66, 36 * FS, T.ink, 800);
+    c.save(); c.shadowColor = MX.rgba(T.teal, pressed ? .25 : .5); c.shadowBlur = pressed ? 8 : 30; c.shadowOffsetY = pressed ? 2 : 10;
+    const bgr = c.createLinearGradient(0, bt.y, 0, bt.y + bt.h); bgr.addColorStop(0, MX.mix(T.teal, '#ffffff', .18)); bgr.addColorStop(1, MX.mix(T.teal, '#000000', .22));
+    box(c, bt.x, bt.y + (pressed ? 4 : 0), bt.w, bt.h - (pressed ? 4 : 0), bgr, null, 18); c.restore();
+    label(c, scene.before.children[2].text, bt.x + bt.w / 2, bt.y + bt.h * .66 + (pressed ? 2 : 0), 36 * FS, ON, 800);
     (scene.before.children[3].children || []).forEach((li, j) => { const yy = top + 56 * K + j * 70 * K; label(c, '•', el[4].x + 30, yy, 38 * FS, T.mute, 700, 'left'); label(c, li.text, el[4].x + 72, yy, 38 * FS, T.ink, 600, 'left'); });
     if (st(0) > .5 && st(0) < .9) { const u = seg(st(0), .5, .9); c.beginPath(); c.arc(bt.x + bt.w / 2, bt.y + bt.h / 2, 14 + u * 90, 0, Math.PI * 2); c.strokeStyle = MX.rgba(T.teal, .8 * (1 - u)); c.lineWidth = 5; c.stroke(); }
     if (idx === 0) {      // the cursor travels to the button, clicks and fades
@@ -181,12 +191,14 @@
       } });
     const byY = after[N - 1].y + 66 * K;
     if (idx === 2 && active < N) { const q = before[active], r = after[active], same = !changed.has(active); label(c, '<' + q.type + '> and <' + r.type + '>: ' + (same ? 'same type, same place: keep the DOM node' : 'same place, but the text differs: update it'), W / 2, byY, 26 * FS, same ? T.teal : AMBER, 700); }
-    if (idx >= 2 && (idx > 2 || st(2) > .86)) { c.save(); c.globalAlpha = idx > 2 ? 1 : seg(st(2), .86, 1); label(c, (N - changed.size) + ' kept   ·   ' + changed.size + ' changed', W / 2, byY + 44 * K, 30 * FS, T.ink, 800); c.restore(); }
+    if (idx >= 2 && (idx > 2 || st(2) > .86)) { c.save(); c.globalAlpha = idx > 2 ? 1 : seg(st(2), .86, 1); label(c, (N - changed.size) + ' kept   ·   ' + changed.size + ' changed', W / 2, byY + 8 * K, 30 * FS, T.ink, 800); c.restore(); }
     // ---- the one change that reaches the page, and the nodes that were never touched
     if (idx === 3) {
-      const pr = st(3), u = P.motion.inout(seg(pr, .06, .54)), pe = after[2], page = el[2], px = page.x + page.w * .5, path = [[pe.x, pe.y - pe.h / 2 - 8], [pe.x, sy + 20 * K], [px, sy + 20 * K], [px, page.y + page.h + 6]];
-      c.save(); c.strokeStyle = MX.rgba(AMBER, .45); c.lineWidth = 4; c.setLineDash([10, 9]); c.lineDashOffset = -a.t * 40; c.beginPath(); path.forEach((p, i) => i ? c.lineTo(...p) : c.moveTo(...p)); c.stroke(); c.restore();
-      if (u < 1) { const p = along(path, u); c.beginPath(); c.arc(p[0], p[1], 15, 0, Math.PI * 2); c.fillStyle = AMBER; c.fill(); pill(c, '"' + pAfter + '"', Math.max(150, Math.min(W - 150, p[0])), p[1] - 30, 22 * FS, T.ink, T.paper); }
+      const pr = st(3), u = P.motion.inout(seg(pr, .06, .54)), pe = after[2], page = el[2], px = page.x + page.w * .5, b0 = [pe.x, pe.y - pe.h / 2 - 8], b1 = [pe.x + 40, sy - 60 * K], b2 = [px, page.y + page.h + 190 * K], b3 = [px, page.y + page.h + 6], path = Array.from({ length: 33 }, (_, i) => { const s = i / 32, r = 1 - s; return [0, 1].map(d => r * r * r * b0[d] + 3 * r * r * s * b1[d] + 3 * r * s * s * b2[d] + s * s * s * b3[d]); });      // one arc from the changed node up to its DOM node
+      c.save(); c.strokeStyle = MX.rgba(AMBER, .4 * (1 - seg(pr, .6, .9))); c.lineWidth = 3; c.setLineDash([2, 12]); c.lineCap = "round"; c.lineDashOffset = -a.t * 40; c.beginPath(); path.forEach((p, i) => i ? c.lineTo(...p) : c.moveTo(...p)); c.stroke(); c.restore();
+      if (u < 1) { const p = along(path, u);
+        for (let q = 7; q >= 1; q--) { const tp = along(path, Math.max(0, u - q * .018)); c.beginPath(); c.arc(tp[0], tp[1], 15 * (1 - q / 9), 0, Math.PI * 2); c.fillStyle = MX.rgba(AMBER, .32 * (1 - q / 8)); c.fill(); }
+        c.save(); c.shadowColor = AMBER; c.shadowBlur = 34; c.beginPath(); c.arc(p[0], p[1], 15, 0, Math.PI * 2); c.fillStyle = AMBER; c.fill(); c.restore(); pill(c, '"' + pAfter + '"', Math.max(150, Math.min(W - 150, p[0])), p[1] - 30, 22 * FS, T.ink, T.paper); }
       else { const r = seg(pr, .54, .8); c.beginPath(); c.arc(px, page.y + page.h / 2, 20 + r * 100, 0, Math.PI * 2); c.strokeStyle = MX.rgba(AMBER, .8 * (1 - r)); c.lineWidth = 6; c.stroke(); }
     }
     if (idx >= 3 && (idx > 3 || st(3) > .75)) { c.save(); c.globalAlpha = idx > 3 ? 1 : seg(st(3), .75, 1); label(c, (N - changed.size) + ' nodes untouched', win.x + win.w - 190, win.y + win.h + 34 * K, 24 * FS, T.teal, 700); c.restore(); }
@@ -194,14 +206,28 @@
   }
 
   /* ------------------------------------------------------------------ the shared frame */
+  // the backdrop never changes inside a film: drawn once at the canvas resolution and reused on every frame
+  let backCache = null;
+  function backdrop(c, T, W, H) {
+    const k = W + "x" + H + "/" + T.paper + "/" + (MX.SS || 1);
+    if (!backCache || backCache.k !== k) { const SS = MX.SS || 1, cv = document.createElement("canvas"); cv.width = W * SS; cv.height = H * SS; const x = cv.getContext("2d"); x.scale(SS, SS); paintBackdrop(x, T, W, H); backCache = { k, cv }; }
+    c.drawImage(backCache.cv, 0, 0, W, H);
+  }
+  function paintBackdrop(c, T, W, H) {
+    const bg = c.createRadialGradient(W * .5, H * .3, 40, W * .5, H * .38, H * .9); bg.addColorStop(0, MX.mix(T.paper, T.teal, T.dark ? .1 : .05)); bg.addColorStop(1, T.paper);
+    c.fillStyle = bg; c.fillRect(0, 0, W, H);
+    c.fillStyle = MX.rgba(T.ink, T.dark ? .07 : .08); for (let y = 24; y < H; y += 36) for (let x = 24; x < W; x += 36) c.fillRect(x - 1, y - 1, 2.4, 2.4);
+    const vg = c.createRadialGradient(W / 2, H * .45, H * .3, W / 2, H * .45, H * .78); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, T.dark ? 'rgba(0,0,0,.38)' : 'rgba(70,60,40,.1)');
+    c.fillStyle = vg; c.fillRect(0, 0, W, H);
+  }
   E.run = ({ spec, validation, config, W, H, length }) => {
     const plan = P.plan(spec, 'workflow', length), T = MX.THEME, M = dims(H), scene = spec.workflowScene && spec.workflowScene.kind === 'reconcile' && plan.items.length === 5 ? spec.workflowScene : null;
     return P.mount({ plan, spec, validation, config, W, H, engine: 'workflow-canvas2d',
       diagnostics: t => { const a = P.at(plan, t); return { operation: a.index, sourceStep: a.item.index, renderer: 'canvas2d', studioFrames: 0, scene: scene ? scene.kind : 'stations' }; },
       draw(c, a) {
-        c.save(); c.fillStyle = T.paper; c.fillRect(0, 0, W, H);
+        c.save(); backdrop(c, T, W, H);
         const short = H < 1600, elapsed = a.intro ? a.t : a.closing ? a.t - plan.end : a.progress * plan.slot;      // seconds since the current stage began
-        const k = { plan, T, W, H, M, elapsed, scene, validation }, factoryBottom = scene ? (() => { c.save(); camera(c, a, k); const b = drawReact(c, a, k); c.restore(); return b; })() : drawStations(c, a, k);
+        const k = { plan, T, W, H, M, elapsed, scene, validation }, factoryBottom = scene ? (() => { c.save(); c.beginPath(); c.rect(0, 204, W, H - 204); c.clip(); camera(c, a, k); const b = drawReact(c, a, k); c.restore(); return b; })() : drawStations(c, a, k);
         const rise = smooth(elapsed / .5), M2 = P.motion;      // the caption slides up when each stage begins
         text(c, 'WORKFLOW / PROCESS LINE', 64, 66, 19, W - 128, T.teal, 700); text(c, spec.title, 64, 124, 40, W - 128, T.ink, 700);
         text(c, scene ? 'WHAT HAPPENS WHEN YOU CLICK • FROM THE SPEC AND THE MEASURED EVIDENCE' : 'ILLUSTRATIVE FLOW • OPERATIONS FROM THE SPEC', 64, 185, 17, W - 128, T.mute);

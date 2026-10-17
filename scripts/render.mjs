@@ -18,7 +18,7 @@ const opt = (k, d) => { const i = args.indexOf('--' + k); return i >= 0 ? args[i
 if (!page) { console.error('uso: node scripts/render.mjs <pagina.html> [--duration 28] [--fps 30] [--blur 4] [--out out/x.mp4] [--still t]'); process.exit(1); }
 
 const DUR_ARG = opt('duration', null), FPS = Number(opt('fps', 30)), DRAFT = args.includes('--draft'), BLUR = Number(opt('blur', DRAFT ? 1 : 4)), SHUT = Number(opt('shutter', 0.5)), CRF = opt('crf', DRAFT ? '24' : '17'), PRESET = opt('preset', DRAFT ? 'veryfast' : 'medium');
-const ENCODER = opt('encoder', 'jpeg');
+const ENCODER = opt('encoder', ['workflow', 'paper'].includes(opt('method', '')) ? 'browser' : 'jpeg');      // 2D engines paint on a CPU canvas: the in-browser H.264 path (BT.709 I420, tested) skips the JPEG round trip
 const METHOD = opt('method', ''), BACKGROUND = opt('background', '');
 if (METHOD && !['studio', 'workflow', 'paper'].includes(METHOD)) throw new Error('--method must be studio, workflow or paper');
 if (BACKGROUND && !['graphite', 'blueprint', 'porcelain', 'ivory'].includes(BACKGROUND)) throw new Error('--background must be graphite, blueprint, porcelain or ivory');
@@ -36,7 +36,7 @@ const png = (d) => Buffer.from(d.split(',')[1], 'base64');
 await withBrowser(async ({ send, ev: evalJs, progress, stopWatchdog, onCleanup }) => {
   await send('Page.enable');
   const url = new URL(pathToFileURL(path.resolve(page)));
-  for (const [key, value] of Object.entries({ render: '1', t: '0', theme: opt('style', opt('theme', '')), length: opt('length', ''), aspect: opt('aspect', ''), method: METHOD, background: BACKGROUND })) if (value !== '') url.searchParams.set(key, value);
+  for (const [key, value] of Object.entries({ render: '1', t: '0', theme: opt('style', opt('theme', '')), length: opt('length', ''), aspect: opt('aspect', ''), method: METHOD, background: BACKGROUND, ss: opt('ss', '') })) if (value !== '') url.searchParams.set(key, value);
   await send('Page.navigate', { url: url.href });
   for (let i = 0; i < 100; i++) { await sleep(150); if (await evalJs('typeof window.__frame === "function"')) break; if (i === 99) throw new Error('la pagina no expuso __frame (usa MX.run)'); }
   mkdirSync(path.dirname(OUT), { recursive: true });
@@ -51,7 +51,7 @@ await withBrowser(async ({ send, ev: evalJs, progress, stopWatchdog, onCleanup }
   if (still != null) { const f = OUT.replace(/\.mp4$/, `-still-${still}.png`); writeFileSync(f, png(await evalJs(`window.__frame(${Number(still)}, ${BLUR}, ${SHUT})`))); console.log('still:', f); }
   else {
     if (!(Number.isFinite(FROM) && Number.isFinite(TO) && FROM >= 0 && TO > FROM && TO <= DUR)) throw new Error('invalid clip interval');
-    const size = await evalJs('({ width: MX.ctx.canvas.width, height: MX.ctx.canvas.height, parts: window.SPEC?.parts?.length || 0 })');
+    const size = await evalJs('({ width: document.getElementById("c").width, height: document.getElementById("c").height, parts: window.SPEC?.parts?.length || 0 })');
     const bitrate = Number(opt('bitrate', bitrateFor({ ...size, fps: FPS, draft: DRAFT })));
     if (!(bitrate > 0 && Number.isFinite(bitrate))) throw new Error('--bitrate must be positive and finite');
     const browser = ENCODER === 'browser' && await evalJs(`(${installEncoder.toString()})(${JSON.stringify({ fps: FPS, bitrate, blur: BLUR, shutter: SHUT })})`);
