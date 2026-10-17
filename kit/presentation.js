@@ -81,6 +81,29 @@
       if (stroke) { c.strokeStyle = stroke; c.lineWidth = 1.5; c.stroke(); }
     },
   };
+  // Motion primitives shared by the engines: pure functions of time, so frames stay repeatable.
+  P.motion = {
+    // closed-form step response of a damped spring, 0 -> 1 (t in seconds, f in Hz, z = damping ratio; z >= .72 gives a tiny overshoot, never a cartoon bounce)
+    spring(t, f = 1.6, z = .78) {
+      if (t <= 0) return 0; const w = 2 * Math.PI * f, wd = w * Math.sqrt(1 - z * z), e = Math.exp(-z * w * t);
+      return 1 - e * (Math.cos(wd * t) + z / Math.sqrt(1 - z * z) * Math.sin(wd * t));
+    },
+    expo: u => u <= 0 ? 0 : u >= 1 ? 1 : 1 - Math.pow(2, -10 * u),
+    inout: u => u <= 0 ? 0 : u >= 1 ? 1 : u < .5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2,
+    // zoom is interpolated in log space so a push-in and a pull-out feel the same
+    zoom: (z0, z1, u) => Math.exp(Math.log(z0) + (Math.log(z1) - Math.log(z0)) * u),
+    // text that rises word by word out of a mask (same layout and return value as util.text)
+    rise(c, str, x, y, size, width, color, weight, t, stagger = .055, dur = .5) {
+      c.font = weight + ' ' + size + 'px ' + MX.SANS; c.fillStyle = color; c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+      const lines = P.wrap(str, width, q => c.measureText(q).width); let n = 0;
+      lines.forEach((ln, li) => {
+        const ly = y + li * size * 1.25; let px = x; c.save(); c.beginPath(); c.rect(x - 6, ly - size * 1.05, width + 12, size * 1.4); c.clip();
+        ln.split(' ').forEach(w => { const e = P.motion.expo(clamp((t - n * stagger) / dur)); n++; c.fillText(w, px, ly + (1 - e) * size * 1.15); px += c.measureText(w + ' ').width; });
+        c.restore();
+      });
+      return lines.length * size * 1.25;
+    },
+  };
   // Shared data/clock/audio contract only. Each engine owns its entire drawing.
   P.mount = ({ plan, spec, validation, config, W, H, engine, draw, shapeCheck = () => [], diagnostics = () => ({}) }) => {
     const inspect = t => P.at(plan, t);

@@ -116,9 +116,9 @@
     const kk = Math.min((W - 140) / 40, H * (tall ? .39 : .4) / 31), left = (W - 40 * kk) / 2, top = H * .17, X = x => left + (x + 3) * kk, Y = y => top + (scene.cap + 4.5 - y) * kk;
     const OUT = -scene.tip - 4, drawn = a.intro ? sg(a.t, 0, 1.6) : 1;
     let dx = OUT, code = scene.code;      // which key is in and how far (key shoulder at dx, in mm)
-    if (idx === 2) dx = OUT * (1 - smooth(sg(p, .06, .94)));
+    if (idx === 2) dx = OUT * (1 - P.motion.spring((p - .04) * k.plan.slot, .9, .8));
     else if (idx === 3) dx = 0;
-    else if (idx === 4) { if (p < .22) dx = OUT * smooth(p / .22); else { code = scene.wrong; dx = OUT * (1 - smooth(sg(p, .22, .78))); } }
+    else if (idx === 4) { if (p < .22) dx = OUT * P.motion.expo(p / .22); else { code = scene.wrong; dx = OUT * (1 - P.motion.spring((p - .22) * k.plan.slot, .9, .8)); } }
     const prof = scene.profile(code), lift = i => { const xk = cx(i) - dx; return xk < 0 || xk >= scene.tip ? 0 : prof(xk); };
     const pinH = i => scene.pin[scene.code[i] - 1] * IN, split = i => lift(i) + pinH(i), drv = scene.driver;
     c.save(); c.beginPath(); c.rect(X(-3) - 6, Y(scene.cap + 4.5) - 4, 40 * kk + 12, (scene.cap + 4.5 + 2.4) * kk); c.clip();
@@ -197,15 +197,19 @@
         if(!scene)text(c,'ORTHOGRAPHIC STUDY • NOT TO SCALE',72,204,17,W-144,T.mute);
         if(scene){
           text(c,'SECTION VIEW • DIMENSIONS FROM THE PUBLISHED KEYING TABLE',72,204,17,W-144,T.mute);
-          const capY=section(c,a,{scene,T,W,H,plan,FS:compact?1:1.15});
+          const el=a.intro?a.t:a.closing?a.t-plan.end:a.progress*plan.slot,idx=a.intro?-1:a.closing?4:a.index,M=P.motion;
+          const key=i=>i===0?[1.03,W*.5,H*.2]:i===1?[1.04,W*.5,H*.28]:i===2?[1.07,W*.35,H*.3]:i===3?[1.09,W*.5,H*.26]:[1,W/2,H*.25];
+          const k0=key(idx-1),k1=key(idx),u=a.intro?1:Math.min(1.08,M.spring(el,1.1,.85)),z=M.zoom(k0[0],k1[0],u),fx=k0[1]+(k1[1]-k0[1])*u,fy=k0[2]+(k1[2]-k0[2])*u;
+          c.save();c.translate(fx,fy);c.scale(z,z);c.translate(-fx,-fy);
+          const capY=section(c,a,{scene,T,W,H,plan,FS:compact?1:1.15});c.restore();
           if(!a.closing){
             let y=capY;
-            y+=text(c,'STEP '+String(a.index+1).padStart(2,'0')+' / '+plan.items.length,72,y,19,W-144,T.teal,700)+16;
-            y+=text(c,a.item.title,72,y,compact?32:40,W-144,T.ink,600)+14;
-            text(c,a.item.formula,72,y,compact?22:26,W-144,T.mute);
+            y+=M.rise(c,'STEP '+String(a.index+1).padStart(2,'0')+' / '+plan.items.length,72,y,19,W-144,T.teal,700,el)+16;
+            y+=M.rise(c,a.item.title,72,y,compact?32:40,W-144,T.ink,600,el-.08)+14;
+            M.rise(c,a.item.formula,72,y,compact?22:26,W-144,T.mute,500,el-.3,.03);
           }else{
-            text(c,'DRAWING REVIEW / '+(validation.verdict?.state||'NOTHING CHECKED'),72,capY+20,compact?28:36,W-144,T.ink,700);
-            text(c,(validation.verdict?.estimated||0)+' estimated claims • the pin diameter and driver length are estimates',72,capY+75,22,W-144,T.mute);
+            M.rise(c,'DRAWING REVIEW / '+(validation.verdict?.state||'NOTHING CHECKED'),72,capY+20,compact?28:36,W-144,T.ink,700,el);
+            M.rise(c,(validation.verdict?.estimated||0)+' estimated claims • the pin diameter and driver length are estimates',72,capY+75,22,W-144,T.mute,500,el-.3,.03);
           }
           line(c,[45,H-110],[W-45,H-110],T.plateEdge,1.5);line(c,[W*.58,H-110],[W*.58,H-45],T.plateEdge,1);
           text(c,String(spec.fig||spec.id).toUpperCase()+' / '+config.background.toUpperCase(),72,H-72,17,W*.5,T.ink,600);

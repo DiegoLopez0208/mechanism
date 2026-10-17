@@ -122,8 +122,16 @@
     const pts = [[0, 0], [0, 40], [10, 31], [17, 46], [25, 42], [18, 28], [31, 28]].map(p => [x + p[0] * s, y + p[1] * s]);
     c.save(); c.lineJoin = 'round'; polygon(c, pts, T.ink, T.paper); c.lineWidth = 3; c.stroke(); c.restore();
   }
+  // one camera transform around the scene: each stage pushes toward what it is about, zoom in log space, settled by a spring
+  function camera(c, a, k) {
+    const { W, H } = k, idx = a.intro ? -1 : a.closing ? 4 : a.index, tall = H >= 1600, rowY = H * (tall ? .475 : .465);
+    const key = i => i === 0 ? [1.06, W * .4, H * .2] : i === 1 ? [1.04, W * .5, H * .42] : i === 2 ? [1.07, W * .5, rowY + 30] : i === 3 ? [1.05, W * .6, H * .3] : [1, W / 2, H / 2];
+    const from = key(idx - 1), to = key(idx), el = a.intro ? 0 : (a.closing ? a.t - k.plan.end : a.progress * k.plan.slot), u = a.intro ? 1 : Math.min(1.08, P.motion.spring(el, 1.1, .85));
+    const z = P.motion.zoom(from[0], to[0], u) + (a.intro ? 0 : .012 * Math.sin(a.t * .9)), fx = from[1] + (to[1] - from[1]) * u, fy = from[2] + (to[2] - from[2]) * u;
+    c.translate(fx, fy); c.scale(z, z); c.translate(-fx, -fy);
+  }
   function drawReact(c, a, k) {
-    const { T, W, H, scene } = k, tall = H >= 1600, K = tall ? 1 : H / 1920 * 1.12, FS = tall ? 1 : .82, AMBER = T.dark ? '#f2c14e' : '#b45f06', ON = T.dark ? '#14191f' : '#ffffff';
+    const { T, W, H, scene, plan } = k, tall = H >= 1600, K = tall ? 1 : H / 1920 * 1.12, FS = tall ? 1 : .82, AMBER = T.dark ? '#f2c14e' : '#b45f06', ON = T.dark ? '#14191f' : '#ffffff';
     const idx = a.intro ? -1 : a.closing ? 99 : a.index, st = i => idx > i ? 1 : idx === i ? a.progress : 0;      // progress of stage i: 0 before, 0..1 during, 1 after
     const rowY = H * (tall ? .475 : .465), before = layoutTree(flat(scene.before), W * .27, rowY, K), after = layoutTree(flat(scene.after), W * .73, rowY, K);
     const changed = new Set(scene.updated || []), N = before.length, introT = a.intro ? a.t : 99, pBefore = scene.before.children[1].text, pAfter = scene.after.children[1].text;
@@ -156,7 +164,7 @@
     label(c, 'state', 158, sy + 8, 24 * FS, T.mute, 700, 'right'); pill(c, flipped ? 'n = 1' : 'n = 0', 246, sy + 8, 30 * FS, hot ? T.teal : T.plate, hot ? ON : T.ink);
     if (idx === 1 || idx === 2) { c.save(); c.globalAlpha = idx === 1 ? seg(st(1), 0, .25) : 1; label(c, 'Counter() runs again: a new description of the page', 330, sy + 8, 25 * FS, T.teal, 700, 'left'); c.restore(); }
     // ---- the two trees, and the comparison that walks the eight pairs in document order
-    const shownBefore = i => a.intro ? smooth((introT - .5 - i * .16) / .4) : 1, afterT = i => idx < 1 ? 0 : idx === 1 ? smooth((st(1) - .12 - i * .075) / .16) : 1, ty = rowY - 70 * K;
+    const SP = P.motion.spring, shownBefore = i => a.intro ? SP(introT - .5 - i * .16, 2.2, .75) : 1, afterT = i => idx < 1 ? 0 : idx === 1 ? SP((st(1) * plan.slot) - .4 - i * .22, 2.2, .75) : 1, ty = rowY - 70 * K;
     label(c, 'BEFORE  ·  ' + pBefore, W * .27, ty, 25 * FS, T.mute, 700); label(c, 'AFTER  ·  ' + pAfter, W * .73, ty, 25 * FS, idx >= 1 ? T.mute : MX.rgba(T.mute, .3), 700);
     edges(c, before, shownBefore, T); edges(c, after, afterT, T);
     const walk = idx === 2 ? seg(st(2), .08, .84) * N : idx > 2 ? N : 0, active = Math.floor(walk);
@@ -176,7 +184,7 @@
     if (idx >= 2 && (idx > 2 || st(2) > .86)) { c.save(); c.globalAlpha = idx > 2 ? 1 : seg(st(2), .86, 1); label(c, (N - changed.size) + ' kept   ·   ' + changed.size + ' changed', W / 2, byY + 44 * K, 30 * FS, T.ink, 800); c.restore(); }
     // ---- the one change that reaches the page, and the nodes that were never touched
     if (idx === 3) {
-      const pr = st(3), u = smooth(seg(pr, .06, .54)), pe = after[2], page = el[2], px = page.x + page.w * .5, path = [[pe.x, pe.y - pe.h / 2 - 8], [pe.x, sy + 20 * K], [px, sy + 20 * K], [px, page.y + page.h + 6]];
+      const pr = st(3), u = P.motion.inout(seg(pr, .06, .54)), pe = after[2], page = el[2], px = page.x + page.w * .5, path = [[pe.x, pe.y - pe.h / 2 - 8], [pe.x, sy + 20 * K], [px, sy + 20 * K], [px, page.y + page.h + 6]];
       c.save(); c.strokeStyle = MX.rgba(AMBER, .45); c.lineWidth = 4; c.setLineDash([10, 9]); c.lineDashOffset = -a.t * 40; c.beginPath(); path.forEach((p, i) => i ? c.lineTo(...p) : c.moveTo(...p)); c.stroke(); c.restore();
       if (u < 1) { const p = along(path, u); c.beginPath(); c.arc(p[0], p[1], 15, 0, Math.PI * 2); c.fillStyle = AMBER; c.fill(); pill(c, '"' + pAfter + '"', Math.max(150, Math.min(W - 150, p[0])), p[1] - 30, 22 * FS, T.ink, T.paper); }
       else { const r = seg(pr, .54, .8); c.beginPath(); c.arc(px, page.y + page.h / 2, 20 + r * 100, 0, Math.PI * 2); c.strokeStyle = MX.rgba(AMBER, .8 * (1 - r)); c.lineWidth = 6; c.stroke(); }
@@ -193,16 +201,16 @@
       draw(c, a) {
         c.save(); c.fillStyle = T.paper; c.fillRect(0, 0, W, H);
         const short = H < 1600, elapsed = a.intro ? a.t : a.closing ? a.t - plan.end : a.progress * plan.slot;      // seconds since the current stage began
-        const k = { plan, T, W, H, M, elapsed, scene, validation }, factoryBottom = scene ? drawReact(c, a, k) : drawStations(c, a, k);
-        const rise = smooth(elapsed / .5), lift = (1 - rise) * 26;      // the caption slides up when each stage begins
+        const k = { plan, T, W, H, M, elapsed, scene, validation }, factoryBottom = scene ? (() => { c.save(); camera(c, a, k); const b = drawReact(c, a, k); c.restore(); return b; })() : drawStations(c, a, k);
+        const rise = smooth(elapsed / .5), M2 = P.motion;      // the caption slides up when each stage begins
         text(c, 'WORKFLOW / PROCESS LINE', 64, 66, 19, W - 128, T.teal, 700); text(c, spec.title, 64, 124, 40, W - 128, T.ink, 700);
         text(c, scene ? 'WHAT HAPPENS WHEN YOU CLICK • FROM THE SPEC AND THE MEASURED EVIDENCE' : 'ILLUSTRATIVE FLOW • OPERATIONS FROM THE SPEC', 64, 185, 17, W - 128, T.mute);
         const y0 = factoryBottom + 24; c.fillStyle = T.teal; c.fillRect(64, y0, 72 * (.4 + .6 * rise), 5);
-        c.save(); c.globalAlpha = rise; c.translate(0, lift); let y = y0 + 55;
-        y += text(c, a.closing ? 'OUTPUT / CHECK' : a.intro ? 'INPUT / START' : 'OPERATION ' + String(a.index + 1).padStart(2, '0'), 64, y, 20, W - 128, T.teal, 700) + 22;
-        y += text(c, a.closing ? (validation.verdict?.state || 'NOTHING CHECKED') : a.item.title, 64, y, short ? 34 : 52, W - 128, T.ink, 700) + 22;
-        y += text(c, a.closing ? 'The evidence verdict comes from the gate; the animation only explains it.' : a.item.formula, 64, y, short ? 24 : 32, W - 128, T.mute) + 22;
-        if (!a.closing) text(c, a.item.value || '', 64, y, short ? 32 : 46, W - 128, T.teal, 700);
+        c.save(); let y = y0 + 55;
+        y += M2.rise(c, a.closing ? 'OUTPUT / CHECK' : a.intro ? 'INPUT / START' : 'OPERATION ' + String(a.index + 1).padStart(2, '0'), 64, y, 20, W - 128, T.teal, 700, elapsed) + 22;
+        y += M2.rise(c, a.closing ? (validation.verdict?.state || 'NOTHING CHECKED') : a.item.title, 64, y, short ? 34 : 52, W - 128, T.ink, 700, elapsed - .08) + 22;
+        y += M2.rise(c, a.closing ? 'The evidence verdict comes from the gate; the animation only explains it.' : a.item.formula, 64, y, short ? 24 : 32, W - 128, T.mute, 500, elapsed - .3, .03) + 22;
+        if (!a.closing) M2.rise(c, a.item.value || '', 64, y, short ? 32 : 46, W - 128, T.teal, 700, elapsed - .7);
         else text(c, (validation.verdict?.checked || 0) + ' published comparisons • ' + (validation.verdict?.estimated || 0) + ' estimated claims', 64, y, 24, W - 128, T.ink);
         c.restore();
         const bottom = H - 80; line(c, [64, bottom], [W - 64, bottom], T.plateEdge, 4);
