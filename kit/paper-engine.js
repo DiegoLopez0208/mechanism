@@ -110,8 +110,8 @@
     c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip(); c.strokeStyle = color; c.lineWidth = 1.3; c.beginPath();
     for (let o = -h; o < w + h; o += gap) { c.moveTo(x + o, dir > 0 ? y + h : y); c.lineTo(x + o + h * dir, dir > 0 ? y : y + h); } c.stroke(); c.restore();
   };
-  const BRASS = '#d9a93f', STEEL = '#a9b4c0';
-  const cyl = (c, x, w, base) => { const g2 = c.createLinearGradient(x - w / 2, 0, x + w / 2, 0); g2.addColorStop(0, MX.mix(base, '#000000', .3)); g2.addColorStop(.38, MX.mix(base, '#ffffff', .45)); g2.addColorStop(1, MX.mix(base, '#000000', .2)); return g2; };
+  // material colour coding of a section drawing (flat fills, as on a coloured drafting sheet): no light, no shading, no shadows
+  const BRASS = '#e3bd62', STEEL = '#b9c3ce';
   function section(c, a, k) {
     const { scene, T, W, H, FS } = k, IN = scene.inch, cx = i => (scene.first + i * scene.pitch) * IN, S = scene.plug * IN, N = scene.code.length, tall = H >= 1600;
     const idx = a.intro ? -1 : a.closing ? 3 : a.index, p = a.closing || a.intro ? 1 : a.progress, ink = T.ink, AMBER = T.dark ? '#f2c14e' : '#b45f06', ON = T.dark ? '#14191f' : '#ffffff';
@@ -129,14 +129,14 @@
     for (let q = 0; q <= N; q++) { const a0 = q === 0 ? -3 : cx(q - 1) + scene.chamber / 2, a1 = q === N ? 37 : cx(q) - scene.chamber / 2; wall(a0, a1, S, scene.cap, 1, T.mute); wall(a0, a1, scene.keyway, S, -1, T.teal); }
     wall(-3, 37, scene.cap, scene.cap + 3, 1, T.mute); wall(-3, 37, -1.6, 0, -1, T.teal);
     const keyIn = dx > -.3, aligned = keyIn && Array.from({ length: N }, (_, i) => Math.abs(split(i) - S) < .12).every(Boolean), lineCol = aligned ? T.teal : keyIn ? AMBER : T.teal;
-    c.save(); c.globalAlpha = drawn; c.strokeStyle = lineCol; c.lineWidth = aligned ? 3.4 : 2.6; if (aligned) { c.shadowColor = MX.rgba(T.teal, .8); c.shadowBlur = 18; } c.setLineDash(aligned ? [] : [14, 8]); c.beginPath(); c.moveTo(X(-3), Y(S)); c.lineTo(X(37), Y(S)); c.stroke(); c.restore();      // the shear line
+    c.save(); c.globalAlpha = drawn; c.strokeStyle = lineCol; c.lineWidth = aligned ? 4.4 : 2.6; c.setLineDash(aligned ? [] : [14, 8]); c.beginPath(); c.moveTo(X(-3), Y(S)); c.lineTo(X(37), Y(S)); c.stroke(); c.restore();      // the shear line
     // pin stacks: key pin, driver pin and the spring above them
     for (let i = 0; i < N; i++) {
       const s = split(i), x = X(cx(i)), w = scene.pinR * 2 * kk, show = drawn * (a.intro ? sg(a.t, .7 + i * .12, 1.2 + i * .12) : 1);
       c.save(); c.globalAlpha = show;
       const kb = Y(lift(i)), ks = Y(s), dt = Y(s + drv), cap = Y(scene.cap);
-      c.beginPath(); c.roundRect(x - w / 2, ks, w, kb - ks, 4); c.fillStyle = cyl(c, x, w, BRASS); c.fill(); c.strokeStyle = ink; c.lineWidth = 2.2; c.stroke();
-      c.beginPath(); c.roundRect(x - w / 2, dt, w, ks - dt, 4); c.fillStyle = cyl(c, x, w, STEEL); c.fill(); c.strokeStyle = ink; c.lineWidth = 2.2; c.stroke();
+      c.beginPath(); c.roundRect(x - w / 2, ks, w, kb - ks, 4); c.fillStyle = BRASS; c.fill(); c.strokeStyle = ink; c.lineWidth = 2.2; c.stroke();
+      c.beginPath(); c.roundRect(x - w / 2, dt, w, ks - dt, 4); c.fillStyle = STEEL; c.fill(); c.strokeStyle = ink; c.lineWidth = 2.2; c.stroke();
       c.beginPath(); const coils = 9, sw = w * .45; c.moveTo(x, dt); for (let q = 1; q <= coils; q++) c.lineTo(x + (q % 2 ? sw : -sw), dt + (cap - dt) * q / (coils + 1)); c.lineTo(x, cap); c.strokeStyle = MX.mix(STEEL, ink, .55); c.lineWidth = 2.6; c.lineJoin = 'round'; c.stroke();
       c.restore();
       if (idx >= 1 && show > .9) {      // where the split of each stack is: on the line (check) or a pin crosses it (warning)
@@ -147,8 +147,7 @@
     }
     // the key: a real profile polygon with the V cuts, sliding in from the left
     if (dx > OUT + .2) { c.save(); c.beginPath(); c.moveTo(X(dx), Y(0)); c.lineTo(X(scene.tip + dx), Y(0)); for (let xk = scene.tip; xk >= 0; xk -= .1) c.lineTo(X(xk + dx), Y(prof(xk))); c.lineTo(X(dx), Y(prof(0))); c.closePath();
-      const kg = c.createLinearGradient(0, Y(scene.keyTop), 0, Y(0)); kg.addColorStop(0, MX.mix(BRASS, '#ffffff', .35)); kg.addColorStop(.55, BRASS); kg.addColorStop(1, MX.mix(BRASS, '#000000', .25));
-      c.shadowColor = 'rgba(60,40,10,.28)'; c.shadowBlur = 16; c.shadowOffsetY = 6; c.fillStyle = kg; c.fill(); c.shadowColor = 'transparent'; c.strokeStyle = ink; c.lineWidth = 2.6; c.lineJoin = 'round'; c.stroke(); c.restore(); }
+      c.fillStyle = BRASS; c.fill(); c.strokeStyle = ink; c.lineWidth = 2.6; c.lineJoin = 'round'; c.stroke(); c.restore(); }
     c.restore();
     // drafting callouts, one by one in the first stage
     const reveal = n => idx > 0 ? 1 : idx === 0 ? sg(p, .04 + n * .13, .2 + n * .13) : 0;

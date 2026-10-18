@@ -101,7 +101,8 @@ test('real renderer: all twelve combinations, stage sync, text bounds and repeat
         const data=x.getImageData(0,0,90,60).data;let sum=0,sq=0,n=0;
         for(let i=0;i<data.length;i+=4){const l=(data[i]+data[i+1]+data[i+2])/3;sum+=l;sq+=l*l;n++;}
         return {failures,residual:{changed,max,mae:total/a.length},sceneStd:Math.sqrt(sq/n-(sum/n)**2),
-          size:[MX.ctx.canvas.width,MX.ctx.canvas.height],stage:window.__stageCanvas?[__stageCanvas.width,__stageCanvas.height]:null,webgl:window.__webglCreates||0};
+          size:[MX.ctx.canvas.width,MX.ctx.canvas.height],stage:window.__stageCanvas?[__stageCanvas.width,__stageCanvas.height]:null,webgl:window.__webglCreates||0,
+          three:typeof THREE,scripts:[...document.scripts].map(s=>s.src.split('/').pop()),profile:window.MX_PROFILE};
       })()`);
       assert.deepEqual(result.failures, [], method + '/' + background + ': ' + JSON.stringify(result.failures));
       // GPU raster/composite rounding is already bounded by the existing visual
@@ -111,6 +112,9 @@ test('real renderer: all twelve combinations, stage sync, text bounds and repeat
       if(method==='studio') assert.deepEqual(result.stage, [1620, height * 1.5]);
       else {assert.equal(result.webgl,0);assert.equal(result.stage,null);assert.equal(result.residual.max,0);}
       if (method === 'workflow') {
+        // Flow runs without the 3D stack: three.js, the WebGL stage, the figure, the parts library and Paper are never loaded
+        assert.equal(result.profile, 'flow'); assert.equal(result.three, 'undefined');
+        assert.deepEqual(result.scripts.filter(s => /^(three\.bundle|gl|figure|parts|paper-engine)\.js$/.test(s)), []);
         const states = await b.ev('[5,10,15,20,23].map(t=>__presentationAt(t))');
         assert.ok(states.every((s, i) => i === 0 || s.sourceStep >= states[i - 1].sourceStep));
       }

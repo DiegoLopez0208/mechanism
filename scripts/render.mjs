@@ -18,7 +18,7 @@ const opt = (k, d) => { const i = args.indexOf('--' + k); return i >= 0 ? args[i
 if (!page) { console.error('uso: node scripts/render.mjs <pagina.html> [--duration 28] [--fps 30] [--blur 4] [--out out/x.mp4] [--still t]'); process.exit(1); }
 
 const DUR_ARG = opt('duration', null), FPS = Number(opt('fps', 30)), DRAFT = args.includes('--draft'), BLUR = Number(opt('blur', DRAFT ? 1 : 4)), SHUT = Number(opt('shutter', 0.5)), CRF = opt('crf', DRAFT ? '24' : '17'), PRESET = opt('preset', DRAFT ? 'veryfast' : 'medium');
-const ENCODER = opt('encoder', ['workflow', 'paper'].includes(opt('method', '')) ? 'browser' : 'jpeg');      // 2D engines paint on a CPU canvas: the in-browser H.264 path (BT.709 I420, tested) skips the JPEG round trip
+const ENCODER = opt('encoder', 'jpeg');      // measured 2026-10-18 (docs/perf-quality.md): JPEG+x264 gives the smaller file and the higher SSIM; browser H.264 is 1.5-1.8x faster
 const METHOD = opt('method', ''), BACKGROUND = opt('background', '');
 if (METHOD && !['studio', 'workflow', 'paper'].includes(METHOD)) throw new Error('--method must be studio, workflow or paper');
 if (BACKGROUND && !['graphite', 'blueprint', 'porcelain', 'ivory'].includes(BACKGROUND)) throw new Error('--background must be graphite, blueprint, porcelain or ivory');

@@ -120,3 +120,24 @@ All 44 Windows golden comparisons passed. All 44 Linux/SwiftShader comparisons p
 Windows `npm test`: **67/67 passed**, zero skips (115.7 seconds in the final complete run). The final cubie-dimension metadata assertion also passed in the focused gate rerun. All example gates and the registry build pass, and an unfilled generated template still fails. Linux Node 22 shared/gate/encoder/helper tests, render/export/remux/fallback checks and golden comparisons were exercised locally. Hosted GitHub Actions was not run because nothing was pushed.
 
 Task 5 was not undertaken: no coverage-improvement claim, schema migration, tsc setup or module split. No published MP4, poster or GIF was replaced. Raw benchmark JSON, ffprobe reports, frames, contact sheets and logs are retained outside git for review.
+
+## Addendum 2026-10-18: 2D encoder default, supersampling, Flow without 3D
+
+Reproduce with `node scripts/bench.mjs --out <work-dir> --cases workflow:react:graphite,paper:lock:ivory --encoders browser,jpeg --bitrates auto,3000000,1500000` (raw JSON and videos stay in `<work-dir>`; this run: `mechanism-benchmark/bench-2026-10-18/grid/`). Each cell renders the full 30 s short cut at 1080×1920, 30 fps, then `validate-render.mjs --video-dir` compares 13 sampled lossless frames with the decoded film. One pass per cell, sequential, no other render running; not a statistical benchmark. Every output probed as H.264, 900 frames, 30 fps, TV range, BT.709.
+
+| Case | Encoder | Requested | ms/frame | Wall s | File MiB | Mean SSIM | Min SSIM | Colour mean abs |
+|---|---|---|---:|---:|---:|---:|---:|---:|
+| Workflow / React | browser | auto (28.3 Mbit/s) | 39.6 | 40.1 | 15.06 | 0.99235 | 0.99130 | 0.76 |
+| Workflow / React | browser | 3 Mbit/s | 38.5 | 39.3 | 9.17 | 0.99041 | 0.98810 | 0.78 |
+| Workflow / React | browser | 1.5 Mbit/s | 37.0 | 38.4 | 5.55 | 0.98899 | 0.97880 | 0.99 |
+| Workflow / React | JPEG + x264 CRF 17 | — | 73.9 | 72.2 | 6.30 | **0.99489** | **0.99460** | 0.79 |
+| Paper / lock | browser | auto (27.6 Mbit/s) | 34.0 | 37.7 | 18.10 | 0.99841 | 0.99701 | 0.88 |
+| Paper / lock | browser | 3 Mbit/s | 31.8 | 33.7 | 6.83 | 0.99529 | 0.98980 | 1.16 |
+| Paper / lock | browser | 1.5 Mbit/s | 31.2 | 33.1 | 5.69 | 0.98736 | 0.96222 | 1.63 |
+| Paper / lock | JPEG + x264 CRF 17 | — | 52.9 | 52.4 | 6.23 | **0.99918** | **0.99775** | 0.87 |
+
+The software WebCodecs encoder undershoots its target (28 Mbit/s requested, about 4-5 Mbit/s produced) and, at any size, gives a lower SSIM than x264 at CRF 17: x264 is both smaller (6.3 vs 15-18 MiB) and closer to the lossless frames. The browser path is 1.5-1.9x faster. **Decision:** `b4a0366` had made the browser encoder the default for Workflow/Paper; that is reverted, JPEG + x264 is again the default for every method, and `--encoder browser` stays available when speed matters more than size. The Workflow JPEG time grew from about 38 ms/frame (2026-10-17, flat background) to 74 because the new backdrop gives JPEG more detail to encode; painting itself takes 1.5 ms per frame (measured in the page).
+
+Supersampling (`--ss 2`, measured 2026-10-17 on 6 s clips): +32 % per frame for Workflow, +36 % Paper, +107 % Studio, for an SSIM of 0.993 / 0.995 / 0.991 against the 1x frame. Canvas2D already anti-aliases text and lines and Studio already renders 3D at 1.5x with MSAA, so it stays opt-in.
+
+Paper cells were rendered after Paper's lit cylinders were replaced by flat material fills (its contract: no lighting); Workflow cells after the first one ran with `boot.js` skipping the 3D stack, which changes which scripts load, not the frames. The load-time saving of skipping three.js was not measured. Bench SSIM is export fidelity against the engine's own frame, not a rating of the design; audio was not listened to.

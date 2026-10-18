@@ -9,8 +9,10 @@ The first prototype reused Studio's shaded object under two new overlays. That d
 | Engine | Renderer | Scene and motion | Studio images |
 |---|---|---|---|
 | Studio | WebGL product renderer | Real object, materials, light, assembly, operation and camera shots | Native |
-| Workflow | `kit/workflow-engine.js`, CPU Canvas2D | Independent factory/process scene, operation stations, conveyors, moving data carriers and rotating mechanism symbols | Never |
-| Paper | `kit/paper-engine.js`, CPU Canvas2D vector paths | Drafting sheet, front/top/side orthographic construction views, progressive strokes, numbered details and analytical exploded translation | Never |
+| Workflow | `kit/workflow-engine.js`, CPU Canvas2D | With `workflowScene.kind: 'reconcile'`: the page, the state, the trees before/after, the node-by-node comparison and the one DOM change, all from spec data. Otherwise: operation stations and a moving carrier | Never |
+| Paper | `kit/paper-engine.js`, CPU Canvas2D vector paths | With `paperScene.kind: 'pin-section'`: a side section driven by the published table (key insertion, splits on the shear line, wrong key), flat material colour coding. Otherwise: front/top/side orthographic construction views, numbered details and analytical exploded translation | Never |
+
+Since 2026-10-18, `?method=workflow` makes `boot.js` skip three.js, `gl.js`, `figure.js`, `parts.js` and `paper-engine.js`: Flow runs without the 3D stack (asserted in `tests/presentation.test.mjs`). A method set only inside the spec is not known when scripts load, so that page still loads everything. Paper still needs three.js for its generic mesh-projection path.
 
 Workflow dispatches before any figure/mesh/stage compilation. Paper reuses parametric mesh geometry as model data through a mathematical scene adapter; it never constructs `WebGLRenderer`, lights a scene, draws materials or blits Studio's canvas. Hard edges and view-dependent silhouettes are projected once and cached; paths move analytically during the technical explosion. Paper retains the geometry-area preflight check. Camera/3D screen occupancy checks do not apply to these 2D engines.
 
