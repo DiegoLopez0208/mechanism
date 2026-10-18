@@ -31,7 +31,7 @@
   "references/checks.md": "7b92be38c3ec3837c59cadc495efb481c6fabd1dc958f7af3cc66f278bf205eb",
   "references/scenes.md": "9b677c62265c99f485be47c1912d0dce804784ce4d6b7f579a2ca16a5a702628",
   "scripts/check-spec.mjs": "dcb2e215ab7f967c24649c34c5469615cc2668b9b696da55e317e73935046238",
-  "scripts/lib/browser.mjs": "39de97d3401bdc8fb30b3eb056827e87a4e6328c44d049e26441f60150cf3de2",
+  "scripts/lib/browser.mjs": "8441b581fe5ce2fc916071084a88bbdfb0a620f2d3f418ad744dc256b20ab537",
   "scripts/lib/encoding.mjs": "bf63ccc1f3a3e579fbe45613a52bdbe53fad9b685cada72360dce5769d38422b",
   "scripts/new.mjs": "7a16495ec85ad5e056d41255305e98ffa16421e905be102ef24b6bae4ce9d0dc",
   "scripts/preflight.mjs": "85d7b6c05144fdcba14dc8199eeb5fc0824b0f40d4cebf15b6b76a7db70e08a6",

@@ -34,6 +34,9 @@ export async function startBrowser({ executable = findBrowser(), timeout = Numbe
   let ws, closed = false, timer, serial = 0, startupError, cleanupPromise;
   const pending = new Map(), disposers = new Set();
   proc.on('error', (e) => { startupError = e; });
+  // resolves when the child has exited and been reaped: on Linux a killed child stays a zombie (its pid still answers kill(pid, 0))
+  // until Node collects it, so cleanup waits for this before it reports the browser gone
+  const exited = proc.pid ? new Promise((resolve) => { if (proc.exitCode !== null || proc.signalCode !== null) resolve(); else proc.once('exit', () => resolve()); }) : Promise.resolve();
   const cleanup = () => {
     if (closed) return cleanupPromise; closed = true; clearTimeout(timer);
     process.off('exit', cleanup); process.off('SIGINT', sigint); process.off('SIGTERM', sigterm);
@@ -43,6 +46,7 @@ export async function startBrowser({ executable = findBrowser(), timeout = Numbe
     // Windows may still hold the directory until the child exit/WS close events
     // have been delivered. Yield to the event loop before retrying the deletion.
     cleanupPromise = (async () => {
+      await Promise.race([exited, sleep(5000)]);      // reaped (bounded: a child that never reports its exit does not hang cleanup)
       // Asynchronous removal lets Windows and libuv finish releasing directory
       // handles even while other browser sessions are busy rendering.
       for (let i = 0; i < 50; i++) {
