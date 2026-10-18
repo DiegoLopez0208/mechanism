@@ -64,6 +64,11 @@
     if (presentation?.enabled && presentation.method === 'workflow') {
       return MX.workflowEngine.run({ spec, validation: V, config: presentation, W, H, length: LEN });
     }
+    // Paper with a vector scene it draws natively (kit/manifest.js paperScenes): no figure, no meshes, no view set. The gate above
+    // (V) has already run on the spec data; only the mesh area check cannot run, and the page says so (__checks.geometryArea).
+    if (presentation?.enabled && presentation.method === 'paper' && (g.MX_MANIFEST ? g.MX_MANIFEST.vectorScene(spec) : !!(spec.paperScene && MX.paperEngine && Object.hasOwn(MX.paperEngine.scenes, spec.paperScene.kind)))) {
+      return MX.paperEngine.run({ spec, validation: V, config: presentation, views: null, shapeCheck: null, W, H, length: LEN });
+    }
 
     /* ---------------------------------------------------------- figura y piezas */
     let beforeHook = null;
@@ -546,6 +551,7 @@
       });
       return { t, cam: cam.position.toArray(), near: cam.near, focus: tr ? tr.id : null, parts: out };
     };
+    g.__checks = { geometryArea: { run: true } };      // the area check below runs on the compiled meshes
     g.__shapeCheck = () => parts.map((p) => { let r = 1; p.group.traverse((m) => { const u = m.isMesh && m.geometry && m.geometry.userData; if (u && u.areaRatio != null && Math.abs(u.areaRatio - 1) > Math.abs(r - 1)) r = u.areaRatio; }); return { id: p.id, ratio: r }; }).filter((q) => Math.abs(q.ratio - 1) > 0.01);      // flat shapes whose triangulated area is not their outline minus the holes (read by scripts/preflight.mjs)
     g.__specInfo = () => ({ duration: DUR, parts: parts.length, validation: V.lines, warnings: V.warnings, errors: V.errors, panels: panels.map((p) => ({ kind: p.kind, page: p.page, from: p.t0, to: p.t1 })), phases: { assembled: ASM_END, modes: tM0, explode: tE0, tour: tT0, reassemble: tR0, panels: tP0 }, shots: [{ label: 'assembled', t: ASM_END + 0.4 }].concat(modes.map((m, k) => (mD[k] ? { label: 'mode ' + (m.id || k), t: mS[k] + mD[k] * 0.62 } : null)).filter(Boolean), [{ label: 'exploded', t: tE0 + ED + 0.2 }], tourIds.map((id, j) => ({ label: 'tour ' + id, t: tT0 + j * TD + TD * 0.62 })), [{ label: 'reassembled', t: tR0 + RD - 0.2 }]) });
 

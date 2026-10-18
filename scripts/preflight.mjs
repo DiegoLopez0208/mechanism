@@ -8,6 +8,10 @@
 //   LABEL_OVERLAP        WARN  two visible texts overlap
 //   LABEL_CLIPPED        WARN  a visible text runs past the edge of the frame
 //   GEOMETRY_AREA_MISMATCH FAIL/WARN  a flat part (plate, profile) whose mesh does not cover its outline minus its holes (a hole outside the outline, a bad bridge): FAIL above 5 %, WARN above 1 %
+//   GEOMETRY_AREA_NOT_RUN  FAIL  the area check should have run and did not (it threw, or the engine gave no reason)
+//   GEOMETRY_AREA_UNREPORTED WARN the page does not say whether the area check ran (a hand-built page): nothing is counted as checked
+//   NOT RUN (not a finding) the area check does not apply to this render (no meshes are compiled: Workflow, Paper with a vector scene,
+//                  or --skip shape); listed with its reason, in JSON as notRun, and never counted as a pass
 // A WARN can be a deliberate choice (a close-up, a part that flies out): it never stops anything. FAIL is for what is wrong in every case.
 // Diagnostic only: the exit code is 0 unless you pass --strict.
 //
@@ -47,7 +51,17 @@ await withBrowser(async ({ send, ev }) => {
   if (!info) throw new Error('this page has no __specInfo() (declarative specs only)');
   if (info.errors && info.errors.length) { console.log('spec errors:\n  ' + info.errors.join('\n  ')); throw new Error('spec errors'); }
   await ev(RECORDER);
-  if (!skip.has('shape')) JSON.parse(await ev('JSON.stringify(window.__shapeCheck ? window.__shapeCheck() : [])')).forEach((q) => note(Math.abs(q.ratio - 1) > 0.05 ? 'FAIL' : 'WARN', 'GEOMETRY_AREA_MISMATCH', q.id, 0, 'the triangulated area of "' + q.id + '" is ' + Math.round(q.ratio * 100) + '% of its outline minus its holes: a hole lies outside the outline or a bridge is wrong, so the mesh has a missing or extra piece. Open a frame of it.'));
+  // the area check over compiled meshes: it runs where the page says it does (window.__checks.geometryArea); a render that compiles no
+  // meshes says it did not run and why (NOT RUN); an omission the engine does not explain, or a check that throws, is a FAIL, never a pass
+  const notRun = [];
+  if (skip.has('shape')) notRun.push({ check: 'GEOMETRY_AREA', reason: 'skipped_by_option' });
+  else {
+    const area = JSON.parse(await ev('JSON.stringify((() => { const c = window.__checks && window.__checks.geometryArea; if (!c) return { status: "unreported" }; if (!c.run) return { status: "not-run", reason: c.reason, expected: !!c.expected }; if (typeof window.__shapeCheck !== "function") return { status: "error", error: "__checks says it runs but there is no __shapeCheck" }; try { return { status: "run", rows: window.__shapeCheck() }; } catch (e) { return { status: "error", error: String((e && e.message) || e) }; } })())'));
+    if (area.status === 'run') area.rows.forEach((q) => note(Math.abs(q.ratio - 1) > 0.05 ? 'FAIL' : 'WARN', 'GEOMETRY_AREA_MISMATCH', q.id, 0, 'the triangulated area of "' + q.id + '" is ' + Math.round(q.ratio * 100) + '% of its outline minus its holes: a hole lies outside the outline or a bridge is wrong, so the mesh has a missing or extra piece. Open a frame of it.'));
+    else if (area.status === 'not-run' && area.expected) notRun.push({ check: 'GEOMETRY_AREA', reason: area.reason });
+    else if (area.status === 'unreported') note('WARN', 'GEOMETRY_AREA_UNREPORTED', 'geometry area', 0, 'the page does not say whether the area check ran (no window.__checks.geometryArea): it is not counted as checked.');
+    else note('FAIL', 'GEOMETRY_AREA_NOT_RUN', 'geometry area', 0, area.status === 'error' ? 'the area check could not run: ' + area.error : 'the area check did not run and the engine gave no reason (' + area.reason + '): an unexplained omission is not a pass.');
+  }
   const cv = JSON.parse(await ev('JSON.stringify([MX.ctx.canvas.width, MX.ctx.canvas.height])')), FW = cv[0], FH = cv[1], frame = [0, 0, FW, FH], ph = info.phases;
   let samples = 0, prevText = new Map();
   for (let t = 0; t < info.duration; t += STEP) {
@@ -74,11 +88,13 @@ await withBrowser(async ({ send, ev }) => {
     }
   }
   const rows = [...found.values()].sort((a, b) => (a.sev === b.sev ? a.first - b.first : a.sev === 'FAIL' ? -1 : 1)), fails = rows.filter((x) => x.sev === 'FAIL').length, warns = rows.length - fails;
-  if (JSON_OUT) console.log(JSON.stringify({ page, length: opt('length', 'normal'), duration: info.duration, samples, step: STEP, fail: fails, warn: warns, findings: rows.map((x) => ({ severity: x.sev, code: x.code, subject: x.subject, from: +x.first.toFixed(2), to: +x.last.toFixed(2), samples: x.n, suggestion: x.detail })) }, null, 2));
+  if (JSON_OUT) console.log(JSON.stringify({ page, length: opt('length', 'normal'), duration: info.duration, samples, step: STEP, fail: fails, warn: warns, findings: rows.map((x) => ({ severity: x.sev, code: x.code, subject: x.subject, from: +x.first.toFixed(2), to: +x.last.toFixed(2), samples: x.n, suggestion: x.detail })), notRun }, null, 2));
   else {
     console.log('VISUAL PREFLIGHT  ' + path.basename(path.dirname(path.resolve(page))) + '  (' + opt('length', 'normal') + ' cut, ' + info.duration + ' s, ' + samples + ' samples every ' + STEP + ' s)');
     for (const x of rows) console.log('\n' + x.sev + '  ' + x.code + '  ' + x.subject + '\n  t = ' + x.first.toFixed(2) + (x.last > x.first ? ' .. ' + x.last.toFixed(2) : '') + ' s  (' + x.n + ' samples)\n  ' + x.detail);
-    console.log('\n' + (fails ? 'FAILED: ' + fails + ' error(s), ' + warns + ' warning(s).' : warns ? 'PASS with ' + warns + ' warning(s): look at them, a close-up or a part that flies out can be deliberate.' : 'PASS: nothing found.'));
+    for (const x of notRun) console.log('\nNOT RUN  ' + x.check + '  ' + x.reason + (x.check === 'GEOMETRY_AREA' && x.reason !== 'skipped_by_option' ? '\n  no meshes are compiled in this render; run the Studio preflight (no --method) to check the flat parts of the model.' : ''));
+    const unchecked = notRun.length ? ' NOT RUN: ' + notRun.map((x) => x.check).join(', ') + ' (not checked, not passed).' : '';
+    console.log('\n' + (fails ? 'FAILED: ' + fails + ' error(s), ' + warns + ' warning(s).' : warns ? 'PASS with ' + warns + ' warning(s): look at them, a close-up or a part that flies out can be deliberate.' : notRun.length ? 'PASS: nothing found by the checks that ran.' : 'PASS: nothing found.') + unchecked);
   }
   process.exitCode = STRICT && fails ? 1 : 0;
 }).catch((e) => { console.error(e.message); process.exitCode = 1; });

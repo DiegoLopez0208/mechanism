@@ -107,14 +107,18 @@
     if (msg) { c.save(); c.globalAlpha = msg[2]; pill(c, msg[0], W / 2, top - 22, 30 * FS, msg[1], ON); c.restore(); }
     return Y(-1.6) + (tall ? 290 : 190);      // where the caption starts: constant, so nothing jumps between stages
   }
+  // the vector scenes Paper draws with no 3D model, by spec.paperScene.kind (kit/manifest.js paperScenes names the same kinds; tested)
+  E.scenes={'pin-section':{steps:sceneSteps,draw:section}};
+  // views: the mesh adapter's view set, or null for a spec whose vector scene needs no meshes; F: the old entry point (the figure)
   E.run=({spec,validation,config,views,shapeCheck,F,W,H,length})=>{
     if(!views&&F){views=MX.paperMesh.viewSet(F);shapeCheck=MX.paperMesh.shapeCheck(F);}
-    const plan=P.plan(spec,'paper',length),T=MX.THEME,entries=views.entries,details=views.parts;
-    const scene=spec.paperScene&&spec.paperScene.kind==='pin-section'?spec.paperScene:null;
-    if(scene){plan.items=sceneSteps(scene);plan.slot=(plan.end-plan.begin)/plan.items.length;}
+    const kind=spec.paperScene&&spec.paperScene.kind,impl=kind!=null&&Object.hasOwn(E.scenes,kind)?E.scenes[kind]:null,scene=impl?spec.paperScene:null;
+    if(!views&&!scene)throw new Error('Paper: no view set and no vector scene it can draw (paperScene.kind: '+JSON.stringify(kind)+')');
+    const plan=P.plan(spec,'paper',length),T=MX.THEME,entries=views?views.entries:[],details=views?views.parts:{};
+    if(scene){plan.items=impl.steps(scene);plan.slot=(plan.end-plan.begin)/plan.items.length;}
     const viewCache=new Map();
     const cols=['A','B','C','D','E','F'];
-    return P.mount({plan,spec,validation,config,W,H,engine:'paper-vector2d',shapeCheck,diagnostics:()=>({renderer:'canvas2d-vector',studioFrames:0,projection:'orthographic'}),
+    return P.mount({plan,spec,validation,config,W,H,engine:'paper-vector2d',shapeCheck,notRun:views?null:'vector_scene_without_mesh_projection',diagnostics:()=>({renderer:'canvas2d-vector',studioFrames:0,projection:'orthographic'}),
       draw(c,a){
         const compact=H<1600,active=details[a.item.id];
         const explode=smooth((a.t-2)/3)*(1-smooth((a.t-plan.end)/1.3));
@@ -135,7 +139,7 @@
           const key=i=>i===0?[1.03,W*.5,H*.2]:i===1?[1.04,W*.5,H*.28]:i===2?[1.07,W*.35,H*.3]:i===3?[1.09,W*.5,H*.26]:[1,W/2,H*.25];
           const k0=key(idx-1),k1=key(idx),u=a.intro?1:Math.min(1.08,M.spring(el,1.1,.85)),z=M.zoom(k0[0],k1[0],u),fx=k0[1]+(k1[1]-k0[1])*u,fy=k0[2]+(k1[2]-k0[2])*u;
           c.save();c.translate(fx,fy);c.scale(z,z);c.translate(-fx,-fy);
-          const capY=section(c,a,{scene,T,W,H,plan,FS:compact?1:1.15});c.restore();
+          const capY=impl.draw(c,a,{scene,T,W,H,plan,FS:compact?1:1.15});c.restore();
           if(!a.closing){
             let y=capY;
             y+=M.rise(c,'STEP '+String(a.index+1).padStart(2,'0')+' / '+plan.items.length,72,y,19,W-144,T.teal,700,el)+16;

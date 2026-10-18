@@ -222,7 +222,7 @@
   }
   E.run = ({ spec, validation, config, W, H, length }) => {
     const plan = P.plan(spec, 'workflow', length), T = MX.THEME, M = dims(H), scene = spec.workflowScene && spec.workflowScene.kind === 'reconcile' && plan.items.length === 5 ? spec.workflowScene : null;
-    return P.mount({ plan, spec, validation, config, W, H, engine: 'workflow-canvas2d',
+    return P.mount({ plan, spec, validation, config, W, H, engine: 'workflow-canvas2d', notRun: 'workflow_draws_no_model_meshes',
       diagnostics: t => { const a = P.at(plan, t); return { operation: a.index, sourceStep: a.item.index, renderer: 'canvas2d', studioFrames: 0, scene: scene ? scene.kind : 'stations' }; },
       draw(c, a) {
         c.save(); backdrop(c, T, W, H);

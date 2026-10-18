@@ -45,13 +45,27 @@ test('Paper generic path (hub, no paperScene): orthographic sheet from the model
   }, { timeout: 90000, retries: 0 });
 });
 
-test('Paper vector scene (lock, paperScene): the section is drawn, not the generic sheet', opts, async () => {
+test('Paper vector scene (lock, paperScene): the section is drawn with no three.js, no figure, no mesh adapter, and the area check says NOT RUN', opts, async () => {
   await withBrowser(async (b) => {
     await open(b, 'lock', 'method=paper&background=ivory');
     const drawn = await texts(b, 9);
     assert.ok(drawn.some((d) => d.s.startsWith('SECTION VIEW')), 'the section scene is drawn');
     assert.ok(!drawn.some((d) => d.s.startsWith('ORTHOGRAPHIC STUDY')), 'not the generic sheet');
     assert.equal(await b.ev('__webgl'), 0);
+    const r = await b.ev('({ three: typeof THREE, mesh: typeof (MX.paperMesh), figure: typeof window.__fig, viewSets: window.__viewSets, checks: window.__checks, shape: __shapeCheck(), errors: __specInfo().errors })');
+    assert.equal(r.three, 'undefined', 'three.js is not loaded'); assert.equal(r.mesh, 'undefined', 'the mesh adapter is not loaded');
+    assert.equal(r.figure, 'undefined', 'no 3D figure is built'); assert.equal(r.viewSets, 0, 'no view set is built');
+    assert.deepEqual(r.checks, { geometryArea: { run: false, reason: 'vector_scene_without_mesh_projection', expected: true } });
+    assert.deepEqual(r.shape, [], 'old callers of __shapeCheck still get an array'); assert.deepEqual(r.errors, []);
+  }, { timeout: 90000, retries: 0 });
+});
+
+test('Paper fails loudly with neither a view set nor a vector scene it can draw', opts, async () => {
+  await withBrowser(async (b) => {
+    await open(b, 'hub', 'method=paper&background=ivory');
+    const message = await b.ev(`(()=>{const q=new URLSearchParams(location.search),c=document.getElementById('c');
+      try{MX.paperEngine.run({spec:Object.assign({},SPEC,{paperScene:{kind:'bogus'}}),validation:MX.spec.validate(SPEC),config:MX.presentation.resolve(q,SPEC),views:null,W:c.width,H:c.height,length:'short'});return 'no error';}catch(e){return e.message;}})()`);
+    assert.match(message, /^Paper: no view set and no vector scene it can draw \(paperScene\.kind: "bogus"\)$/);
   }, { timeout: 90000, retries: 0 });
 });
 

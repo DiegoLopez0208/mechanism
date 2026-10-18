@@ -105,7 +105,9 @@
     },
   };
   // Shared data/clock/audio contract only. Each engine owns its entire drawing.
-  P.mount = ({ plan, spec, validation, config, W, H, engine, draw, shapeCheck = () => [], diagnostics = () => ({}) }) => {
+  // shapeCheck: the preflight's area check over compiled meshes, or null when this render compiles none; notRun: why it does not run
+  // (an engine that gives neither has not explained the omission, which the preflight reports as a failure, not as a pass)
+  P.mount = ({ plan, spec, validation, config, W, H, engine, draw, shapeCheck = null, notRun = null, diagnostics = () => ({}) }) => {
     const inspect = t => P.at(plan, t);
     g.__specInfo = () => ({ duration: plan.duration, parts: (spec.parts || []).length, validation: validation.lines,
       warnings: validation.warnings, errors: validation.errors, method: config.method, background: config.background, engine,
@@ -113,7 +115,8 @@
       shots: plan.items.map((item, i) => ({ label: item.title, t: plan.begin + (i + .6) * plan.slot })) });
     g.__presentationAt = t => Object.assign({}, inspect(t), diagnostics(t));
     g.__geom = t => ({ t, cam: [0, 0, 10000], near: 0, focus: null, parts: [] });
-    g.__shapeCheck = shapeCheck;
+    g.__shapeCheck = typeof shapeCheck === 'function' ? shapeCheck : () => [];      // old callers still get an array
+    g.__checks = { geometryArea: typeof shapeCheck === 'function' ? { run: true } : { run: false, reason: notRun || 'no_area_check_from_the_engine', expected: !!notRun } };
     const audio = () => MX.sound.render({ duration: plan.duration, seed: config.method === 'workflow' ? 81 : 91,
       events: plan.items.map((_, i) => ({ t: plan.begin + i * plan.slot, v: config.method === 'workflow' ? 'click' : 'whoosh', d: .3, f: 1100, f0: 600, f1: 1400, gain: .16, sharp: .5 })),
       bed: { bpm: config.method === 'workflow' ? 96 : 72, root: 48, mode: 'dorian', level: .24, prog: [0, 5, 3, 4], curve: [[0, .2], [plan.begin, .3], [plan.end, .2], [plan.duration, 0]] }, room: { size: 1, wet: .15, fb: .7 }, tone: .002 });

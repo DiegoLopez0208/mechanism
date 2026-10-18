@@ -18,9 +18,14 @@
     injected: ['presentation.js'],
     engines: {
       studio: { stack3d: true, modules: [] },
-      paper: { stack3d: true, modules: ['paper-engine.js', 'paper-mesh.js'] },      // vector engine, then the mesh adapter that projects the model meshes through three.js
+      // vector engine, then the mesh adapter that projects the model meshes through three.js; a spec with a vector scene
+      // Paper draws natively needs neither the stack nor the adapter (see vectorScene below)
+      paper: { stack3d: true, modules: ['paper-engine.js', 'paper-mesh.js'], vector: { stack3d: false, modules: ['paper-engine.js'] } },
       workflow: { stack3d: false, modules: ['workflow-engine.js'] },
     },
+    // the vector scene kinds Paper draws without any 3D model (spec.paperScene.kind); the only list of them: kit/paper-engine.js
+    // implements exactly these (MX.paperEngine.scenes) and tests/manifest.test.mjs checks the two match
+    paperScenes: ['pin-section'],
     legacy: 'studio',
     compiler: 'spec.js',
     // object models a spec page names only when its spec uses them
@@ -36,9 +41,13 @@
   M.engineFor = (query, spec, presentation) => {
     try { const c = presentation.resolve(query, spec || {}); return c.enabled ? c.method : M.legacy; } catch (e) { return M.legacy; }      // an invalid method is reported by the compiler, as before
   };
-  // the kit modules a page loads for an engine: its listed modules minus the 3D stack when the engine does not need it, plus the injected and engine modules
-  M.modulesFor = (engine, listed) => {
-    const e = M.engines[engine], set = new Set(listed.filter((f) => e.stack3d || !M.stack3d.includes(f)).concat(M.injected, e.modules));
+  // does this spec carry a vector scene Paper draws natively? An unknown kind is not one: it goes through the meshes
+  M.vectorScene = (spec) => !!(spec && spec.paperScene && M.paperScenes.includes(spec.paperScene.kind));
+  // what an engine needs for this spec: { stack3d, modules }
+  M.needsFor = (engine, spec) => { const e = M.engines[engine]; return engine === 'paper' && M.vectorScene(spec) ? e.vector : e; };
+  // the kit modules a page loads for an engine and spec: its listed modules minus the 3D stack when not needed, plus the injected and engine modules
+  M.modulesFor = (engine, listed, spec) => {
+    const e = M.needsFor(engine, spec), set = new Set(listed.filter((f) => e.stack3d || !M.stack3d.includes(f)).concat(M.injected, e.modules));
     return M.order.filter((f) => set.has(f));
   };
   g.MX_MANIFEST = M;

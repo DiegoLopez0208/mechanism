@@ -1,6 +1,6 @@
 # Design: Paper Vector Engine and Paper Mesh Adapter (2026-10-18)
 
-Status: PV-1 implemented on `ecosystem-foundation` (uncommitted, on top of `5f90a14`); PV-2 and PV-3 not started.
+Status: PV-1 committed (`e84b886`). PV-2 implemented on `ecosystem-foundation`, uncommitted (section 7). PV-3: the NOT RUN signal for the area check moved into PV-2; the style test (no shadows or gradients in Paper) is still to do.
 
 PV-1 as built differs from the sketch below in three details, all forced by what `draw()` reads: the view set is `{ entries, parts }`, where each entry also carries `anchor` (the first front-view edge point, where the callout leader starts) and `parts` holds the detail-panel data per part (`sizeLabel`, the first source-backed `param`) instead of a `params` field per entry; `MX.paperEngine.stage` stays as an alias of `MX.paperMesh.stage`, and `MX.paperEngine.run` still accepts `F` (it then asks the adapter), so no caller breaks. Validation: 54 sampled frames (lock, hub, rtx4090, switch; 9:16, 4:5, 1:1) byte-identical before and after; full 30 s Paper films of hub and lock decode to the same MD5; `__shapeCheck` and shot times unchanged; `tests/paper.test.mjs` (4 tests) and a `--method paper` area-check case in `tests/preflight.test.mjs` added.
 
@@ -90,3 +90,63 @@ Proposal, without changing any test:
 5. CI keeps its current command; the runner's output is the same TAP/spec stream.
 
 Accept: on this machine, `MX_TEST_CONCURRENCY=1 npm test` and `npm test` with ~2.5 GB free both finish 81/81 without the low-memory guard stopping them, and the printed concurrency matches the free memory at start.
+
+## 6. PV-2 detailed design: Paper with a vector scene and no three.js (proposal, 2026-10-18, on top of `e84b886`)
+
+### What the code shows
+
+- **The gate does not need the 3D model.** `V = S.validate(spec)` (`kit/spec-core.js`) runs at `kit/spec.js:55`, before any figure exists, and computes every published comparison, provenance and drawn-size check from spec data (`d.p` parameters). After line 70, `kit/spec.js` adds no error or warning. Skipping the figure skips no gate check: Workflow already does exactly that (`kit/spec.js:64`).
+- **What only exists with compiled meshes:** the preflight area check (`__shapeCheck`, from `geometry.userData.areaRatio`, computed by `kit/parts.js` on `THREE.Shape` outlines), the STL/GLB exports and the camera diagnostics (`__geom`), which Paper already reports as not applicable.
+- **The vector scene does not read the view set**: `draw()` returns from the `if(scene)` branch before any use of `entries` or `details`, except `active=details[a.item.id]`, evaluated at the top of `draw()` and unused in that branch.
+- **Today a missing area check is silent in two places:** `P.mount` defaults to `shapeCheck = () => []` (`kit/presentation.js:108`), so Workflow returns `[]`, and `scripts/preflight.mjs:50` turns a missing `__shapeCheck` into `[]` too. PV-2 would add a third case (Paper with a vector scene). Doing PV-2 without fixing this would disable a check silently, so the "not run" signal moves from PV-3 into PV-2.
+
+### Contracts
+
+1. **Which specs are vector-only.** One predicate, declared once in `kit/manifest.js` (boot needs it before any engine module loads): `paperScenes: ['pin-section']` and `M.vectorScene(spec) = !!spec?.paperScene && paperScenes.includes(spec.paperScene.kind)`. `kit/paper-engine.js` keeps its own list of the scene kinds it can draw; a test asserts both lists are equal, so a kind the engine cannot draw never skips the stack.
+2. **Engine needs, per spec.** `engines.paper` becomes `{ stack3d: 'unless-vector-scene', modules: ['paper-engine.js', 'paper-mesh.js'], vectorModules: ['paper-engine.js'] }`, resolved by one function `M.needsFor(engine, spec) -> { stack3d, modules }` that `boot.js`, `modulesFor` and the tests all call. Workflow and Studio keep their current static entries.
+3. **Compiler dispatch.** In `kit/spec.js`, next to the Workflow early return: when the resolved method is Paper and `M.vectorScene(spec)`, call `MX.paperEngine.run({ spec, validation, config, views: null, shapeCheck: null, W, H, length })` before `MX.figure`. Every other Paper spec goes through the figure and the adapter as now.
+4. **`run({ views: null })`.** Allowed only with a drawable vector scene; otherwise `run` throws `Paper: no view set and no vector scene` (a loud failure instead of a blank sheet). `details` defaults to `{}`.
+5. **A check that did not run says so.** `P.mount` takes `shapeCheck: null` to mean "not applicable" and publishes `window.__checks = { geometryArea: { run: false, reason: 'no meshes are compiled in this method' } }` (or `{ run: true }` when a real check is mounted). `__shapeCheck()` keeps returning an array for old callers. `scripts/preflight.mjs` reads `__checks` and prints `NOT RUN  GEOMETRY_AREA  <reason>  (run the Studio preflight to check the model's flat parts)`; in `--json` it adds `notRun: [{ check, reason }]`, never counted as PASS, WARN or FAIL. Workflow gets the same signal, which closes the silent skip it has today.
+
+### Files
+
+`kit/manifest.js` (predicate, per-spec needs), `kit/boot.js` (call `needsFor` with `window.SPEC`), `kit/spec.js` (early dispatch), `kit/paper-engine.js` (`views: null`, scene-kind list), `kit/presentation.js` (`shapeCheck: null`, `__checks`), `scripts/preflight.mjs` (NOT RUN line and `notRun`), tests below, `SKILL.md`, `docs/presentations.md`. Not touched: `kit/paper-mesh.js`, `kit/figure.js`, `kit/parts.js`, Studio and Workflow drawing code.
+
+### Tests
+
+- **Equivalence:** lock with Paper (vector path, no three.js) against the `e84b886` captures: the same 18 lock frames byte-identical, and the full 30 s film decodes to the same MD5 (`bf74967c...`). Hub, rtx4090 and switch (generic) also byte-identical: their path does not change.
+- **Loading (manifest browser test):** `lock?method=paper` and lock with `presentation: { method: 'paper' }` only in the spec load no three.js, `gl.js`, `figure.js`, `parts.js` or `paper-mesh.js`; `hub?method=paper` loads the stack and both Paper modules; a spec with an unknown `paperScene.kind` loads the stack and draws the generic sheet.
+- **Predicate:** the manifest's scene kinds equal the engine's; `run({ views: null })` without a scene throws.
+- **Area check, by design changed:** the existing `--method paper` preflight case uses lock, which becomes vector-only. It is replaced, not loosened: lock with Paper must report `notRun` with the reason and no `GEOMETRY_AREA_MISMATCH`, and a new hub variant with the bad plate and `--method paper` must still report the FAIL. `tests/paper.test.mjs` keeps its generic-path checks on hub; the lock case asserts `__checks.geometryArea.run === false`.
+- **Workflow:** preflight with `--method workflow` reports `notRun` for the area check (new), and nothing else changes.
+- Regression: presentation (12 combinations), goldens (44, unchanged), render, gate, the whole suite serially in one run.
+
+### Risks
+
+| Risk | Mitigation |
+|---|---|
+| The predicate in boot and in the engine disagree, so a page loads no stack and then needs it | one declared list, an equality test, and `run` throws instead of drawing a blank sheet |
+| A future vector scene starts reading part data from the figure | the scene receives no figure at all; any such read fails in the test with `views: null` |
+| Someone reads "PASS: nothing found" from a vector-only Paper preflight as "the flat parts were checked" | the NOT RUN line in the human output and `notRun` in JSON; docs name Studio as the place that checks them |
+| The preflight JSON gains a field | additive (`notRun`); existing consumers read `findings`, `fail`, `warn` unchanged |
+| Lock's Studio film, STL and GLB | untouched: Studio never takes the vector path |
+
+### Acceptance
+
+1. `lock?method=paper` (URL or spec only) loads no three.js or mesh adapter, and its frames and film are byte-identical to `e84b886`.
+2. Generic Paper (hub, rtx4090, switch) is unchanged, byte for byte.
+3. Every gate check still runs (same `V.lines`, warnings and errors as before for every example).
+4. The area check never disappears silently: it runs where meshes are compiled and says NOT RUN everywhere else, Workflow included.
+5. Whole suite passes in one serial run; goldens unchanged.
+6. Load time of `lock?method=paper` measured before and after (median of 9).
+
+## 7. PV-2 as built (2026-10-18, uncommitted, on top of `e84b886`)
+
+Differences from section 6, all small:
+
+- The manifest keeps Paper's vector needs as data inside the engine entry (`engines.paper.vector = { stack3d: false, modules: ['paper-engine.js'] }`) rather than a string rule; `M.needsFor(engine, spec)` picks it when `M.vectorScene(spec)`. `boot.js`, `M.modulesFor(engine, listed, spec)` and the tests call the same function.
+- `MX.paperEngine.scenes` is the implementation map (`{ 'pin-section': { steps, draw } }`), not a second list; `tests/manifest.test.mjs` asserts its keys equal `M.paperScenes`. Lookups use `Object.hasOwn`, so `constructor` or any inherited name is not a scene.
+- Reasons are snake_case codes: `vector_scene_without_mesh_projection`, `workflow_draws_no_model_meshes`, `skipped_by_option`. `__checks.geometryArea.expected` separates a declared omission (NOT RUN) from an undeclared one (`no_area_check_from_the_engine`, reported as `GEOMETRY_AREA_NOT_RUN`, FAIL). A page that publishes no `__checks` (hand-built pages) is `GEOMETRY_AREA_UNREPORTED` (WARN), not a pass.
+- `kit/spec.js` uses `MX_MANIFEST.vectorScene` when the manifest is loaded (every `boot.js` page) and falls back to `MX.paperEngine.scenes` for a page that loads scripts directly.
+
+Results: lock with Paper (URL or spec only) loads 14 scripts, no three.js, no `paper-mesh.js`, builds no figure and no view set; time to `__frame` 111-120 ms (two rounds of 9) against 1641-1682 ms at `e84b886`; JS heap 9.5 MB against 391 MB; render time unchanged (52.98 against 52.35-52.65 ms/frame: encoding dominates). The 54 sampled frames of section 3 are byte-identical to `e84b886`; the full 30 s lock film decodes to the same video MD5 (`bf74967c…`) and audio MD5 (`493ffeb3…`). The CLI gate of all 11 examples and the page-side gate of 7 pages (Paper on lock, hub, rtx4090, switch; Workflow on react; Studio and the legacy film on lock) are identical before and after.

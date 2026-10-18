@@ -23,7 +23,7 @@
       const k = kit(s);
       if (held.includes(s)) continue;
       if (spec && k === M.compiler) {
-        const engine = window.MX_PROFILE = M.engineFor(q, window.SPEC, MX.presentation), e = M.engines[engine];
+        const engine = window.MX_PROFILE = M.engineFor(q, window.SPEC, MX.presentation), e = M.needsFor(engine, window.SPEC);      // Paper with a vector scene: no stack, no mesh adapter
         if (e.stack3d) for (const h of held) await load(h);
         for (const m of e.modules) await load(base + m);
       }
