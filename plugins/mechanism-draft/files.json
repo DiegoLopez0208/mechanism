@@ -3,9 +3,9 @@
  "version": "0.1.0",
  "generatedBy": "scripts/build-skill.mjs draft",
  "files": {
-  ".claude-plugin/plugin.json": "83c2083c29dc7c3e7f6192c2b7efeddcb57165d1186d1450e97a49e54ebf8ff5",
+  ".claude-plugin/plugin.json": "7920e5f2c1b8caf087fb745629e56c48689838aef49a2fb206a0467209416bec",
   "LICENSE": "1b1396e1247ad634fa098cb45dce262713c7a750cac6893ae029a633b1cab3b2",
-  "README.md": "21dd59cfe7195a55a8230e236d93bb3175711f6efab316417ad2daec7a4dc492",
+  "README.md": "b38233c33fb05754af829490556a24c041731f278daaf54b27804f625cba6505",
   "SKILL.md": "588a5322f2c6dfa690461969abfbf8b3d00c6d9acaba5a8a3a975d1a793feae5",
   "THIRD_PARTY.md": "71405a7d03e754193dbfc1ca234f1ba71e4d925857750a6c27233e1133ae33f3",
   "examples/lock/index.html": "9d0d46b5cd2ee4d0549e20ef1ef9d8b0ef1b25193026dca4cc2b1bfd6cfddeef",
@@ -33,10 +33,10 @@
   "scripts/check-spec.mjs": "dcb2e215ab7f967c24649c34c5469615cc2668b9b696da55e317e73935046238",
   "scripts/lib/browser.mjs": "39de97d3401bdc8fb30b3eb056827e87a4e6328c44d049e26441f60150cf3de2",
   "scripts/lib/encoding.mjs": "bf63ccc1f3a3e579fbe45613a52bdbe53fad9b685cada72360dce5769d38422b",
-  "scripts/new.mjs": "50d7c9cdceb3592fc2f4d84eb5a931ccf5ea70b4e92f5bcdc7ee25d16d3406ad",
+  "scripts/new.mjs": "7a16495ec85ad5e056d41255305e98ffa16421e905be102ef24b6bae4ce9d0dc",
   "scripts/preflight.mjs": "85d7b6c05144fdcba14dc8199eeb5fc0824b0f40d4cebf15b6b76a7db70e08a6",
   "scripts/render.mjs": "235027b5cc3695603aad0f1a8e68f8182bd9577fd84becce19bd1e5a89002098",
-  "scripts/skill-doctor.mjs": "4dce0818ecde1145ea2cc70cdcdfa66a1a5abf2ce52108c24f4f80691e0e781f",
+  "scripts/skill-doctor.mjs": "c8a1d1cbf6402489feb1b45d0a3cf72068def0089af27f716cfca2b5fe175740",
   "skill.json": "a2588ae3ce61f344e42cd8145c10c95385deefd5cd69a45ef200031813631693"
  },
  "optional": {

@@ -77,6 +77,23 @@ test('new.mjs writes the manifest script list', () => {
   } finally { fs.rmSync(work, { recursive: true, force: true }); }
 });
 
+test('new.mjs keeps --title and --fig as text: escaped in the page, exact in spec.js, harmless in comments and replace patterns', () => {
+  const work = fs.mkdtempSync(path.join(os.tmpdir(), 'mx-new-escape-'));
+  try {
+    const fig = 'Fig 7 "quoted" it\'s <b>&amp;</b> $& $1 `x` ${y} */ end \\ </script>', title = 'Tom\'s "lock" <i>&</i> $\' */ /*   next';
+    const r = spawnSync(process.execPath, ['scripts/new.mjs', 'evil', '--dir', work, '--fig', fig, '--title', title], { cwd: root, encoding: 'utf8' });
+    assert.equal(r.status, 0, r.stderr);
+    const html = fs.readFileSync(path.join(work, 'evil', 'index.html'), 'utf8'), t = /<title>([^<]*)<\/title>/.exec(html)[1];
+    const unescape = (s) => s.replace(/&(amp|lt|gt|quot|#39);/g, (_, e) => ({ amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'" })[e]);
+    assert.equal(unescape(t), fig + ' - ' + title, 'the page title is the exact text, HTML-escaped');
+    assert.ok(!/[<>"']/.test(t), 'no raw markup characters inside <title>');
+    const c = vm.createContext({ window: {} }); vm.runInContext(fs.readFileSync(path.join(work, 'evil', 'spec.js'), 'utf8'), c);
+    assert.equal(c.window.SPEC.fig, fig); assert.equal(c.window.SPEC.title, title);
+    const gate = spawnSync(process.execPath, ['scripts/check-spec.mjs', path.join(work, 'evil', 'spec.js')], { cwd: root, encoding: 'utf8' });
+    assert.equal(gate.status, 1, 'still a draft that fails the gate'); assert.doesNotMatch(gate.stdout + gate.stderr, /SyntaxError/);
+  } finally { fs.rmSync(work, { recursive: true, force: true }); }
+});
+
 test('real browser: each engine loads exactly the modules the manifest gives it', {
   skip: !findBrowser() && !process.env.CI ? 'no Chromium browser found' : false, timeout: 300000,
 }, async () => {

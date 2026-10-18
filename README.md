@@ -125,7 +125,7 @@ Only the technical-drawing part (Mechanism Draft 0.1: vector Paper sheets, the e
 /plugin install mechanism-draft@mechanism
 ```
 
-See [`plugins/mechanism-draft/README.md`](plugins/mechanism-draft/README.md) (checked with a local copy of this marketplace; not yet from GitHub).
+Draft is on the `ecosystem-foundation` branch until it reaches `main`; until then add the marketplace with `/plugin marketplace add DiegoLopez0208/mechanism#ecosystem-foundation`. Installed that way from GitHub on 2026-10-18; see [`plugins/mechanism-draft/README.md`](plugins/mechanism-draft/README.md).
 
 Or by hand, as a plain skill:
 

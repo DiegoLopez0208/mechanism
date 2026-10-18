@@ -40,14 +40,64 @@ test('the committed skill equals a fresh build: its runtime is an exact copy of 
 test('a clean install holds every file it lists, nothing from Workflow or the 3D stack, and no path back into the repository', () => {
   const doctor = node(core, 'scripts/skill-doctor.mjs', '--json'), r = JSON.parse(doctor.stdout);
   assert.equal(doctor.status, 0, doctor.stdout); assert.equal(r.ok, true); assert.deepEqual([r.missing, r.changed, r.undeclared], [[], [], []]);
-  assert.equal(r.optional.mesh, 'not installed');
+  assert.deepEqual(r.optional.mesh, { state: 'not installed', declared: false, problem: null, note: null });
   for (const f of ['workflow-engine.js', 'vendor/three.bundle.js', 'gl.js', 'figure.js', 'parts.js', 'paper-mesh.js']) assert.ok(!fs.existsSync(path.join(core, 'kit', f)), 'Draft must not carry kit/' + f);
   const needle = [root, root.split(path.sep).join('/'), pathToFileURL(root).href].map((s) => s.toLowerCase());
   for (const f of Object.keys(JSON.parse(fs.readFileSync(path.join(core, 'files.json'), 'utf8')).files)) {
     if (!/\.(js|mjs|json|md|html)$/.test(f)) continue;
     const text = fs.readFileSync(path.join(core, f), 'utf8').toLowerCase(); for (const n of needle) assert.ok(!text.includes(n), f + ' refers to the repository path');
   }
-  const meshDoctor = JSON.parse(node(mesh, 'scripts/skill-doctor.mjs', '--json').stdout); assert.equal(meshDoctor.optional.mesh, 'installed'); assert.equal(meshDoctor.ok, true);
+  const meshDoctor = JSON.parse(node(mesh, 'scripts/skill-doctor.mjs', '--json').stdout); assert.equal(meshDoctor.optional.mesh.state, 'installed'); assert.equal(meshDoctor.optional.mesh.declared, true); assert.equal(meshDoctor.ok, true);
+});
+
+// copies an install so the doctor can be shown a damaged one without touching the shared ones
+const copyInstall = (from, name) => { const d = path.join(work, name); fs.cpSync(from, d, { recursive: true }); return d; };
+const doctor = (dir, ...flags) => { const r = node(dir, 'scripts/skill-doctor.mjs', '--json', ...flags); return { status: r.status, ...JSON.parse(r.stdout) }; };
+test('skill-doctor: an extra file is listed; only --strict fails the install for it', () => {
+  const d = copyInstall(core, 'doctor-extra'); fs.writeFileSync(path.join(d, 'kit', 'stray.js'), '// not from the build\n');
+  const loose = doctor(d), strict = doctor(d, '--strict');
+  assert.deepEqual(loose.undeclared, ['kit/stray.js']); assert.equal(loose.ok, true); assert.equal(loose.status, 0);
+  assert.equal(strict.ok, false); assert.equal(strict.status, 1); assert.equal(strict.strict, true);
+  assert.equal(doctor(core, '--strict').ok, true, 'a clean install passes --strict');
+});
+
+test('skill-doctor: optional pack absent, incomplete, declared but gone, and added after the build are told apart', () => {
+  const meshFiles = Object.keys(JSON.parse(fs.readFileSync(path.join(mesh, 'files.json'), 'utf8')).optional.mesh.files);
+  const half = copyInstall(mesh, 'doctor-half'); fs.rmSync(path.join(half, meshFiles[0]));
+  const h = doctor(half); assert.equal(h.optional.mesh.state, 'incomplete'); assert.ok(h.optional.mesh.problem); assert.equal(h.ok, false); assert.equal(h.status, 1);
+  const gone = copyInstall(mesh, 'doctor-gone'); for (const f of meshFiles) fs.rmSync(path.join(gone, f));
+  const g = doctor(gone); assert.equal(g.optional.mesh.state, 'not installed'); assert.equal(g.optional.mesh.declared, true); assert.match(g.optional.mesh.problem, /declared it installed/); assert.equal(g.ok, false);
+  const changed = copyInstall(mesh, 'doctor-changed'); fs.appendFileSync(path.join(changed, meshFiles[1]), '\n// edited\n');
+  assert.equal(doctor(changed).optional.mesh.state, 'incomplete');
+  const added = copyInstall(core, 'doctor-added'); for (const f of meshFiles) { fs.mkdirSync(path.dirname(path.join(added, f)), { recursive: true }); fs.copyFileSync(path.join(mesh, f), path.join(added, f)); }
+  const a = doctor(added, '--strict'); assert.equal(a.optional.mesh.state, 'installed'); assert.equal(a.optional.mesh.declared, false); assert.equal(a.optional.mesh.note, 'added after the build'); assert.equal(a.ok, true, 'the pack files are declared in files.json, so even --strict accepts them');
+});
+
+// build-skill.mjs is run from a disposable copy of the repository, so a guard that failed could only damage the copy
+test('build-skill refuses dangerous destinations and never removes files it did not write', () => {
+  const fake = path.join(tmp, 'fake-repo'), skillDef = JSON.parse(fs.readFileSync(path.join(committed, 'skill.json'), 'utf8'));
+  for (const d of ['kit', 'examples/lock']) fs.cpSync(path.join(root, d), path.join(fake, d), { recursive: true });
+  for (const f of ['scripts/build-skill.mjs', 'LICENSE', 'THIRD_PARTY.md', ...skillDef.runtime.scripts, ...skillDef.handwritten.map((h) => 'plugins/mechanism-draft/' + h)]) { fs.mkdirSync(path.dirname(path.join(fake, f)), { recursive: true }); fs.copyFileSync(path.join(root, f), path.join(fake, f)); }
+  const build = (...a) => spawnSync(process.execPath, [path.join(fake, 'scripts', 'build-skill.mjs'), 'draft', ...a], { cwd: fake, encoding: 'utf8' });
+  const snapshot = (dir) => { const out = {}; const walk = (d) => { for (const e of fs.readdirSync(d, { withFileTypes: true })) { const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else out[path.relative(dir, p)] = sha(p); } }; walk(dir); return out; };
+  const repoBefore = snapshot(fake);
+  for (const [label, out] of [['the repository itself', fake], ['a folder that contains it', tmp], ['the repository kit/', path.join(fake, 'kit')], ['a repository folder that is not the skill', path.join(fake, 'examples')]]) {
+    const r = build('--out', out); assert.equal(r.status, 1, label + ': ' + r.stdout); assert.match(r.stderr, /nothing was written or removed/, label);
+  }
+  assert.deepEqual(snapshot(fake), repoBefore, 'a refused build left the repository untouched');
+  // a folder that is not a build: refused, its files untouched
+  const foreign = path.join(tmp, 'foreign'); fs.mkdirSync(path.join(foreign, 'kit'), { recursive: true }); fs.writeFileSync(path.join(foreign, 'kit', 'mine.js'), 'keep'); fs.writeFileSync(path.join(foreign, 'notes.txt'), 'keep');
+  assert.equal(build('--out', foreign).status, 1); assert.deepEqual(snapshot(foreign), { [path.join('kit', 'mine.js')]: sha(path.join(foreign, 'kit', 'mine.js')), 'notes.txt': sha(path.join(foreign, 'notes.txt')) });
+  // a previous build: rebuilt; with a user file in kit/, refused and the file kept; a files.json pointing outside cannot delete there
+  const prev = path.join(tmp, 'prev-build'); assert.equal(build('--out', prev).status, 0); assert.equal(build('--out', prev).status, 0, 'rebuilding a previous build works');
+  fs.writeFileSync(path.join(prev, 'kit', 'user.js'), 'keep'); const r2 = build('--out', prev);
+  assert.equal(r2.status, 1); assert.match(r2.stderr, /kit\/user\.js/); assert.equal(fs.readFileSync(path.join(prev, 'kit', 'user.js'), 'utf8'), 'keep');
+  fs.rmSync(path.join(prev, 'kit', 'user.js'));
+  const outside = path.join(tmp, 'outside.txt'); fs.writeFileSync(outside, 'keep');
+  const list = JSON.parse(fs.readFileSync(path.join(prev, 'files.json'), 'utf8')); list.files['kit/../../outside.txt'] = 'x'; list.files['../outside.txt'] = 'x'; fs.writeFileSync(path.join(prev, 'files.json'), JSON.stringify(list));
+  assert.equal(build('--out', prev).status, 0); assert.equal(fs.readFileSync(outside, 'utf8'), 'keep', 'a tampered files.json cannot remove a file outside the build');
+  // bad options
+  assert.equal(build('--out').status, 1); assert.equal(build('--with', 'textures').status, 1);
 });
 
 test('the gate gives the same verdict in the install as in the repository', () => {

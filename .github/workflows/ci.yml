@@ -17,10 +17,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Tests (the evidence gate, and the DEFLATE / RAR5 models against zlib)
-        run: node --test tests/gate.test.mjs tests/kit.test.mjs tests/encoding.test.mjs tests/browser.test.mjs tests/media-server.test.mjs
+      - name: Tests (the evidence gate, the DEFLATE / RAR5 models against zlib, version consistency)
+        run: node --test tests/gate.test.mjs tests/kit.test.mjs tests/encoding.test.mjs tests/browser.test.mjs tests/media-server.test.mjs tests/versions.test.mjs
+      # The browser-heavy files run one at a time: each opens headless Chromium sessions (browser.test.mjs opens five at once on purpose)
       - name: Render, colour tags, audio streams and encoder fallback
-        run: node --test tests/render.test.mjs tests/presentation.test.mjs
+        run: node --test --test-concurrency=1 tests/render.test.mjs tests/presentation.test.mjs
+      - name: Engine manifest, Paper (vector scene, mesh adapter, visual contract) and the preflight
+        run: node --test --test-concurrency=1 tests/manifest.test.mjs tests/paper.test.mjs tests/paper-contract.test.mjs tests/preflight.test.mjs
+      - name: Mechanism Draft as a standalone install (built outside the repository)
+        run: node --test --test-concurrency=1 tests/draft-skill.test.mjs
+      - name: The committed Draft plugin matches its files.json, with nothing extra
+        working-directory: plugins/mechanism-draft
+        run: node scripts/skill-doctor.mjs --strict
       - name: Visual regression (compact lossless golden frames)
         run: |
           node scripts/visual-regression.mjs

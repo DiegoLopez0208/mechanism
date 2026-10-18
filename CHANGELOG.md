@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Ecosystem foundation (branch `ecosystem-foundation`): an engine dependency manifest (`kit/manifest.js`), Workflow and vector Paper without three.js, Paper's mesh adapter split from its vector engine, explicit NOT RUN reporting of checks that do not run, a Paper visual-contract test, and Mechanism Draft 0.1 as a standalone plugin in `plugins/mechanism-draft/`. Hardening: `build-skill.mjs` refuses dangerous `--out` folders and removes only files its previous build wrote; `new.mjs` escapes `--title` and `--fig`; `skill-doctor.mjs --strict` and distinct states for optional packs; CI runs the manifest, Paper, preflight, Draft and version tests; `.claude-plugin/plugin.json` now carries the repository version (0.8.1) under the version policy in CONTRIBUTING.md.
+
 - Replace the first presentation prototypes with independent engines: Workflow is a Canvas2D industrial process scene; Paper is pure vector technical drawing with front/top/side orthographic views. Neither engine instantiates WebGL or composites Studio frames. Reuse evidence/model data, not the original scene rendering. Tests prohibit WebGL creation in both 2D engines and require byte-identical repeated CPU frames. Studio retains the product renderer.
 
 - Presentations: name the normal director Studio; add Workflow (model-driven process stations) and Paper (real mesh contours/silhouettes, numbered details and evidence annotations). Four independent backgrounds: Graphite, Blueprint, Porcelain and Ivory. CLI, URL and spec selection; 1.5x 3D supersampling for opted-in presentations; crisp Workflow/Paper overlays and synchronized deterministic timelines/audio. Existing films remain unchanged without opt-in. Add configuration, layout and browser tests; run them in CI.
