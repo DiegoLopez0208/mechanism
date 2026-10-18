@@ -4,9 +4,10 @@
 //   node scripts/new.mjs rubik --title "Rubik's cube"
 //   node scripts/check-spec.mjs examples/rubik/spec.js
 //
-// La pagina copia los scripts de examples/hub (la lista es fija: lo unico que cambia es spec.js).
+// La pagina toma el HTML de examples/hub y la lista de scripts de kit/manifest.js (lo unico que cambia es spec.js).
 import fs from 'node:fs';
 import path from 'node:path';
+import vm from 'node:vm';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const args = process.argv.slice(2), name = args.find((a) => !a.startsWith('--') && !(args[args.indexOf(a) - 1] || '').startsWith('--'));
@@ -19,7 +20,10 @@ const taken = ['spec.js', 'index.html', 'run.js'].filter((f) => fs.existsSync(pa
 if (taken.length) { console.error('ya existe ' + rel + ' (tiene ' + taken.join(', ') + '): elige otro nombre o borra esos archivos'); process.exit(1); }
 fs.mkdirSync(dir, { recursive: true });
 
-const hub = fs.readFileSync(path.join(root, 'examples/hub/index.html'), 'utf8');
+// the page takes its markup from examples/hub and its script list from kit/manifest.js (the same table kit/boot.js reads)
+const ctx = vm.createContext({}); vm.runInContext(fs.readFileSync(path.join(root, 'kit/manifest.js'), 'utf8'), ctx);
+const scripts = ctx.MX_MANIFEST.pageModules([]).map((f) => '../../kit/' + f).concat('spec.js', '../../kit/' + ctx.MX_MANIFEST.compiler, 'run.js').join(',');
+const hub = fs.readFileSync(path.join(root, 'examples/hub/index.html'), 'utf8').replace(/data-scripts="[^"]*"/, 'data-scripts="' + scripts + '"');
 fs.writeFileSync(path.join(dir, 'index.html'), (work ? hub.split('../../kit/').join(kitUrl) : hub).replace(/<title>[^<]*<\/title>/, '<title>' + fig + ' - ' + title.replace(/[<>&]/g, '') + '</title>'));
 fs.copyFileSync(path.join(root, 'examples/hub/run.js'), path.join(dir, 'run.js'));
 fs.writeFileSync(path.join(dir, 'spec.js'), `/*

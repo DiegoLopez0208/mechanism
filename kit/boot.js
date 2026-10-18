@@ -8,24 +8,27 @@
   const self = document.currentScript, list = (self.getAttribute('data-scripts') || '').split(',').map((s) => s.trim()).filter(Boolean), base = self.src.replace(/boot\.js.*$/, '');
   const load = (src) => new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.async = false; s.onload = res; s.onerror = () => rej(new Error('no se pudo cargar ' + src)); document.head.appendChild(s); });
   const q = new URLSearchParams(location.search), theme = q.get('style') || q.get('theme') || self.getAttribute('data-theme') || 'dossier';
-  // Flow (?method=workflow) is a Canvas2D engine: the 3D stack (three.js, the WebGL stage, the figure and the parts library)
-  // runs three.js as soon as it loads and Workflow never uses it, so it is not loaded at all. A method chosen only inside the
-  // spec (presentation: { method }) is not known yet at this point: that page loads everything, as before.
-  const STACK_3D = /(^|\/)(vendor\/three\.bundle|gl|figure|parts|paper-engine)\.js(?:\?.*)?$/, flow = q.get('method') === 'workflow';
-  window.MX_PROFILE = flow ? 'flow' : 'full';
+  // Which modules each engine needs comes from kit/manifest.js. On a spec page the 3D stack (three.js and the modules that run it
+  // when they load) is held back until just before the compiler: by then the page's own spec has loaded, so the engine is known
+  // from the URL or from spec.presentation, and an engine that does not need the stack (Workflow) never loads it.
+  // A hand-built page (no compiler in its list) loads its scripts in their own order, as before.
   (async () => {
     await load(base + 'fonts.js');
+    await load(base + 'manifest.js');
+    const M = window.MX_MANIFEST, kit = (s) => M.kitName(s), spec = list.some((s) => kit(s) === M.compiler), held = spec ? list.filter((s) => M.stack3d.includes(kit(s))) : [];
     const fonts = [new FontFace('Inter', 'url(' + MX.FONT_DATA.inter + ')', { weight: '100 900' }), new FontFace('Cormorant Garamond', 'url(' + MX.FONT_DATA.cormorant + ')', { weight: '300 700' })];
     for (const f of fonts) { await f.load(); document.fonts.add(f); }
-    window.MX_THEME = theme;
+    window.MX_THEME = theme; window.MX_PROFILE = spec ? null : 'hand-built';
     for (const s of list) {
-      if (flow && STACK_3D.test(s)) continue;
-      await load(s);
-      if (/(^|\/)core\.js(?:\?.*)?$/.test(s)) {
-        await load(base + 'presentation.js');
-        await load(base + 'workflow-engine.js');
-        if (!flow) await load(base + 'paper-engine.js');
+      const k = kit(s);
+      if (held.includes(s)) continue;
+      if (spec && k === M.compiler) {
+        const engine = window.MX_PROFILE = M.engineFor(q, window.SPEC, MX.presentation), e = M.engines[engine];
+        if (e.stack3d) for (const h of held) await load(h);
+        for (const m of e.modules) await load(base + m);
       }
+      await load(s);
+      if (k === 'core.js') for (const m of M.injected) await load(base + m);
     }
   })().catch((e) => { console.error(e); document.title = 'ERROR ' + e.message; });
 })();

@@ -113,7 +113,7 @@ test('real renderer: all twelve combinations, stage sync, text bounds and repeat
       else {assert.equal(result.webgl,0);assert.equal(result.stage,null);assert.equal(result.residual.max,0);}
       if (method === 'workflow') {
         // Flow runs without the 3D stack: three.js, the WebGL stage, the figure, the parts library and Paper are never loaded
-        assert.equal(result.profile, 'flow'); assert.equal(result.three, 'undefined');
+        assert.equal(result.profile, 'workflow'); assert.equal(result.three, 'undefined');
         assert.deepEqual(result.scripts.filter(s => /^(three\.bundle|gl|figure|parts|paper-engine)\.js$/.test(s)), []);
         const states = await b.ev('[5,10,15,20,23].map(t=>__presentationAt(t))');
         assert.ok(states.every((s, i) => i === 0 || s.sourceStep >= states[i - 1].sourceStep));
