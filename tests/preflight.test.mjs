@@ -89,6 +89,20 @@ test('--skip shape is reported as NOT RUN (skipped_by_option)', opts, () => {
   assert.deepEqual(r.json.notRun, [{ check: 'GEOMETRY_AREA', reason: 'skipped_by_option' }]);
 });
 
+// Every report says what ran: a render that compiles meshes runs the area check (notRun empty); a spec page that does not report
+// the check at all is a WARN, never a pass; a hand-built page (no __geom, no __checks) is refused before any check, with no PASS line.
+test('every report says whether the area check ran: run, NOT RUN, or GEOMETRY_AREA_UNREPORTED (a WARN, not a pass)', opts, () => {
+  const studio = run(variant(), '--skip', 'camera,labels,frame'); assert.ok(studio.json, studio.stderr);
+  assert.deepEqual(studio.json.notRun, []); assert.ok(!studio.json.findings.some((x) => x.code.startsWith('GEOMETRY_AREA')), JSON.stringify(studio.json.findings));
+  const silent = run(variant({ script: `Object.defineProperty(window,'__checks',{configurable:true,get:()=>undefined,set:()=>{}});` }), '--skip', 'camera,labels,frame'); assert.ok(silent.json, silent.stderr);
+  const u = silent.json.findings.find((x) => x.code === 'GEOMETRY_AREA_UNREPORTED'); assert.ok(u && u.severity === 'WARN', JSON.stringify(silent.json.findings)); assert.deepEqual(silent.json.notRun, []);
+});
+
+test('a hand-built page (no spec compiler) is refused before any check: exit code 1 and no PASS line', opts, () => {
+  const r = spawnSync(process.execPath, [PREFLIGHT, path.join(root, 'examples', 'phones', 'index.html'), '--length', 'short', '--step', '1'], { encoding: 'utf8', timeout: 170000 });
+  assert.equal(r.status, 1, r.stdout + r.stderr); assert.doesNotMatch(r.stdout, /PASS/); assert.match(r.stderr, /did not expose __frame\/__geom/);
+});
+
 // An omission nobody explains is not acceptable: a check that throws, or an engine that says it did not run without a reason it
 // declared, is a FAIL.
 test('an area check that throws, or that did not run without a declared reason, is a FAIL (GEOMETRY_AREA_NOT_RUN)', opts, () => {

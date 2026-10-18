@@ -1,6 +1,6 @@
 # Design: Paper Vector Engine and Paper Mesh Adapter (2026-10-18)
 
-Status: PV-1 committed (`e84b886`). PV-2 implemented on `ecosystem-foundation`, uncommitted (section 7). PV-3: the NOT RUN signal for the area check moved into PV-2; the style test (no shadows or gradients in Paper) is still to do.
+Status: PV-1 committed (`e84b886`), PV-2 committed (`c52144d`), PV-3 implemented and uncommitted (section 8).
 
 PV-1 as built differs from the sketch below in three details, all forced by what `draw()` reads: the view set is `{ entries, parts }`, where each entry also carries `anchor` (the first front-view edge point, where the callout leader starts) and `parts` holds the detail-panel data per part (`sizeLabel`, the first source-backed `param`) instead of a `params` field per entry; `MX.paperEngine.stage` stays as an alias of `MX.paperMesh.stage`, and `MX.paperEngine.run` still accepts `F` (it then asks the adapter), so no caller breaks. Validation: 54 sampled frames (lock, hub, rtx4090, switch; 9:16, 4:5, 1:1) byte-identical before and after; full 30 s Paper films of hub and lock decode to the same MD5; `__shapeCheck` and shot times unchanged; `tests/paper.test.mjs` (4 tests) and a `--method paper` area-check case in `tests/preflight.test.mjs` added.
 
@@ -150,3 +150,14 @@ Differences from section 6, all small:
 - `kit/spec.js` uses `MX_MANIFEST.vectorScene` when the manifest is loaded (every `boot.js` page) and falls back to `MX.paperEngine.scenes` for a page that loads scripts directly.
 
 Results: lock with Paper (URL or spec only) loads 14 scripts, no three.js, no `paper-mesh.js`, builds no figure and no view set; time to `__frame` 111-120 ms (two rounds of 9) against 1641-1682 ms at `e84b886`; JS heap 9.5 MB against 391 MB; render time unchanged (52.98 against 52.35-52.65 ms/frame: encoding dominates). The 54 sampled frames of section 3 are byte-identical to `e84b886`; the full 30 s lock film decodes to the same video MD5 (`bf74967c…`) and audio MD5 (`493ffeb3…`). The CLI gate of all 11 examples and the page-side gate of 7 pages (Paper on lock, hub, rtx4090, switch; Workflow on react; Studio and the legacy film on lock) are identical before and after.
+
+## 8. PV-3 as built: Paper reliability and visual contract (2026-10-18, uncommitted, on top of `c52144d`)
+
+No code in `kit/` or `scripts/` changed: PV-3 adds tests and documentation only, so frames, films and gates are those of `c52144d`.
+
+- **Visual contract** (`tests/paper-contract.test.mjs`). During 21 frames from 0 to 29 s, on lock (vector scene) and hub (mesh projection), every 2D context records any gradient (`createLinearGradient`, `createRadialGradient`, `createConicGradient`), any `shadowBlur > 0` or non-zero shadow offset, any `filter` other than `none` and any lighting blend (`lighter`, `screen`, `overlay`, `color-dodge`, `hard-light`, `soft-light`, `plus-lighter`). Paper must record none. The test also injects a shadow into every stroke and requires the detector to catch it. Run against the lit Paper of `b4a0366`, the same detector reports 258 violations (gradients, `shadowBlur`, `shadowOffsetY`); against the current code, 0. Flat fills and hatching are allowed: that is Paper's rule, and the test does not change it.
+- **Pages without `boot.js`** (same file). A page that lists its scripts itself has no `MX_MANIFEST`; the compiler then picks Paper's path from `MX.paperEngine.scenes`. Lock built that way runs with no three.js and no mesh adapter and reports NOT RUN; hub built that way loads three.js and the adapter and runs the area check.
+- **Hand-built pages** (audit). `phones`, `rpi4` and `s25-vs-s26` expose no `__geom`, so the preflight refuses them before any check (exit code 1, "the page did not expose __frame/__geom"); it prints no PASS. `GEOMETRY_AREA_UNREPORTED` therefore never fires on a real page today; it is reachable on a spec page that does not publish `__checks`, which a test now simulates (WARN, not a pass). The refusal message mentions the gate, which is misleading on a page without a spec; left as it is (pending).
+- **Every report says what ran** (`tests/preflight.test.mjs`): Studio has `notRun: []` and runs the check; a page with no `__checks` gets the WARN; a hand-built page is refused with no PASS line.
+
+Still not covered: other tools (`lint-film`, `stranger`, `validate-render`) do not read `__checks` because they run no geometry check; the preflight refusal message for hand-built pages; the style contract covers Paper only (Workflow and Studio use shadows and gradients by design).
