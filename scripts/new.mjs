@@ -23,9 +23,11 @@ fs.mkdirSync(dir, { recursive: true });
 // the page takes its markup from examples/hub and its script list from kit/manifest.js (the same table kit/boot.js reads)
 const ctx = vm.createContext({}); vm.runInContext(fs.readFileSync(path.join(root, 'kit/manifest.js'), 'utf8'), ctx);
 const scripts = ctx.MX_MANIFEST.pageModules([]).map((f) => '../../kit/' + f).concat('spec.js', '../../kit/' + ctx.MX_MANIFEST.compiler, 'run.js').join(',');
-const hub = fs.readFileSync(path.join(root, 'examples/hub/index.html'), 'utf8').replace(/data-scripts="[^"]*"/, 'data-scripts="' + scripts + '"');
+// the markup template: examples/hub in the full repository; a standalone skill (scripts/build-skill.mjs) carries only its own examples
+const tpl = ['hub', ...fs.readdirSync(path.join(root, 'examples')).sort()].map((n) => path.join(root, 'examples', n)).find((d) => fs.existsSync(path.join(d, 'index.html')) && fs.existsSync(path.join(d, 'run.js')));
+const hub = fs.readFileSync(path.join(tpl, 'index.html'), 'utf8').replace(/data-scripts="[^"]*"/, 'data-scripts="' + scripts + '"');
 fs.writeFileSync(path.join(dir, 'index.html'), (work ? hub.split('../../kit/').join(kitUrl) : hub).replace(/<title>[^<]*<\/title>/, '<title>' + fig + ' - ' + title.replace(/[<>&]/g, '') + '</title>'));
-fs.copyFileSync(path.join(root, 'examples/hub/run.js'), path.join(dir, 'run.js'));
+fs.copyFileSync(path.join(tpl, 'run.js'), path.join(dir, 'run.js'));
 fs.writeFileSync(path.join(dir, 'spec.js'), `/*
  * spec.js - ${title}. Plantilla minima, BORRADOR: "node scripts/check-spec.mjs ${rel}/spec.js" falla hasta que cada TODO y example.com se reemplacen por lo que investigaste.
  * Reemplaza las fuentes, las afirmaciones y las piezas por lo que investigaste. Reglas: todo numero SPEC / MEASURED / DERIVED nombra su fuente

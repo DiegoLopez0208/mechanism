@@ -1,0 +1,33 @@
+{
+  "name": "mechanism-draft",
+  "version": "0.1.0",
+  "runtime": {
+    "scripts": [
+      "scripts/render.mjs",
+      "scripts/check-spec.mjs",
+      "scripts/preflight.mjs",
+      "scripts/new.mjs",
+      "scripts/skill-doctor.mjs",
+      "scripts/lib/browser.mjs",
+      "scripts/lib/encoding.mjs"
+    ],
+    "examples": [
+      "lock"
+    ],
+    "files": [
+      "LICENSE",
+      "THIRD_PARTY.md"
+    ]
+  },
+  "handwritten": [
+    "SKILL.md",
+    "README.md",
+    "skill.json",
+    "references/scenes.md",
+    "references/checks.md",
+    ".claude-plugin/plugin.json"
+  ],
+  "optional": {
+    "mesh": "Paper's projection of the model meshes (orthographic sheets of any spec without a vector paperScene): three.js and the figure, parts and mesh-adapter modules. Build it in with: node scripts/build-skill.mjs draft --out <dir> --with mesh (from the full Mechanism repository)."
+  }
+}

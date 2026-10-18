@@ -119,6 +119,14 @@ The one-line way, as a Claude Code plugin (Claude Code 2.1.275 or later):
 
 The skill then runs from the plugin folder, and your objects go in your own project.
 
+Only the technical-drawing part (Mechanism Draft 0.1: vector Paper sheets, the evidence gate and films, without the 3D Studio film or Workflow; 1.6 MB):
+
+```
+/plugin install mechanism-draft@mechanism
+```
+
+See [`plugins/mechanism-draft/README.md`](plugins/mechanism-draft/README.md) (checked with a local copy of this marketplace; not yet from GitHub).
+
 Or by hand, as a plain skill:
 
 ```bash

@@ -1,0 +1,8 @@
+# Third-party notices
+
+- **Vendored bundle checksum:** `kit/vendor/three.bundle.js` sha256 6f5eb0fd72ada778b941562656d51ed44ab092f5a329609af25b99257bfe0848 (three 0.186.1 packed with esbuild by `tools/vendor-build`; this is the hash of the committed file).
+- **three.js** (MIT, (c) 2010-2026 three.js authors): bundled, with its post-processing, GTAO, bokeh, bloom, GLTF exporter and geometry utilities, in `kit/vendor/three.bundle.js`. Rebuild with `node scripts/build-vendor.mjs` (see `tools/vendor-build`).
+- **Inter** (SIL Open Font License 1.1, (c) The Inter Project Authors) and **Cormorant Garamond** (SIL Open Font License 1.1, (c) Christian Thalmann / Catharsis Fonts): embedded as data URIs in `kit/fonts.js` and as `kit/fonts/*.woff2`.
+- **Sound samples** (CC0 1.0, public domain, no attribution required; credited anyway), embedded as Int16 in `kit/samples.js` and rebuilt with `node scripts/build-samples.mjs`: "Keyboard Soundpack #1" by unicaegames (OpenGameArt), and "Impact Sounds" and "Interface Sounds" by Kenney (kenney.nl). The source packs are downloaded to `data/audio/dl/` and are not committed.
+- **Data and sources.** Every example lists its sources. The photos, renders, datasheets and catalog pages that were measured to build the models belong to their owners (GSMArena, Xiaomi, Samsung, Raspberry Pi Ltd, Cherry, and others) and are **not** redistributed here: only the numbers measured from them are kept (`data/**/*.json`, measurement scripts). Product and company names are used to identify the objects modelled and belong to their owners.
+- **Anatomy** (wheresryan22/anatomy): not used or copied; credited as the inspiration for presenting an explained object as a "Fig N" card.
