@@ -13,12 +13,12 @@
   'use strict';
   const M = {
     order: ['vendor/three.bundle.js', 'iso.js', 'core.js', 'presentation.js', 'audio.js', 'samples.js', 'sound.js', 'gl.js', 'figure.js', 'parts.js', 'kin.js',
-      'enigma.js', 'cube.js', 'deflate.js', 'rar5.js', 'react-reconcile.js', 'spec-core.js', 'workflow-engine.js', 'paper-engine.js', 'spec.js'],
+      'enigma.js', 'cube.js', 'deflate.js', 'rar5.js', 'react-reconcile.js', 'spec-core.js', 'workflow-engine.js', 'paper-engine.js', 'paper-mesh.js', 'spec.js'],
     stack3d: ['vendor/three.bundle.js', 'gl.js', 'figure.js', 'parts.js'],
     injected: ['presentation.js'],
     engines: {
       studio: { stack3d: true, modules: [] },
-      paper: { stack3d: true, modules: ['paper-engine.js'] },      // its sheet still projects the model meshes through three.js
+      paper: { stack3d: true, modules: ['paper-engine.js', 'paper-mesh.js'] },      // vector engine, then the mesh adapter that projects the model meshes through three.js
       workflow: { stack3d: false, modules: ['workflow-engine.js'] },
     },
     legacy: 'studio',

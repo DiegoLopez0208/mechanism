@@ -150,7 +150,7 @@
       root.add(grp);
     });
     F.finish();
-    if (vectorOnly) return MX.paperEngine.run({ spec, validation: V, config: presentation, F, W, H, length: LEN });
+    if (vectorOnly) return MX.paperEngine.run({ spec, validation: V, config: presentation, views: MX.paperMesh.viewSet(F), shapeCheck: MX.paperMesh.shapeCheck(F), W, H, length: LEN });      // the mesh adapter turns the compiled parts into the plain view set the vector engine draws
     const parts = F.parts, key = st.key;
     st.scene.updateMatrixWorld(true); const wbox = new TH.Box3(); parts.forEach((p) => wbox.expandByObject(p.group)); const ctr = wbox.getCenter(new TH.Vector3());      // centro del objeto armado, en ejes del mundo
 

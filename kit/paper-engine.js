@@ -12,68 +12,9 @@
     const k=Math.min(rect.w/Math.max(.001,right-left),rect.h/Math.max(.001,bottom-top));
     return p=>[rect.x+rect.w/2+(p[0]-(left+right)/2)*k,rect.y+rect.h/2+(p[1]-(top+bottom)/2)*k];
   };
-  // Geometry compilation uses the figure's scene graph, but never G.stage.
-  // Supply the minimal mathematical stage needed by that compiler and exports.
-  E.stage=o=>{
-    const TH=g.THREE,scene=new TH.Scene();
-    return {scene,camera:null,key:{position:new TH.Vector3()},floor:new TH.Group(),aoSkip:[],ao:{updateGtaoMaterial(){}},
-      setView(){},
-      project(x,y,z){const p=E.project([x,z,-y],'front');return[o.w/2+p[0],o.h/2+p[1]];},
-      render(){throw new Error('Paper is a vector engine: shaded rendering is forbidden');},
-      blit(){throw new Error('Paper cannot composite a Studio image');}};
-  };
-  function silhouettes(geometry){
-    const TH=g.THREE,pos=geometry.attributes.position,idx=geometry.index,edges=new Map();
-    for(let i=0;i<(idx?idx.count:pos.count);i+=3){
-      const v=[0,1,2].map(j=>new TH.Vector3().fromBufferAttribute(pos,idx?idx.getX(i+j):i+j));
-      const normal=v[1].clone().sub(v[0]).cross(v[2].clone().sub(v[0])).normalize();
-      const keys=v.map(p=>p.toArray().map(n=>Math.round(n*1e5)).join(','));
-      for(let j=0;j<3;j++){
-        const k=(j+1)%3,key=[keys[j],keys[k]].sort().join('/');
-        if(!edges.has(key))edges.set(key,{ends:[v[j].clone(),v[k].clone()],normals:[]});
-        edges.get(key).normals.push(normal.clone());
-      }
-    }
-    return Array.from(edges.values());
-  }
-  function meshEdges(parts){
-    const TH=g.THREE;
-    return parts.map(part=>{
-      const meshes=[];
-      part.group.traverse(mesh=>{
-        if(!mesh.isMesh||!mesh.geometry)return;
-        const geometry=new TH.EdgesGeometry(mesh.geometry,35),pos=geometry.attributes.position;
-        meshes.push({mesh,points:pos.array.slice(),outline:silhouettes(mesh.geometry)});geometry.dispose();
-      });return{part,meshes};
-    });
-  }
-  function worldLines(cache){
-    const TH=g.THREE,v=new TH.Vector3();
-    return cache.map(({part,meshes})=>{
-      const segments=[],outline=[];
-      for(const {mesh,points,outline:edges} of meshes){
-       const normalMatrix=new TH.Matrix3().getNormalMatrix(mesh.matrixWorld);
-       for(const edge of edges)outline.push({ends:edge.ends.map(v=>v.clone().applyMatrix4(mesh.matrixWorld).toArray()),normals:edge.normals.map(n=>n.clone().applyNormalMatrix(normalMatrix).toArray())});
-       for(let i=0;i<points.length;i+=6){
-        const ends=[];for(let j=0;j<6;j+=3){v.set(points[i+j],points[i+j+1],points[i+j+2]).applyMatrix4(mesh.matrixWorld);ends.push(v.toArray());}segments.push(ends);
-       }
-      }
-      return{part,segments,outline};
-    });
-  }
-  function prepare(entries) {
-    for(const entry of entries){
-      entry.views={};
-      for(const view of ['front','top','side']){
-        const axis=view==='top'?1:view==='side'?0:2;
-        const outline=entry.outline.filter(e=>e.normals.length===1||e.normals.some(n=>(n[axis]>1e-7)!==(e.normals[0][axis]>1e-7))).map(e=>e.ends);
-        const points=entry.segments.concat(outline).flatMap(s=>s.flatMap(p=>E.project(p,view)));
-        let l=Infinity,r=-Infinity,t=Infinity,b=-Infinity;
-        for(let i=0;i<points.length;i+=2){l=Math.min(l,points[i]);r=Math.max(r,points[i]);t=Math.min(t,points[i+1]);b=Math.max(b,points[i+1]);}
-        entry.views[view]={points:Float32Array.from(points),bounds:[l,t,r,b],offset:E.project(entry.offset,view)};
-      }
-    }
-  }
+  // The mesh adapter (stage, edges, silhouettes, projection to a view set) lives in kit/paper-mesh.js; this alias keeps the
+  // old entry point for callers that still ask the engine for the stage.
+  E.stage=o=>MX.paperMesh.stage(o);
   function drawing(c,entries,view,rect,T,active,fraction=1,all=false,explode=0){
     let l=Infinity,r=-Infinity,t=Infinity,b=-Infinity;
     for(const entry of entries){const v=entry.views[view],dx=v.offset[0]*explode,dy=v.offset[1]*explode;
@@ -81,7 +22,7 @@
     const k=Math.min(rect.w/Math.max(.001,r-l),rect.h/Math.max(.001,b-t)),cx=(l+r)/2,cy=(t+b)/2;
     const fit=p=>[rect.x+rect.w/2+(p[0]-cx)*k,rect.y+rect.h/2+(p[1]-cy)*k];
     for(const entry of entries){
-      const v=entry.views[view],points=v.points,part=entry.part,selected=part.id===active,estimated=part.spec.conf==='estimated';
+      const v=entry.views[view],points=v.points,selected=entry.id===active,estimated=entry.conf==='estimated';
       c.save();c.translate(rect.x+rect.w/2,rect.y+rect.h/2);c.scale(k,k);c.translate(-cx+v.offset[0]*explode,-cy+v.offset[1]*explode);
       c.beginPath();c.setLineDash(estimated?[7/k,5/k]:[]);
       const limit=Math.floor(points.length/4*fraction)*4;
@@ -166,26 +107,16 @@
     if (msg) { c.save(); c.globalAlpha = msg[2]; pill(c, msg[0], W / 2, top - 22, 30 * FS, msg[1], ON); c.restore(); }
     return Y(-1.6) + (tall ? 290 : 190);      // where the caption starts: constant, so nothing jumps between stages
   }
-  E.run=({spec,validation,config,F,W,H,length})=>{
-    const plan=P.plan(spec,'paper',length),T=MX.THEME,cache=meshEdges(F.parts);
+  E.run=({spec,validation,config,views,shapeCheck,F,W,H,length})=>{
+    if(!views&&F){views=MX.paperMesh.viewSet(F);shapeCheck=MX.paperMesh.shapeCheck(F);}
+    const plan=P.plan(spec,'paper',length),T=MX.THEME,entries=views.entries,details=views.parts;
     const scene=spec.paperScene&&spec.paperScene.kind==='pin-section'?spec.paperScene:null;
     if(scene){plan.items=sceneSteps(scene);plan.slot=(plan.end-plan.begin)/plan.items.length;}
-    const pose={t:0,e:0,mech:{ang:()=>0,step:0,phase:0},view:{yaw:0,pitch:0,zoom:1}};
-    F.apply(pose,false);F.st.scene.updateMatrixWorld(true);const entries=worldLines(cache),TH=g.THREE;
-    const origins=F.parts.map(p=>new TH.Vector3().setFromMatrixPosition(p.group.matrixWorld));
-    F.apply({...pose,e:.55},false);F.st.scene.updateMatrixWorld(true);
-    entries.forEach((entry,i)=>{entry.offset=new TH.Vector3().setFromMatrixPosition(entry.part.group.matrixWorld).sub(origins[i]).toArray();});
-    // Technical explosion is translation-only. Cache contour topology and all
-    // three orthographic projections once, then move vector paths analytically.
-    prepare(entries);
     const viewCache=new Map();
     const cols=['A','B','C','D','E','F'];
-    const shapeCheck=()=>F.parts.map(p=>{
-      let ratio=1;p.group.traverse(m=>{const u=m.geometry?.userData;if(u?.areaRatio!=null&&Math.abs(u.areaRatio-1)>Math.abs(ratio-1))ratio=u.areaRatio;});return{id:p.id,ratio};
-    }).filter(p=>Math.abs(p.ratio-1)>.01);
     return P.mount({plan,spec,validation,config,W,H,engine:'paper-vector2d',shapeCheck,diagnostics:()=>({renderer:'canvas2d-vector',studioFrames:0,projection:'orthographic'}),
       draw(c,a){
-        const compact=H<1600,active=F.byId[a.item.id];
+        const compact=H<1600,active=details[a.item.id];
         const explode=smooth((a.t-2)/3)*(1-smooth((a.t-plan.end)/1.3));
         c.save();c.fillStyle=T.paper;c.fillRect(0,0,W,H);
         // Drawing-sheet registration, zone letters and restrained drafting grid.
@@ -246,18 +177,18 @@
           y+=text(c,'PART '+String(a.index+1).padStart(2,'0')+' / '+plan.items.length+' • '+String(a.item.conf).toUpperCase(),72,y,19,W-144,T.teal,700)+16;
           y+=text(c,a.item.title,72,y,compact?30:38,W-144,T.ink,600)+15;
           y+=text(c,a.item.formula,72,y,compact?21:26,W-144,T.mute)+18;
-          const size=active.info.sizeEvidence; y+=text(c,size?.label||'SIZE NOT COMPARED',72,y,18,W-144,T.teal,600)+18;
+          y+=text(c,active.sizeLabel||'SIZE NOT COMPARED',72,y,18,W-144,T.teal,600)+18;
           const room=H-160-y;
           if(room>45){
-            const chosen=entries.filter(e=>e.part.id===a.item.id);
+            const chosen=entries.filter(e=>e.id===a.item.id);
             drawing(c,chosen,'front',{x:W*.5,y:y+10,w:W*.38,h:Math.max(20,room-35)},T,a.item.id,smooth(a.progress*3),true);
-            const param=Object.entries(active.spec.params||{}).find(([,p])=>p.conf!=='estimated'&&p.value!=null);
-            if(param)text(c,param[0].toUpperCase()+' = '+param[1].value+' '+(param[1].unit||''),72,y+35,25,W*.38,T.ink,600);
+            const param=active.param;
+            if(param)text(c,param.name.toUpperCase()+' = '+param.value+' '+param.unit,72,y+35,25,W*.38,T.ink,600);
             text(c,'DETAIL '+String(a.index+1).padStart(2,'0'),72,y+75,18,W*.38,T.mute);
           }
-          const selected=entries.find(e=>e.part===active);
-          if(selected?.segments.length){
-            const origin=E.project(selected.segments[0][0],'front'),offset=selected.views.front.offset;
+          const selected=entries.find(e=>e.id===a.item.id);
+          if(selected?.anchor){
+            const origin=selected.anchor,offset=selected.views.front.offset;
             const p=fit([origin[0]+offset[0]*explode,origin[1]+offset[1]*explode]),to=[W-115,main.y+main.h-10];
             line(c,p,to,T.teal,1.2);c.beginPath();c.arc(to[0],to[1],19,0,Math.PI*2);c.fillStyle=T.paper;c.fill();c.strokeStyle=T.teal;c.stroke();
             text(c,String(a.index+1).padStart(2,'0'),to[0]-12,to[1]+6,17,40,T.teal,700);

@@ -64,3 +64,11 @@ test('a hole that lies outside the outline is reported as GEOMETRY_AREA_MISMATCH
   const f = r.json.findings.find((x) => x.code === 'GEOMETRY_AREA_MISMATCH' && x.subject === 'testplate'); assert.ok(f, JSON.stringify(r.json.findings));
   assert.equal(f.severity, 'FAIL'); assert.ok(r.json.fail > 0);
 });
+
+// Paper compiles the model meshes through its mesh adapter, so the area check runs there too (the lock page here still compiles
+// them although its sheet is the vector section). With --method workflow no mesh is compiled and the check does not run.
+test('with --method paper the area check still runs on the compiled meshes', opts, () => {
+  const r = run(variant({ part: testPlate([[9, 0, 12, 12]]) }), '--method', 'paper', '--background', 'ivory', '--skip', 'camera,labels,frame'); assert.ok(r.json, r.stderr);
+  const f = r.json.findings.find((x) => x.code === 'GEOMETRY_AREA_MISMATCH' && x.subject === 'testplate'); assert.ok(f, JSON.stringify(r.json.findings));
+  assert.equal(f.severity, 'FAIL');
+});
