@@ -199,7 +199,8 @@
       label: compared.length ? 'SIZE ' + compared.length + '/' + keys.length + ' COMPARED' : 'SIZE NOT COMPARED' };
   };
   S.validate = (spec) => {
-    const paramRows = [], mixed = [], geomRows = [], errors = [], warnings = [], R =spec.research || { sources: [], claims: [] }, src = {}, cl = {}, ids = new Set();
+    const paramRows = [], mixed = [], mixedConfs = new Set(), geomRows = [], errors = [], warnings = [], R =spec.research || { sources: [], claims: [] }, src = {}, cl = {}, ids = new Set();
+    let estDims = 0;      // dimensions declared ESTIMATED in params (never compared)
     Object.keys(spec).filter((k) => !SPEC_KEYS.has(k)).forEach((k) => warnings.push('unknown spec key: ' + k));
     if (spec.presentation != null) {
       const p = spec.presentation;
@@ -243,7 +244,7 @@
           if (!(k in sizes)) { errors.push('part ' + d.id + ': params.' + k + ' is not a dimension of this part' + (d.kind === 'drawing' ? ' (a drawing has: ' + Object.keys(sizes).join(', ') + ')' : '')); return; }
           if (!CONFS.includes(q.conf)) { errors.push('part ' + d.id + ': params.' + k + ' has no valid conf'); return; }
           if (RANK[q.conf] > worst) { worst = RANK[q.conf]; worstK = k; }
-          if (q.conf === 'estimated') { if (!q.why && !(q.claim && cl[q.claim])) errors.push('part ' + d.id + ': params.' + k + ' is ESTIMATED without saying why'); }
+          if (q.conf === 'estimated') { estDims++; if (!q.why && !(q.claim && cl[q.claim])) errors.push('part ' + d.id + ': params.' + k + ' is ESTIMATED without saying why'); }
           else if (!q.claim || !cl[q.claim]) errors.push('part ' + d.id + ': params.' + k + ' (' + q.conf + ') cites no claim that exists');
           if (q.value != null) {
             const drawn = sizes[k], tol = q.tol == null ? Math.abs(q.value) * 0.001 : q.tol;
@@ -252,10 +253,10 @@
             else if (typeof drawn !== 'number') errors.push('part ' + d.id + ': ' + k + ' is not a number, it cannot be compared with its source');
             else if (unitClash(q, cl[q.claim])) errors.push('part ' + d.id + ': params.' + k + ' ' + unitClash(q, cl[q.claim]));
             else if (Math.abs(drawn - q.value) > tol) errors.push('part ' + d.id + ': ' + k + ' is drawn at ' + drawn + ' but the source says ' + q.value + ' (tolerance ' + tol + ')');
-            else if (q.conf !== 'estimated') paramRows.push({ part: d.id, key: k, drawn, value: q.value });
+            else if (q.conf !== 'estimated') paramRows.push({ part: d.id, key: k, drawn, value: q.value, conf: q.conf });
           }
         });
-        if (d.conf && worst >= 0 && RANK[d.conf] < worst) { mixed.push(d.id); warnings.push('part ' + d.id + ' is ' + d.conf.toUpperCase() + ' but its dimension ' + worstK + ' is ' + d.params[worstK].conf.toUpperCase() + ': the card lists both'); }
+        if (d.conf && worst >= 0 && RANK[d.conf] < worst) { mixed.push(d.id); [d.conf].concat(Object.keys(d.params).map((k) => (d.params[k] || {}).conf)).forEach((c) => { if (CONFS.includes(c)) mixedConfs.add(c); }); warnings.push('part ' + d.id + ' is ' + d.conf.toUpperCase() + ' but its dimension ' + worstK + ' is ' + d.params[worstK].conf.toUpperCase() + ': the card lists both'); }
       }
       bad(d.p, 'p'); [d.at, d.explode].forEach((a, i) => (a || []).forEach((v) => { if (typeof v !== 'number' || !isFinite(v)) errors.push('part ' + d.id + ': ' + (i ? 'explode' : 'at') + ' has a value that is not a finite number'); }));
     });
@@ -334,7 +335,9 @@
     lines.push('size evidence: ' +sizeEvidence.filter((s) => s.compared.length).length + '/' + sizeEvidence.length + ' parts have a drawn size compared with its source (confidence badges do not verify size)');
     if (!errors.length && !checked) warnings.push(conversions ? 'every check is a unit conversion (inch to mm, pound to kg): it cannot fail, so it is not evidence. Compare the drawn model with a figure the sheet gives in another way, or cross two sources (mark a real conversion with kind: "convert")' : 'no published figure is compared with the model: this is a description, not a verification');
     if (!errors.length && checked && conversions) warnings.push(conversions + ' of the checks are unit conversions and do not count as evidence');
-    if (paramRows.length || mixed.length) lines.push('dimensions: ' + paramRows.length + ' compared with their source, ' + mixed.length + ' part(s) mix sourced and estimated dimensions');
+    // compared means drawn = the cited figure; it says nothing of independence (that is the provenance line). Classes are named as they are: SPEC + DERIVED is not "estimated"
+    if (paramRows.length || mixed.length) { const by = CONFS.map((c) => [c, paramRows.filter((r) => r.conf === c).length]).filter(([, n]) => n).map(([c, n]) => n + ' ' + c);
+      lines.push('dimensions: ' + paramRows.length + ' compared with their source' + (by.length ? ' (' + by.join(', ') + ')' : '') + ', ' + estDims + ' estimated, ' + mixed.length + ' part(s) mix confidence classes' + (mixed.length ? ' (' + CONFS.filter((c) => mixedConfs.has(c)).join(', ') + ')' : '')); }
     lines.push('recognisable: ' + (recog.declared ? recog.features + ' iconic features built, blind test ' + recog.blind : 'not declared'));
     if (!errors.length && checked) { lines.push('provenance: ' + prov.independent.length + ' independent, ' + prov.sameSource.length + ' same source as the inputs, ' + prov.unlinked.length + ' with no sourced inputs, ' + (checked - prov.independent.length - prov.sameSource.length - prov.unlinked.length) + ' other (dimensions, test vectors) not classified');
       if (prov.sameSource.length) warnings.push(prov.sameSource.length + ' check(s) compare the model with a figure from the same source that fed it (' + prov.sameSource.map((r) => r.label + ' [' + r.shared.join(', ') + ']').slice(0, 4).join('; ') + '): they show the two agree, not that the source is right. Compare with a figure from another source, or say in the source that it derives from another (derives: [ids])');

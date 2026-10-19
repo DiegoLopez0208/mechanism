@@ -20,6 +20,9 @@
   "examples/lock/index.html": "9d0d46b5cd2ee4d0549e20ef1ef9d8b0ef1b25193026dca4cc2b1bfd6cfddeef",
   "examples/lock/run.js": "fdde519e21f354e473dacdd9c508ef91f6ed64de72dd0c736ccf8626504af502",
   "examples/lock/spec.js": "1eb1ca4c8e02cedee42846b923b77c7c615b9dda1fb018979ce3ff2f06593100",
+  "examples/rpi4-board/index.html": "b152b7823566444da6409ad15a03d83d1418bfb52e61c3e96ba64721344d78b7",
+  "examples/rpi4-board/run.js": "fdde519e21f354e473dacdd9c508ef91f6ed64de72dd0c736ccf8626504af502",
+  "examples/rpi4-board/spec.js": "909c902a37385a2f4e611fc770dc29a9d16287649db6786af8c23b7f622d306c",
   "kit/boot.js": "7079efa34b264c4ca7449a9dc5aa65007eb370b6aee770b133591cb99ee6e071",
   "kit/core.js": "bdd722ab57902039e4cab25644c13bce237906ead933484f75d3d57343e28cf1",
   "kit/cube.js": "2e1fede9093abd373ddbab1dcd58161c418f66cc6f7fc691374d54d594ec2371",
@@ -36,11 +39,11 @@
   "kit/react-reconcile.js": "478a08a5b7d39f87b32774bc7c5cb6df07db4ce83fc9bca6fff1fbd80ab3ce41",
   "kit/samples.js": "a6c3859752acd1a2a54c4e0830f3aa14cfd15c1c91670a2899a9e1ab1677a4fe",
   "kit/sound.js": "a7379d1a04a60d7ebedbfb9538a84190d9e24914f4fad876614f5e95267f0467",
-  "kit/spec-core.js": "4a8b6b5153ce289c8e08ccbeea266b2d8e06d644dd12a94759f989dc1c79017a",
+  "kit/spec-core.js": "09ce0b8b256251b5e4b0eac6b58aabdec9e797c14b9a43d5dbf1fc9932a3465b",
   "kit/spec.js": "2258afb47a7d7ffe0cef8d58b43eff4883eff33783e19d89956d22d1ec6d2d75",
-  "kit/svg2d.js": "b683e705effec6610c7bb92b632e6c3641f442cf0cf53761dbf88ab062de60d2",
+  "kit/svg2d.js": "669634706108ced8a8e1f2673973344a50fb6eca6fcc32cca91d9efa9c2596aa",
   "references/checks.md": "7b92be38c3ec3837c59cadc495efb481c6fabd1dc958f7af3cc66f278bf205eb",
-  "references/scenes.md": "3777dd90db68a577127f12de4c0a79ae24c4df706ec5b93a62c42e372d490a3f",
+  "references/scenes.md": "03ac5a99e24580011e5cbb88587a74afe7a8377e0628dc1f3be6c4f10c547187",
   "scripts/check-spec.mjs": "9ef785d9699b8c74164e04ec65a12faa6c66e3df5818451b9ca98c7192f4f2de",
   "scripts/export-svg.mjs": "9d9e0a717bdbd6cf180310fdbfa2bf2f52c7b91fe9129de0af009edc78d68a02",
   "scripts/lib/browser.mjs": "8441b581fe5ce2fc916071084a88bbdfb0a620f2d3f418ad744dc256b20ab537",
@@ -49,7 +52,7 @@
   "scripts/preflight.mjs": "85d7b6c05144fdcba14dc8199eeb5fc0824b0f40d4cebf15b6b76a7db70e08a6",
   "scripts/render.mjs": "235027b5cc3695603aad0f1a8e68f8182bd9577fd84becce19bd1e5a89002098",
   "scripts/skill-doctor.mjs": "c8a1d1cbf6402489feb1b45d0a3cf72068def0089af27f716cfca2b5fe175740",
-  "skill.json": "91151baa7f346738f41bc04d22ac994fb772b56d7cf14062569bb82411bc3b21"
+  "skill.json": "9ab7a4c335d513bd7ed0ef3fb9874f5fc4e23e3961d8a9158bc63a366a1a7483"
  },
  "optional": {
   "mesh": {

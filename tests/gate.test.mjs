@@ -244,6 +244,18 @@ test('params: a part stronger than its weakest dimension is reported as mixed', 
   assert.equal(r.errors.length, 0, r.errors.join('; '));
   assert.equal(r.verdict.mixed, 1);
   assert.ok(r.warnings.some((w) => /dimension h is ESTIMATED/.test(w)));
+  assert.ok(r.lines.some((l) => /^dimensions: 1 compared with their source \(1 spec\), 1 estimated, 1 part\(s\) mix confidence classes \(spec, estimated\)$/.test(l)), r.lines.join('\n'));
+});
+
+test('params: published + derived dimensions (none estimated) are not reported as estimated', () => {
+  const r = mutate((s) => { s.research.claims.push({ id: 'cd', conf: 'derived', text: 'h = w, by symmetry of the sheet', src: ['s1'], cross: 'the sheet prints h = 10 on its side view' });
+    s.parts[0].params = { w: { value: 10, conf: 'spec', claim: 'c1' }, h: { value: 10, conf: 'derived', claim: 'cd' } }; });
+  assert.equal(r.errors.length, 0, r.errors.join('; '));
+  assert.equal(r.verdict.mixed, 1);
+  const line = r.lines.find((l) => l.startsWith('dimensions: '));
+  assert.equal(line, 'dimensions: 2 compared with their source (1 spec, 1 derived), 0 estimated, 1 part(s) mix confidence classes (spec, derived)');
+  assert.doesNotMatch(line, /estimated dimensions|mix sourced and estimated/);
+  assert.equal(r.verdict.state, mutate(() => {}).verdict.state, 'the wording does not move the verdict');
 });
 
 test('recognize: features must be built from parts that exist', () => {

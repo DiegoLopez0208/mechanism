@@ -37,7 +37,7 @@ jobs:
       - name: Studio camera (exploded view hold, flight to the first stop, picture and sound in sync)
         run: node --test --test-concurrency=1 tests/camera.test.mjs
       - name: Engine manifest and Paper (vector scene, declared 2D geometry, SVG export, mesh adapter, visual contract)
-        run: node --test --test-concurrency=1 tests/manifest.test.mjs tests/paper.test.mjs tests/paper-contract.test.mjs tests/paper-geometry.test.mjs tests/svg2d.test.mjs
+        run: node --test --test-concurrency=1 tests/manifest.test.mjs tests/paper.test.mjs tests/paper-contract.test.mjs tests/paper-geometry.test.mjs tests/svg2d.test.mjs tests/rpi4-board.test.mjs
       - name: Mechanism Draft as a standalone install (built outside the repository)
         run: node --test --test-concurrency=1 tests/draft-skill.test.mjs
       - name: The committed Draft plugin matches its files.json, with nothing extra

@@ -36,7 +36,8 @@ material specification, no fits, no check against a source unless the gate compa
 Three things are kept apart: the **value** (a named dimension of `build()`: `outline.w`, `fix1.d`, `bolts.pcd`, ...), the
 **dimension geometry** (extension and dimension lines, leaders: placed by `viewSet()` in model units), and the **label
 position** (chosen by the exporter). A label is placed at its preferred spot and then moved along the candidates it has (along
-the dimension line, the other side, the other leader directions); if every candidate collides with another label, a dimension
+the dimension line, the other side, and, for a span too short for its text, just outside either end with the dimension line run on to it (Draft 0.4:
+the 3.5 mm datum dimensions of the Raspberry Pi 4 board need it at 1:1), the other leader directions); if every candidate collides with another label, a dimension
 line, the part's contours or the sheet border, the export stops and names the dimension. Nothing is overlapped silently.
 
 Colour carries the evidence status the gate gives: compared with a source (teal), declared in the spec but not verified (black),
