@@ -34,6 +34,8 @@ jobs:
       # The browser-heavy files run one at a time: each opens headless Chromium sessions (browser.test.mjs opens five at once on purpose)
       - name: Render, colour tags, audio streams and encoder fallback
         run: node --test --test-concurrency=1 tests/render.test.mjs tests/presentation.test.mjs
+      - name: Studio camera (exploded view hold, flight to the first stop, picture and sound in sync)
+        run: node --test --test-concurrency=1 tests/camera.test.mjs
       - name: Engine manifest and Paper (vector scene, mesh adapter, visual contract)
         run: node --test --test-concurrency=1 tests/manifest.test.mjs tests/paper.test.mjs tests/paper-contract.test.mjs
       - name: Mechanism Draft as a standalone install (built outside the repository)

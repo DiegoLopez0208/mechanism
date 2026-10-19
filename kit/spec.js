@@ -215,7 +215,11 @@
       const mulv = (m, v) => [0, 1, 2].map((r) => m[r * 3] * v[0] + m[r * 3 + 1] * v[1] + m[r * 3 + 2] * v[2]);
       return CST[i].map((c) => (CB.inLayer(c, ev.mv.face) ? { pos: mulv(Rm, c.pos), R: [0, 1, 2].flatMap((r) => [0, 1, 2].map((q) => Rm[r * 3] * c.R[q] + Rm[r * 3 + 1] * c.R[3 + q] + Rm[r * 3 + 2] * c.R[6 + q])) } : c));
     };
-    const tMend = tM0 + mD.reduce((s2, d) => s2 + d, 0), tE0 = tMend + (modes.length ? 0.2 : 0.4), ED = SHORT ? 1.8 : 2.8, tT0 = tE0 + ED + 0.4;
+    const tMend = tM0 + mD.reduce((s2, d) => s2 + d, 0), tE0 = tMend + (modes.length ? 0.2 : 0.4), ED = SHORT ? 1.8 : 2.8;
+    // exploded view -> first tour stop: the parts stop separating at tXS (the camera lands on the exploded view at that moment), the whole
+    // exploded object is then held still for XHOLD so it can be read (normal and extended cuts; director.explodedHold), and the camera flies
+    // to the first stop on XEASE: it leaves XLEAD before the stop begins and lands 0.3 s into it, as the stop's bell rings (XMOVE = 0.7 s)
+    const tXS = tE0 + ED, XHOLD = SHORT ? 0 : (dir.explodedHold == null ? 0.9 : Math.max(0, dir.explodedHold)), XLEAD = 0.4, XMOVE = XLEAD + 0.3, XEASE = E.sm, tT0 = tXS + XHOLD + XLEAD;
     const tourAll = parts.filter((p) => p.spec.tour !== false && p.info && !p.spec.decor).sort((a, b) => (a.base.z + a.explode.z) - (b.base.z + b.explode.z)).map((p) => p.id);
     const tourIds = SHORT ? (((dir.short && dir.short.tour) || dir.tour || tourAll).slice(0, 2)) : LONG ? tourAll.slice(0, 12) : (dir.tour || tourAll);
     const tR0 = tT0 + tourIds.length * TD, RD = SHORT ? 1.4 : 2.6, tP0 = tR0 + RD + 0.3, PD = 5.4;
@@ -255,21 +259,25 @@
     if (HOLD) keys.push([ASM_END + HOLD * 0.5, Object.assign({}, VW.iso, { yaw: VW.iso.yaw + 22, pitch: VW.iso.pitch + 4, zoom: VW.iso.zoom * 1.06 })], [ASM_END + HOLD, Object.assign({}, VW.iso, { yaw: VW.iso.yaw - 6, pitch: VW.iso.pitch + 8 })]);      // toma de presentacion: el objeto entero, con su marca, antes de abrirlo
     const cyc = [VW.front, VW.iso, VW.side, VW.three];
     modes.forEach((m, k) => { if (!mD[k]) return; const t = mS[k]; keys.push([t + 0.5, Object.assign({}, k % 2 ? cyc[k % 4] : cyc[(k + 1) % 4]), [0.45, 0, 0.2, 1]]); keys.push([t + mD[k] - 0.2, Object.assign({}, cyc[(k + 2) % 4], { yaw: cyc[(k + 2) % 4].yaw + 8 })]); });
-    keys.push([tE0 + ED, VW.expl, [0.4, 0, 0.15, 1]]);
+    keys.push([tXS, VW.expl, [0.4, 0, 0.15, 1]]);
+    if (XHOLD > 0) keys.push([tXS + XHOLD, VW.expl]);      // the same view at both ends: the camera does not move during the hold
     const YP = dir.tourAngles || [[-38, 20], [-20, 12], [-58, 26], [-30, 8], [-48, 30]];      // director.tourAngles: [[yaw, pitch], ...] for objects whose natural view is not the default one
-    tourIds.forEach((id, j) => { const ts = tT0 + j * TD, [y, p] = YP[j % YP.length]; keys.push([ts + 0.3, shot(id, { yaw: y, pitch: p }), E.settle]); keys.push([ts + TD - 0.1, shot(id, { yaw: y + 9, pitch: p - 3, dof: 0.8 }), [0.2, 0, 0.8, 1]]); });
+    tourIds.forEach((id, j) => { const ts = tT0 + j * TD, [y, p] = YP[j % YP.length]; keys.push([ts + 0.3, shot(id, { yaw: y, pitch: p }), j ? E.settle : XEASE]); keys.push([ts + TD - 0.1, shot(id, { yaw: y + 9, pitch: p - 3, dof: 0.8 }), [0.2, 0, 0.8, 1]]); });
     keys.push([tR0 + RD, Object.assign({}, VW.iso, { zoom: VW.iso.zoom * 0.88 }), [0.4, 0, 0.2, 1]], [DUR, Object.assign({}, VW.iso, { zoom: VW.iso.zoom * 0.8, yaw: -26 })]);
     keys.sort((a, b) => a[0] - b[0]);
     for (let i = 1; i < keys.length; i++) if (keys[i][0] <= keys[i - 1][0]) keys[i][0] = keys[i - 1][0] + 0.01;
 
     const stag = {}; order.slice().sort((a, b) => (a.explode.length() - b.explode.length())).forEach((p, i) => { stag[p.id] = i / Math.max(1, N - 1); });
-    const tourAt = (t) => { const n = tourIds.length, jj = Math.floor((t - tT0) / TD); if (jj < 0 || !n || t >= tR0 + RD) return null; if (jj >= n) return { id: tourIds[n - 1], a: 1 - ramp(t, tR0 + RD * 0.55, tR0 + RD), j: n - 1 }; const ts = tT0 + jj * TD; return { id: tourIds[jj], a: jj === 0 ? ramp(t, ts - 0.35, ts + 0.15) : 1, j: jj }; };      // the rest stays dimmed between two stops and until the camera has flown back out: through the shell the frame would go white
+    // the first stop takes over when the camera leaves the exploded view: the rest fades in the first 35 % of the flight (gone before the camera
+    // can pass through it, and quickly: a stack of thin parts glows while it is half transparent) and the card fades in as the camera lands
+    // (a: card, d: the rest)
+    const tourAt = (t) => { const n = tourIds.length, jj = Math.floor((t - tT0) / TD); if (t < tXS + XHOLD || !n || t >= tR0 + RD) return null; if (jj >= n) return { id: tourIds[n - 1], a: 1 - ramp(t, tR0 + RD * 0.55, tR0 + RD), j: n - 1 }; if (jj <= 0) return { id: tourIds[0], a: E.sm(ramp(t, tT0, tT0 + 0.45)), d: E.sm(ramp(t, tXS + XHOLD, tXS + XHOLD + XMOVE * 0.35)), j: 0 }; return { id: tourIds[jj], a: 1, j: jj }; };      // the rest stays dimmed between two stops and until the camera has flown back out: through the shell the frame would go white
     const cutSet = Object.fromEntries(parts.filter((p) => p.spec.cutaway).map((p) => [p.id, typeof p.spec.cutaway === 'number' ? p.spec.cutaway : 0.9]));   // piezas que se vuelven casi transparentes mientras corre el mecanismo (vista de corte)
     const script = (t) => {
       const cut = ramp(t, tM0 - 0.3, tM0 + 0.5) * (1 - ramp(t, tE0 - 0.6, tE0 - 0.1)), ex = ramp(t, tE0, tE0 + ED), re = ramp(t, tR0, tR0 + RD), eg = ex * (1 - re), tr = tourAt(t), md = modeAt(t);
       const s = { t, e: eg, explodeK: (id) => { const dl = stag[id] * 0.35, a = E.sm(ramp(ex, dl, dl + 0.65)), b = E.sm(ramp(re, (1 - stag[id]) * 0.35, (1 - stag[id]) * 0.35 + 0.65)); return a * (1 - b); },
         assemble: (id) => { const k = E.outBack(ramp(t, arrive[id], arrive[id] + 0.95), 1.1); return { k: Math.min(1.04, k) > 1 ? 1 : k, alpha: ramp(t, arrive[id], arrive[id] + 0.3) * (cutSet[id] ? 1 - cutSet[id] * cut : 1) }; },
-        focus: tr ? tr.id : null, focusA: tr ? tr.a : 0, dimTo: 0.012, light: { az: -38 + 26 * Math.sin(t * 0.23), el: 54 },
+        focus: tr ? tr.id : null, focusA: tr ? tr.a : 0, dimA: tr ? tr.d : undefined, dimTo: 0.012, light: { az: -38 + 26 * Math.sin(t * 0.23), el: 54 },
         mech: mechAt(t), hint: t < COLD ? 'THE QUESTION' : t < ASM_END ? 'ASSEMBLY' : t < tE0 ? (PRESS ? 'KEY PRESS' : ENIG ? 'ENCIPHERING' : CALC ? 'THE NUMBERS' : CUBE ? 'FACE TURNS' : ENGN ? 'FOUR-STROKE CYCLE' : 'POWER PATH') : t < tT0 ? 'EXPLODED VIEW' : t < tR0 ? 'PART ' + ((tr ? tr.j : tourIds.length - 1) + 1) + ' OF ' + tourIds.length : t < tP0 ? 'RE-ASSEMBLY' : 'EVIDENCE',
         readout: md && t >= tM0 && t < tR0 ? md.label + '  -  ' + (PRESS ? pressAt(t).toFixed(2) + ' mm' : ENIG ? ((mechAt(t).enigma || {}).window || '') : CALC ? an.modes[modeIdx(t)].text + (md.unit ? ' ' + md.unit : '') : CUBE ? cubeDone(t) + ' turns' : ENGN ? Math.round(crankDeg(mechAt(t).eng.theta)) + ' / 720 deg' : an.modes[modeIdx(t)].ratio.toFixed(3) + ' : 1') : parts.length + ' parts', infoAt: [64, H - 360] };
       s.modeA = md && t >= tM0 && t < tE0 ? Math.min(ramp(t, tM0, tM0 + 0.6), 1 - ramp(t, tE0 - 0.5, tE0 - 0.1)) : 0; s.mode = md; s.modeI = modeIdx(t); s.speed = speedAt(t); s.step = stepIdx(t);
@@ -471,7 +479,7 @@
     F.overlay((ctx, s) => { if (s.t == null) return; drawWhat(ctx, s); drawMode(ctx, s); drawCold(ctx, s); panels.forEach((pn) => { if (s.t >= pn.t0 - 0.01 && s.t <= pn.t1 + 0.01) drawPanel(ctx, pn, s.t); }); });
 
     /* ---------------------------------------------------------- sonido */
-    function audio() {
+    function soundEvents() {      // every timed sound of the film (read by audio() and by the timing tests through __soundEvents)
       const ev = [], note = (id, idx) => SND.note(60, 'dorian', idx), pan = (p) => clamp(p.base.x / 45, -0.6, 0.6);
       order.forEach((p) => {
         const sm = P.soundMat(p.spec.mat), size = clamp(Math.max(p.size.x, p.size.y) * 0.9, 4, 90), t0 = arrive[p.id];
@@ -519,7 +527,10 @@
       ev.push({ t: tR0 - 0.1, v: 'whoosh', d: 1.6, f0: 3400, f1: 240, gain: 0.8 }, { t: tR0 + RD - 0.3, v: 'boom', gain: 0.8 });
       panels.forEach((pn) => { ev.push({ t: pn.t0 + 0.1, v: 'blip', f: 900, gain: 0.5 }); (pn.rows || an.modes).forEach((r, i) => ev.push({ t: pn.t0 + 0.5 + i * 0.3, v: 'blip', f: 1100 + i * 90, gain: 0.35, pan: 0.2 })); });
       ev.push({ t: DUR - 3.2, v: 'tone', f: note(0, 4), timbre: 'bell', d: 3.4, ring: 2, gain: 0.6 }, { t: DUR - 3.0, v: 'tone', f: note(0, 9), timbre: 'bell', d: 3, ring: 2, gain: 0.45 });
-      return SND.render({ duration: DUR, seed: 61, events: ev, bed: (dir.sound && 'bed' in dir.sound) ? dir.sound.bed : { bpm: 92, root: 48, mode: 'dorian', level: 0.55, prog: [0, 5, 3, 4], curve: [[0, 0.2], [tM0, 0.4], [tE0, 0.6], [tT0, 0.5], [tP0, 0.3], [DUR, 0.15]] }, room: (dir.sound && dir.sound.room) || { size: 1.1, wet: 0.22, fb: 0.78 }, tone: 0.002 });
+      return ev;
+    }
+    function audio() {
+      return SND.render({ duration: DUR, seed: 61, events: soundEvents(), bed: (dir.sound && 'bed' in dir.sound) ? dir.sound.bed : { bpm: 92, root: 48, mode: 'dorian', level: 0.55, prog: [0, 5, 3, 4], curve: [[0, 0.2], [tM0, 0.4], [tE0, 0.6], [tT0, 0.5], [tP0, 0.3], [DUR, 0.15]] }, room: (dir.sound && dir.sound.room) || { size: 1.1, wet: 0.22, fb: 0.78 }, tone: 0.002 });
     }
 
     /* ---------------------------------------------------------- exportacion */
@@ -551,9 +562,10 @@
       });
       return { t, cam: cam.position.toArray(), near: cam.near, focus: tr ? tr.id : null, parts: out };
     };
+    g.__soundEvents = () => soundEvents().map((e) => ({ t: e.t, v: e.v }));      // when each sound starts (the timing tests check it against the picture)
     g.__checks = { geometryArea: { run: true } };      // the area check below runs on the compiled meshes
     g.__shapeCheck = () => parts.map((p) => { let r = 1; p.group.traverse((m) => { const u = m.isMesh && m.geometry && m.geometry.userData; if (u && u.areaRatio != null && Math.abs(u.areaRatio - 1) > Math.abs(r - 1)) r = u.areaRatio; }); return { id: p.id, ratio: r }; }).filter((q) => Math.abs(q.ratio - 1) > 0.01);      // flat shapes whose triangulated area is not their outline minus the holes (read by scripts/preflight.mjs)
-    g.__specInfo = () => ({ duration: DUR, parts: parts.length, validation: V.lines, warnings: V.warnings, errors: V.errors, panels: panels.map((p) => ({ kind: p.kind, page: p.page, from: p.t0, to: p.t1 })), phases: { assembled: ASM_END, modes: tM0, explode: tE0, tour: tT0, reassemble: tR0, panels: tP0 }, shots: [{ label: 'assembled', t: ASM_END + 0.4 }].concat(modes.map((m, k) => (mD[k] ? { label: 'mode ' + (m.id || k), t: mS[k] + mD[k] * 0.62 } : null)).filter(Boolean), [{ label: 'exploded', t: tE0 + ED + 0.2 }], tourIds.map((id, j) => ({ label: 'tour ' + id, t: tT0 + j * TD + TD * 0.62 })), [{ label: 'reassembled', t: tR0 + RD - 0.2 }]) });
+    g.__specInfo = () => ({ duration: DUR, parts: parts.length, validation: V.lines, warnings: V.warnings, errors: V.errors, panels: panels.map((p) => ({ kind: p.kind, page: p.page, from: p.t0, to: p.t1 })), phases: { assembled: ASM_END, modes: tM0, explode: tE0, separated: tXS, approach: tXS + XHOLD, arrive: tT0 + 0.3, tour: tT0, reassemble: tR0, panels: tP0 }, shots: [{ label: 'assembled', t: ASM_END + 0.4 }].concat(modes.map((m, k) => (mD[k] ? { label: 'mode ' + (m.id || k), t: mS[k] + mD[k] * 0.62 } : null)).filter(Boolean), [{ label: 'exploded', t: tE0 + ED + 0.2 }], tourIds.map((id, j) => ({ label: 'tour ' + id, t: tT0 + j * TD + TD * 0.62 })), [{ label: 'reassembled', t: tR0 + RD - 0.2 }]) });
 
     /* ---------------------------------------------------------- Enigma: estado animado, camino de la senal y HUD */
     // Los eventos (tecla, salida, camino, rotores que avanzan) vienen de kit/enigma.js, ya validados contra los casos publicados.

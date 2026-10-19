@@ -65,7 +65,7 @@ Use `--length short --aspect 9:16` first: Workflow/Paper are 30 seconds (normal 
 
 **Closing card.** Every film ends on a card with the object name and the gate verdict, and nothing about this toolkit: no name, no URL, no credit. Sign it yourself if you want to with `director.outro: { title, sub, what, line, url }` (all optional), or drop the card with `director.outro: false`.
 
-**Lengths.** Render the short cut (`--length short`, about 30 s) for sharing, the normal one for the full argument and `--length extended` when someone wants the whole teardown. Name the files `<name>-short.mp4` / `<name>.mp4`. Choose what the short cut keeps with `director.short: { modes: [ids], tour: [ids] }` (the steps phase and the first published checks by default).
+**Lengths.** Render the short cut (`--length short`, about 30 s) for sharing, the normal one for the full argument and `--length extended` when someone wants the whole teardown. Name the files `<name>-short.mp4` / `<name>.mp4`. Choose what the short cut keeps with `director.short: { modes: [ids], tour: [ids] }` (the steps phase and the first published checks by default). In the normal and extended cuts the whole exploded object is held still for `director.explodedHold` seconds (0.9 by default) before the camera flies to the first part; the short cut has no hold.
 
 **Provenance per dimension.** When a part mixes sourced and estimated sizes, add `params: { w: { value, unit, conf, claim, tol }, wall: { conf: 'estimated', why } }`: the gate compares each drawn size with its source value and reports the part as mixed, and the card shows each size with its class. (`node scripts/registry.mjs` refreshes the register of the skill's own examples; it is for contributors, not for your object.)
 

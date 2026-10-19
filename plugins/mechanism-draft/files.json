@@ -26,8 +26,8 @@
   "kit/react-reconcile.js": "478a08a5b7d39f87b32774bc7c5cb6df07db4ce83fc9bca6fff1fbd80ab3ce41",
   "kit/samples.js": "a6c3859752acd1a2a54c4e0830f3aa14cfd15c1c91670a2899a9e1ab1677a4fe",
   "kit/sound.js": "a7379d1a04a60d7ebedbfb9538a84190d9e24914f4fad876614f5e95267f0467",
-  "kit/spec-core.js": "5d9a78c2bf9dd87b3fbd140a743871f3dac820f4042b12757ef26319978f2ca3",
-  "kit/spec.js": "4575da31bf2202af8cc1a2c029812ad3f791ae04125717e2f70233a7be1c8990",
+  "kit/spec-core.js": "d692338832a10e69c296e979cac48adf95989e3b30ca93a3900cb72aa7dac7a1",
+  "kit/spec.js": "c16257837836e8f9301f17763f5acbc3dd25f920a33e4f1bc40be6598feb0eae",
   "references/checks.md": "7b92be38c3ec3837c59cadc495efb481c6fabd1dc958f7af3cc66f278bf205eb",
   "references/scenes.md": "9b677c62265c99f485be47c1912d0dce804784ce4d6b7f579a2ca16a5a702628",
   "scripts/check-spec.mjs": "dcb2e215ab7f967c24649c34c5469615cc2668b9b696da55e317e73935046238",
@@ -46,7 +46,7 @@
    "files": {
     "kit/vendor/three.bundle.js": "6f5eb0fd72ada778b941562656d51ed44ab092f5a329609af25b99257bfe0848",
     "kit/gl.js": "727246e18cfbc778e4f49838b7bc9951c179e16d6f646541492792c9f534382c",
-    "kit/figure.js": "e16096ebae2dcfa7b8ff75fc9e19e62a7602fdc743002480001faeccb0532b33",
+    "kit/figure.js": "83f25719986d129fe293ffeb0afeae7c7ecb9147fc95bd848d11aab12ea442e5",
     "kit/parts.js": "5b4769aceb68df69a06be982ea30fb5fd5cc3d45fbe4ab23f6d8d144d421bc9e",
     "kit/paper-mesh.js": "2f5c35351682308d63d1ce044d0966dff3df22f21a1580c227a7bfda2f95e3fc"
    }

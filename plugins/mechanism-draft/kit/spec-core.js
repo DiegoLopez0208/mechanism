@@ -11,7 +11,7 @@
  *               conf, claims: [ids], info: { title, lines, conf } }],
  *     mechanism: { free, links: [{ t: 'fixed'|'same'|'ext'|'int', a, b, carrier }],
  *                  drive: { rpm, modes: [{ id, label, driver, shell, publish: { value, text, claim, tol }, formula }] } },
- *     director: { modeDur, tourDur, tour: [ids], views: {...} } }
+ *     director: { modeDur, tourDur, explodedHold, tour: [ids], views: {...} } }
  * Reglas: todo numero SPEC/MEASURED/DERIVED nombra su fuente; DERIVED trae su cruce; MEASURED trae su error; ESTIMATED trae su porque.
  */
 (function (g) {

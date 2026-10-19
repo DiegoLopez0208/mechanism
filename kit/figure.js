@@ -72,7 +72,7 @@
         const sp = p.spin ? 1 - Math.min(1, a.k) : 0; p.group.rotation.set((p.spin ? p.spin.x * sp : 0) + (p.tilt ? p.tilt.x * ek : 0), (p.spin ? p.spin.y * sp : 0) + (p.tilt ? p.tilt.y * ek : 0), (p.spin ? p.spin.z * sp : 0) + (p.tilt ? p.tilt.z * ek : 0));
         if (p.pose) p.pose(s, p);                                  // pieza en movimiento (cinematica): ajusta posicion y giro despues del explosionado
         const inSet = !!(s.focusSet && s.focusSet.includes(p.id)), isF = s.focus === p.id || inSet, anyF = !!(s.focus || (s.focusSet && s.focusSet.length));
-        let f = a.alpha; if (anyF && !isF && s.focusA != null) f *= lerp(1, s.dimTo == null ? 0.14 : s.dimTo, s.focusA);
+        let f = a.alpha; if (anyF && !isF && s.focusA != null) f *= lerp(1, s.dimTo == null ? 0.14 : s.dimTo, s.dimA == null ? s.focusA : s.dimA);      // dimA: the rest may fade on its own clock (before the card)
         setFade(p, f); if (f < 0.95) st.aoSkip.push(p.group); const on = !!(isF && (s.focusA || 0) > 0.2); p.hi.visible = on && !p.est; if (p.dash) p.dash.visible = on;
         p.group.visible = s.vis ? s.vis(p) !== false : true;
       });
@@ -136,9 +136,10 @@
       F.overlays.forEach((fn) => fn(ctx, s)); H2.info(s); if (s.ui) s.ui(ctx);
     };
     F.run = (o) => {
-      const cam = F.camera(o.keys);
+      const cam = F.camera(o.keys), state = (t) => { const s = o.script(t); s.t = t; s.view = s.view || (o.drift === false ? cam(t) : F.drift(cam(t), t, o.drift == null ? 1 : o.drift)); return s; };
+      window.__pose = (t) => { const s = state(t); F.apply(s, false); return s; };      // the scene as it is at t, not drawn: for __geom and the timing tests, cheap even on a software GPU
       MX.run({ w: W, h: H, fps: FPS, duration: o.duration, blurAt: o.blurAt, poster: o.poster == null ? o.duration * 0.35 : o.poster,
-        draw: (ctx, t) => { const s = o.script(t); s.t = t; s.view = s.view || (o.drift === false ? cam(t) : F.drift(cam(t), t, o.drift == null ? 1 : o.drift)); F.frame(ctx, s); }, audio: () => (o.audio ? o.audio() : MX.audio.render({ duration: o.duration, cues: o.cues ? o.cues() : [], reverb: 0.2 })) });
+        draw: (ctx, t) => F.frame(ctx, state(t)), audio: () => (o.audio ? o.audio() : MX.audio.render({ duration: o.duration, cues: o.cues ? o.cues() : [], reverb: 0.2 })) });
     };
 
     /* ---------------------------------------------------------- modo explorar */
