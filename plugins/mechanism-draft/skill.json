@@ -12,7 +12,10 @@
       "scripts/lib/encoding.mjs"
     ],
     "examples": [
-      "lock"
+      "lock",
+      "demo-plate",
+      "demo-flange",
+      "demo-section"
     ],
     "files": [
       "LICENSE",

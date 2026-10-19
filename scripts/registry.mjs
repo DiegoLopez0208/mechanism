@@ -13,10 +13,11 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), docs = path.join(root, 'docs');
-const KIT = ['kit/kin.js', 'kit/enigma.js', 'kit/cube.js', 'kit/rar5.js', 'kit/deflate.js', 'kit/react-reconcile.js', 'kit/spec-core.js'];
+const KIT = ['kit/kin.js', 'kit/enigma.js', 'kit/cube.js', 'kit/rar5.js', 'kit/deflate.js', 'kit/react-reconcile.js', 'kit/geom2d.js', 'kit/spec-core.js'];
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const sha = (f) => crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');
-const names = fs.readdirSync(path.join(root, 'examples')).filter((n) => /^[a-z0-9][a-z0-9-]*$/.test(n) && fs.existsSync(path.join(root, 'examples', n, 'spec.js'))).sort();
+// demo-* examples are synthetic drawings that show a capability (Draft's 2D geometry), not real objects: they are not registered
+const names = fs.readdirSync(path.join(root, 'examples')).filter((n) => /^[a-z0-9][a-z0-9-]*$/.test(n) && !n.startsWith('demo-') && fs.existsSync(path.join(root, 'examples', n, 'spec.js'))).sort();
 const COLOR = { VERIFIED: '#2ea043', CONSISTENT: '#bf8700', INCOMPLETE: '#d29922', 'NOTHING CHECKED': '#8b949e', 'DOES NOT PASS': '#da3633' };
 
 const records = names.map((n) => {

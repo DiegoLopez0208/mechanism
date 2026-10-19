@@ -17,7 +17,7 @@
 (function (g) {
   'use strict';
   const MX = (g.MX = g.MX || {}), S = (MX.spec = MX.spec || {});
-  const KINDS = ['gear', 'ring', 'sprocket', 'shaft', 'pin', 'disc', 'flange', 'tube', 'plate', 'bearing', 'spring', 'nut', 'bolt', 'box', 'block', 'cross', 'rotor', 'crankshaft', 'conrod', 'piston', 'engblock', 'camshaft', 'valve', 'cubie', 'fan', 'fins', 'profile'];
+  const KINDS = ['gear', 'ring', 'sprocket', 'shaft', 'pin', 'disc', 'flange', 'tube', 'plate', 'bearing', 'spring', 'nut', 'bolt', 'box', 'block', 'cross', 'rotor', 'crankshaft', 'conrod', 'piston', 'engblock', 'camshaft', 'valve', 'cubie', 'fan', 'fins', 'profile', 'drawing'];      // drawing: a flat piece declared as 2D geometry (kit/geom2d.js), drawn by Paper only
   const CONFS = ['spec', 'measured', 'derived', 'estimated'];
   S.KINDS = KINDS; S.CONFS = CONFS;
   const teethOf = (d) => (d.kind === 'gear' || d.kind === 'ring' ? d.p.z : d.kind === 'sprocket' ? d.p.teeth : null);
@@ -185,19 +185,21 @@
   const SPEC_KEYS = new Set('id fig kicker title sub aspect style presentation brand stage up orient research parts mechanism director recognize workflowScene paperScene'.split(' '));
   const PART_KEYS = new Set('id name kind p mat at explode body orbit conf claims info params why decor decals late cutaway tour tourAt tourDim rot spin motion engine cubie role slide compress'.split(' '));
   // Confidence describes evidence for the part, not a measurement of every size.
+  // the sizes of a part the gate can compare: the numbers in p, or for a 2D drawing the named dimensions its geometry gives
+  const drawnSizes = (part) => (part.kind === 'drawing' ? (MX.geom2d ? MX.geom2d.build(part.p).dims : {}) : part.p || {});
   S.sizeEvidence = (part) => {
-    const keys = Object.keys(part.p || {}).filter((k) => (DIMS.includes(k) || (part.kind === 'cubie' && k === 's') || k in (part.params || {})) && typeof part.p[k] === 'number');
+    const v = drawnSizes(part), keys = Object.keys(v).filter((k) => (part.kind === 'drawing' || DIMS.includes(k) || (part.kind === 'cubie' && k === 's') || k in (part.params || {})) && typeof v[k] === 'number');
     const compared = keys.filter((k) => {
       const q = (part.params || {})[k];
       return q && q.conf !== 'estimated' && CONFS.includes(q.conf) && q.claim && Number.isFinite(q.value)
-        && Math.abs(part.p[k] - q.value) <= (q.tol == null ? Math.abs(q.value) * 0.001 : q.tol);
+        && Math.abs(v[k] - q.value) <= (q.tol == null ? Math.abs(q.value) * 0.001 : q.tol);
     });
     const unchecked = keys.filter((k) => !compared.includes(k));
     return { part: part.id, compared, unchecked, status: !compared.length ? 'not compared' : unchecked.length ? 'partly compared' : 'compared',
       label: compared.length ? 'SIZE ' + compared.length + '/' + keys.length + ' COMPARED' : 'SIZE NOT COMPARED' };
   };
   S.validate = (spec) => {
-    const paramRows = [], mixed = [], errors = [], warnings = [], R = spec.research || { sources: [], claims: [] }, src = {}, cl = {}, ids = new Set();
+    const paramRows = [], mixed = [], geomRows = [], errors = [], warnings = [], R =spec.research || { sources: [], claims: [] }, src = {}, cl = {}, ids = new Set();
     Object.keys(spec).filter((k) => !SPEC_KEYS.has(k)).forEach((k) => warnings.push('unknown spec key: ' + k));
     if (spec.presentation != null) {
       const p = spec.presentation;
@@ -225,22 +227,26 @@
       if (ids.has(d.id)) errors.push('duplicate part: ' + d.id); ids.add(d.id);
       if (!KINDS.includes(d.kind)) errors.push('part ' + d.id + ': unknown kind ' + d.kind);
       if (!CONFS.includes(d.conf)) errors.push('part ' + d.id + ': missing conf (spec | measured | derived | estimated)');
-      if (!d.at && !d.orbit) errors.push('part ' + d.id + ': missing at or orbit');
+      if (!d.at && !d.orbit && d.kind !== 'drawing') errors.push('part ' + d.id + ': missing at or orbit');
+      if (d.kind === 'drawing') {      // a flat piece: its declared 2D geometry is checked here, with the same build() Paper draws from
+        if (!MX.geom2d) errors.push('part ' + d.id + ' is a 2D drawing but kit/geom2d.js is not loaded');
+        else { const m = MX.geom2d.build(d.p); m.errors.forEach((e) => errors.push('part ' + d.id + ': geometry: ' + e)); m.warnings.forEach((w) => warnings.push('part ' + d.id + ': geometry: ' + w)); if (m.facts) geomRows.push({ id: d.id, facts: m.facts, dims: Object.keys(m.dims).length }); }
+      }
       if (d.conf && d.conf !== 'estimated' && !d.decor) { if (!d.claims || !d.claims.length) errors.push('part ' + d.id + ' es ' + d.conf.toUpperCase() + ' and cites no claim'); (d.claims || []).forEach((c) => { if (!cl[c]) errors.push('part ' + d.id + ' cites a claim that does not exist: ' + c); }); }
       if (d.conf === 'estimated' && !(d.claims || []).length && !d.why) errors.push('part ' + d.id + ' is ESTIMATED without saying why (give it an estimated claim or a why)');
       if (PH.test(d.name || '') || PH.test((d.info && d.info.title) || '') || ((d.info && d.info.lines) || []).some((l) => PH.test(String(l)))) errors.push('part ' + d.id + ' still has placeholder text (TODO / TBD)');
       const bad = (o, label) => Object.keys(o || {}).forEach((k) => { const v = o[k]; if (typeof v === 'number' && !isFinite(v)) errors.push('part ' + d.id + ': ' + label + '.' + k + ' is not finite'); else if (label === 'p' && typeof v === 'number' && DIMS.includes(k) && v <= 0) errors.push('part ' + d.id + ': dimension ' + k + ' = ' + v + ' must be positive'); });
       if (d.params) {      // provenance per dimension
-        let worst = -1, worstK = null;
+        let worst = -1, worstK = null; const sizes = drawnSizes(d);
         Object.keys(d.params).forEach((k) => {
           const q = d.params[k] || {};
-          if (!d.p || !(k in d.p)) { errors.push('part ' + d.id + ': params.' + k + ' is not a dimension of this part'); return; }
+          if (!(k in sizes)) { errors.push('part ' + d.id + ': params.' + k + ' is not a dimension of this part' + (d.kind === 'drawing' ? ' (a drawing has: ' + Object.keys(sizes).join(', ') + ')' : '')); return; }
           if (!CONFS.includes(q.conf)) { errors.push('part ' + d.id + ': params.' + k + ' has no valid conf'); return; }
           if (RANK[q.conf] > worst) { worst = RANK[q.conf]; worstK = k; }
           if (q.conf === 'estimated') { if (!q.why && !(q.claim && cl[q.claim])) errors.push('part ' + d.id + ': params.' + k + ' is ESTIMATED without saying why'); }
           else if (!q.claim || !cl[q.claim]) errors.push('part ' + d.id + ': params.' + k + ' (' + q.conf + ') cites no claim that exists');
           if (q.value != null) {
-            const drawn = d.p[k], tol = q.tol == null ? Math.abs(q.value) * 0.001 : q.tol;
+            const drawn = sizes[k], tol = q.tol == null ? Math.abs(q.value) * 0.001 : q.tol;
             if (typeof q.value !== 'number' || !isFinite(q.value)) errors.push('part ' + d.id + ': params.' + k + '.value is not a finite number');
             else if (!(typeof tol === 'number' && isFinite(tol) && tol >= 0)) errors.push('part ' + d.id + ': params.' + k + ' has an invalid tolerance');
             else if (typeof drawn !== 'number') errors.push('part ' + d.id + ': ' + k + ' is not a number, it cannot be compared with its source');
@@ -324,7 +330,8 @@
     if (uncheckedCalculations.length) lines.push('computed values without a published comparator: ' + uncheckedCalculations.map((m) => m.label).join(', '));
     if (uncheckedInputs.length) lines.push('calc inputs without a published mode comparator: ' + uncheckedInputs.map((v) => v.id).join(', '));
     if (uncheckedTeeth.length) lines.push('tooth counts outside the kinematic train: ' + uncheckedTeeth.join(', '));
-    lines.push('size evidence: ' + sizeEvidence.filter((s) => s.compared.length).length + '/' + sizeEvidence.length + ' parts have a drawn size compared with its source (confidence badges do not verify size)');
+    geomRows.forEach((r) => { const f = r.facts, a = (x) => x.toFixed(2); lines.push('geometry ' + r.id + ': ' + a(f.width) + ' x ' + a(f.height) + ' mm, net area ' + a(f.netArea) + ' mm2 (outline ' + a(f.outlineArea) + ' - ' + f.holes + ' hole(s) ' + a(f.holeArea) + '), ' + r.dims + ' named dimensions: closed, holes inside, none overlapping (internal consistency, not evidence)'); });
+    lines.push('size evidence: ' +sizeEvidence.filter((s) => s.compared.length).length + '/' + sizeEvidence.length + ' parts have a drawn size compared with its source (confidence badges do not verify size)');
     if (!errors.length && !checked) warnings.push(conversions ? 'every check is a unit conversion (inch to mm, pound to kg): it cannot fail, so it is not evidence. Compare the drawn model with a figure the sheet gives in another way, or cross two sources (mark a real conversion with kind: "convert")' : 'no published figure is compared with the model: this is a description, not a verification');
     if (!errors.length && checked && conversions) warnings.push(conversions + ' of the checks are unit conversions and do not count as evidence');
     if (paramRows.length || mixed.length) lines.push('dimensions: ' + paramRows.length + ' compared with their source, ' + mixed.length + ' part(s) mix sourced and estimated dimensions');

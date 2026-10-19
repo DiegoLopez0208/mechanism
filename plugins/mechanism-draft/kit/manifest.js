@@ -12,10 +12,11 @@
 (function (g) {
   'use strict';
   const M = {
-    order: ['vendor/three.bundle.js', 'iso.js', 'core.js', 'presentation.js', 'audio.js', 'samples.js', 'sound.js', 'gl.js', 'figure.js', 'parts.js', 'kin.js',
+    order: ['vendor/three.bundle.js', 'iso.js', 'core.js', 'presentation.js', 'geom2d.js', 'audio.js', 'samples.js', 'sound.js', 'gl.js', 'figure.js', 'parts.js', 'kin.js',
       'enigma.js', 'cube.js', 'deflate.js', 'rar5.js', 'react-reconcile.js', 'spec-core.js', 'workflow-engine.js', 'paper-engine.js', 'paper-mesh.js', 'spec.js'],
     stack3d: ['vendor/three.bundle.js', 'gl.js', 'figure.js', 'parts.js'],
-    injected: ['presentation.js'],
+    // geom2d.js is pure math the gate needs for any spec with 2D drawing parts, whatever the engine (no DOM, no three.js)
+    injected: ['presentation.js', 'geom2d.js'],
     engines: {
       studio: { stack3d: true, modules: [] },
       // vector engine, then the mesh adapter that projects the model meshes through three.js; a spec with a vector scene
@@ -26,6 +27,8 @@
     // the vector scene kinds Paper draws without any 3D model (spec.paperScene.kind); the only list of them: kit/paper-engine.js
     // implements exactly these (MX.paperEngine.scenes) and tests/manifest.test.mjs checks the two match
     paperScenes: ['pin-section'],
+    // vector paths that give Paper a view set made from declared 2D geometry (kit/geom2d.js viewSet), not from meshes
+    paperViewSets: ['geometry'],
     legacy: 'studio',
     compiler: 'spec.js',
     // object models a spec page names only when its spec uses them
@@ -41,8 +44,8 @@
   M.engineFor = (query, spec, presentation) => {
     try { const c = presentation.resolve(query, spec || {}); return c.enabled ? c.method : M.legacy; } catch (e) { return M.legacy; }      // an invalid method is reported by the compiler, as before
   };
-  // does this spec carry a vector scene Paper draws natively? An unknown kind is not one: it goes through the meshes
-  M.vectorScene = (spec) => !!(spec && spec.paperScene && M.paperScenes.includes(spec.paperScene.kind));
+  // does this spec carry a vector scene Paper draws natively (a scene, or declared 2D geometry)? An unknown kind is not one: it goes through the meshes
+  M.vectorScene = (spec) => !!(spec && spec.paperScene && (M.paperScenes.includes(spec.paperScene.kind) || M.paperViewSets.includes(spec.paperScene.kind)));
   // what an engine needs for this spec: { stack3d, modules }
   M.needsFor = (engine, spec) => { const e = M.engines[engine]; return engine === 'paper' && M.vectorScene(spec) ? e.vector : e; };
   // the kit modules a page loads for an engine and spec: its listed modules minus the 3D stack when not needed, plus the injected and engine modules

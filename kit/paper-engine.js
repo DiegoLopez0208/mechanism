@@ -107,6 +107,95 @@
     if (msg) { c.save(); c.globalAlpha = msg[2]; pill(c, msg[0], W / 2, top - 22, 30 * FS, msg[1], ON); c.restore(); }
     return Y(-1.6) + (tall ? 290 : 190);      // where the caption starts: constant, so nothing jumps between stages
   }
+  /* ---- a piece drawing from a view set of declared 2D geometry (kit/geom2d.js, layout 'piece'): the same code for any part.
+   * Every number on it is a value of the geometry; the colour of a dimension says what the gate knows about it. */
+  const DIMCOL = (T, st) => (st === 'compared' ? T.teal : st === 'estimated' ? T.ember : T.ink);
+  const arrow = (c, x, y, ang, s) => { c.beginPath(); c.moveTo(x, y); c.lineTo(x - s * Math.cos(ang - .32), y - s * Math.sin(ang - .32)); c.lineTo(x - s * Math.cos(ang + .32), y - s * Math.sin(ang + .32)); c.closePath(); c.fill(); };
+  function pieceDrawing(c, v, rect, T, reveal, FS) {
+    const [l, t, r, b] = v.bounds, k = Math.min(rect.w / (r - l), rect.h / (b - t)), mx = rect.x + rect.w / 2 - (l + r) / 2 * k, my = rect.y + rect.h / 2 - (t + b) / 2 * k;
+    const X = x => mx + x * k, Y = y => my + y * k;
+    // the material: a flat tint, hatched when the drawing is a section (holes stay empty: even-odd)
+    const mat = new Path2D();
+    for (const op of v.region) {
+      if (op[0] === 'M') mat.moveTo(X(op[1]), Y(op[2])); else if (op[0] === 'L') mat.lineTo(X(op[1]), Y(op[2]));
+      else if (op[0] === 'A') mat.arc(X(op[1]), Y(op[2]), op[3] * k, op[4], op[5]);
+      else if (op[0] === 'C') { mat.moveTo(X(op[1]) + op[3] * k, Y(op[2])); mat.arc(X(op[1]), Y(op[2]), op[3] * k, 0, Math.PI * 2); mat.closePath(); }
+      else mat.closePath();
+    }
+    c.save(); c.fillStyle = MX.rgba(T.ink, .05); c.fill(mat, 'evenodd');
+    if (v.section) {      // section lines at the declared angle and pitch (a pitch under 6 px is drawn at 6 px: still readable, still parallel)
+      c.clip(mat, 'evenodd'); const a = -v.section.angle * Math.PI / 180, dx = Math.cos(a), dy = Math.sin(a), gap = Math.max(6, v.section.pitch * k), R = Math.hypot(rect.w, rect.h), cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
+      c.beginPath(); for (let o = -R; o <= R; o += gap) { const px = cx - dy * o, py = cy + dx * o; c.moveTo(px - dx * R, py - dy * R); c.lineTo(px + dx * R, py + dy * R); }
+      c.strokeStyle = MX.rgba(T.ink, .5); c.lineWidth = 1.2; c.stroke();
+    }
+    c.restore();
+    // visible edges: straight segments and exact arcs
+    c.save(); c.beginPath(); const p = v.points;
+    for (let i = 0; i < p.length; i += 4) { c.moveTo(X(p[i]), Y(p[i + 1])); c.lineTo(X(p[i + 2]), Y(p[i + 3])); }
+    for (const [ax, ay, ar, a0, a1] of v.arcs) { c.moveTo(X(ax) + ar * k * Math.cos(a0), Y(ay) + ar * k * Math.sin(a0)); c.arc(X(ax), Y(ay), ar * k, a0, a1); }
+    c.strokeStyle = T.ink; c.lineWidth = 2.6; c.lineJoin = 'round'; c.stroke(); c.restore();
+    // centre and hidden lines
+    for (const ln of v.lines) {
+      c.save(); c.beginPath();
+      if (ln.arc) { const [ax, ay, ar, a0, a1] = ln.arc; c.arc(X(ax), Y(ay), ar * k, a0, a1, a1 < a0); }
+      else for (let i = 0; i < ln.pts.length; i += 2) (i ? c.lineTo : c.moveTo).call(c, X(ln.pts[i]), Y(ln.pts[i + 1]));
+      c.setLineDash(ln.style === 'center' ? [18, 5, 3, 5] : ln.style === 'hidden' ? [8, 5] : []); c.strokeStyle = ln.style === 'visible' ? T.ink : T.mute; c.lineWidth = ln.style === 'visible' ? 2.2 : 1.3; c.stroke(); c.restore();
+    }
+    // dimensions, in sheet pixels around the lines the geometry placed
+    c.save(); c.globalAlpha = reveal; const fs = 19 * FS;
+    for (const d of v.dims) {
+      const col = DIMCOL(T, d.status); c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 1.3; c.font = '600 ' + fs + 'px ' + MX.SANS;
+      if (d.kind === 'linear') {
+        const h = d.dir === 'h', a = [X(d.a[0]), Y(d.a[1])], e = [X(d.b[0]), Y(d.b[1])], at = h ? Y(d.at) : X(d.at), s = h ? Math.sign(at - a[1]) || 1 : Math.sign(at - a[0]) || 1;
+        c.beginPath();
+        if (h) { for (const q of [a, e]) { c.moveTo(q[0], q[1] + s * 6); c.lineTo(q[0], at + s * 8); } c.moveTo(a[0], at); c.lineTo(e[0], at); }
+        else { for (const q of [a, e]) { c.moveTo(q[0] + s * 6, q[1]); c.lineTo(at + s * 8, q[1]); } c.moveTo(at, a[1]); c.lineTo(at, e[1]); }
+        c.stroke();
+        const len = h ? Math.abs(e[0] - a[0]) : Math.abs(e[1] - a[1]), sz = Math.min(12, len / 3);
+        if (h) { const dir = Math.sign(e[0] - a[0]) || 1; arrow(c, a[0], at, dir > 0 ? Math.PI : 0, sz); arrow(c, e[0], at, dir > 0 ? 0 : Math.PI, sz); c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.fillText(d.text, (a[0] + e[0]) / 2, at - 7); }
+        else { const dir = Math.sign(e[1] - a[1]) || 1; arrow(c, at, a[1], dir > 0 ? -Math.PI / 2 : Math.PI / 2, sz); arrow(c, at, e[1], dir > 0 ? Math.PI / 2 : -Math.PI / 2, sz); c.save(); c.translate(at - 7, (a[1] + e[1]) / 2); c.rotate(-Math.PI / 2); c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.fillText(d.text, 0, 0); c.restore(); }
+      } else {      // a leader from the contour: diameter, corner radius, or a note (pattern, cut-out size)
+        const cx = X(d.c[0]), cy = Y(d.c[1]), rr = d.r * k, u = Math.cos(d.angle), w = Math.sin(d.angle), p0 = [cx + rr * u, cy + rr * w], ll = d.len != null ? Math.max(24, d.len * k) : 46, p1 = [p0[0] + ll * u, p0[1] + ll * w], side = u >= 0 ? 1 : -1;      // the leader length the geometry placed the callout with
+        c.beginPath(); c.moveTo(p0[0], p0[1]); c.lineTo(p1[0], p1[1]); c.lineTo(p1[0] + side * 18, p1[1]); c.stroke();
+        if (d.kind !== 'note' || rr > 0) arrow(c, p0[0], p0[1], Math.atan2(-w, -u), 11);
+        c.textAlign = side > 0 ? 'left' : 'right'; c.textBaseline = 'middle'; c.fillText(d.text, p1[0] + side * 24, p1[1]);
+      }
+    }
+    c.restore();
+    return { X, Y, k };
+  }
+  function pieceSheet(c, a, { entries, parts, plan, spec, validation, config, T, W, H, compact }) {
+    const FS = compact ? 1 : 1.15, M = P.motion;
+    text(c, 'PIECE DRAWING • DIMENSIONS IN mm • FITTED TO THE SHEET, NOT TO SCALE', 72, 204, 17, W - 144, T.mute);
+    const main = { x: 120, y: 250, w: W - 240, h: H * (compact ? .40 : .42) }, byId = Object.fromEntries(entries.map(e => [e.id, e]));
+    if (a.closing) {      // the review: every part side by side, then the gate's verdict
+      const n = entries.length, cw = main.w / n;
+      entries.forEach((e, i) => { pieceDrawing(c, e.views.front, { x: main.x + i * cw + 10, y: main.y + main.h * .15, w: cw - 20, h: main.h * .7 }, T, 0, FS * .7); text(c, String(i + 1).padStart(2, '0') + ' / ' + e.views.front.label, main.x + i * cw + 10, main.y + main.h + 10, 16, cw - 20, T.mute, 600); });
+      const el = a.t - plan.end, y = main.y + main.h + 90, dc = Object.values(parts).reduce((s, q) => ({ compared: s.compared + q.dimCount.compared, declared: s.declared + q.dimCount.declared }), { compared: 0, declared: 0 });
+      M.rise(c, 'DRAWING REVIEW / ' + (validation.verdict?.state || 'NOTHING CHECKED'), 72, y, compact ? 28 : 36, W - 144, T.ink, 700, el);
+      M.rise(c, n + ' parts drawn from their declared geometry: every contour closed, every hole inside the material, none overlapping. That is internal consistency, not evidence.', 72, y + 60, 22, W - 144, T.mute, 500, el - .3, .03);
+      M.rise(c, dc.compared + ' dimensions compared with a source • ' + dc.declared + ' declared, not verified', 72, y + 150, 22, W - 144, dc.compared ? T.teal : T.mute, 600, el - .6, .03);
+    } else {
+      const item = a.intro ? plan.items[0] : a.item, e = byId[item.id], v = e.views.front, info = parts[item.id], f = info.facts;
+      const reveal = a.intro ? smooth((a.t - 1) / 1.8) : smooth(a.progress * 4);
+      pieceDrawing(c, v, main, T, reveal, FS);
+      text(c, String((a.intro ? 0 : a.index) + 1).padStart(2, '0') + ' / ' + v.label, main.x, main.y + main.h + 36, 16, main.w, T.mute, 600);
+      let y = main.y + main.h + 88; const el = a.intro ? 0 : a.progress * plan.slot;
+      y += M.rise(c, 'PART ' + String((a.intro ? 0 : a.index) + 1).padStart(2, '0') + ' / ' + plan.items.length + ' • ' + String(item.conf).toUpperCase(), 72, y, 19, W - 144, T.teal, 700, el) + 14;
+      y += M.rise(c, item.title, 72, y, compact ? 30 : 38, W - 144, T.ink, 600, el - .08) + 12;
+      if (item.formula) y += M.rise(c, item.formula, 72, y, compact ? 21 : 24, W - 144, T.mute, 500, el - .2, .03) + 16;
+      const n1 = x => x.toFixed(1), facts = [
+        'NET AREA ' + n1(f.netArea) + ' mm²  =  OUTLINE ' + n1(f.outlineArea) + ' − ' + f.holes + ' HOLE' + (f.holes === 1 ? '' : 'S') + ' ' + n1(f.holeArea),
+        'OVERALL ' + n1(f.width) + ' × ' + n1(f.height) + ' mm' + (info.thickness != null ? ' • THICKNESS ' + info.thickness + ' mm (STATED: NO SIDE VIEW IS DRAWN FROM IT)' : ' • THICKNESS NOT GIVEN') + (info.material ? ' • ' + String(info.material).toUpperCase() : ''),
+        info.dimCount.compared + ' DIMENSIONS COMPARED WITH A SOURCE • ' + info.dimCount.declared + ' DECLARED, NOT VERIFIED' + (info.dimCount.estimated ? ' • ' + info.dimCount.estimated + ' ESTIMATED' : '')];
+      facts.forEach((s, i) => { y += M.rise(c, s, 72, y, compact ? 18 : 20, W - 144, i === 2 && info.dimCount.compared ? T.teal : T.ink, 600, el - .4 - i * .1, .02) + 8; });
+      text(c, 'TEAL: COMPARED WITH A SOURCE • INK: DECLARED IN THE SPEC, NOT VERIFIED • AMBER: ESTIMATED', 72, y + 10, 15, W - 144, T.mute, 600);
+    }
+    line(c, [45, H - 110], [W - 45, H - 110], T.plateEdge, 1.5); line(c, [W * .58, H - 110], [W * .58, H - 45], T.plateEdge, 1);
+    text(c, String(spec.fig || spec.id).toUpperCase() + ' / ' + config.background.toUpperCase(), 72, H - 72, 17, W * .5, T.ink, 600);
+    text(c, 'SHEET ' + String(a.index + 1).padStart(2, '0') + ' / ' + String(plan.items.length).padStart(2, '0'), W * .60, H - 72, 17, W * .32, T.mute);
+  }
+  E.piece = pieceDrawing;
   // the vector scenes Paper draws with no 3D model, by spec.paperScene.kind (kit/manifest.js paperScenes names the same kinds; tested)
   E.scenes={'pin-section':{steps:sceneSteps,draw:section}};
   // views: the mesh adapter's view set, or null for a spec whose vector scene needs no meshes; F: the old entry point (the figure)
@@ -114,11 +203,11 @@
     if(!views&&F){views=MX.paperMesh.viewSet(F);shapeCheck=MX.paperMesh.shapeCheck(F);}
     const kind=spec.paperScene&&spec.paperScene.kind,impl=kind!=null&&Object.hasOwn(E.scenes,kind)?E.scenes[kind]:null,scene=impl?spec.paperScene:null;
     if(!views&&!scene)throw new Error('Paper: no view set and no vector scene it can draw (paperScene.kind: '+JSON.stringify(kind)+')');
-    const plan=P.plan(spec,'paper',length),T=MX.THEME,entries=views?views.entries:[],details=views?views.parts:{};
+    const plan=P.plan(spec,'paper',length),T=MX.THEME,entries=views?views.entries:[],details=views?views.parts:{},piece=!!(views&&views.layout==='piece');      // piece: a view set of declared 2D geometry (kit/geom2d.js)
     if(scene){plan.items=impl.steps(scene);plan.slot=(plan.end-plan.begin)/plan.items.length;}
     const viewCache=new Map();
     const cols=['A','B','C','D','E','F'];
-    return P.mount({plan,spec,validation,config,W,H,engine:'paper-vector2d',shapeCheck,notRun:views?null:'vector_scene_without_mesh_projection',diagnostics:()=>({renderer:'canvas2d-vector',studioFrames:0,projection:'orthographic'}),
+    return P.mount({plan,spec,validation,config,W,H,engine:'paper-vector2d',shapeCheck,notRun:views&&!piece?null:'vector_scene_without_mesh_projection',diagnostics:()=>({renderer:'canvas2d-vector',studioFrames:0,projection:'orthographic'}),
       draw(c,a){
         const compact=H<1600,active=details[a.item.id];
         const explode=smooth((a.t-2)/3)*(1-smooth((a.t-plan.end)/1.3));
@@ -132,6 +221,7 @@
         }
         text(c,'PAPER / TECHNICAL DRAWING',72,91,19,W-144,T.teal,700);
         text(c,spec.title,72,148,compact?36:44,W-144,T.ink,500);
+        if(piece){pieceSheet(c,a,{entries,parts:details,plan,spec,validation,config,T,W,H,compact});c.restore();return;}
         if(!scene)text(c,'ORTHOGRAPHIC STUDY • NOT TO SCALE',72,204,17,W-144,T.mute);
         if(scene){
           text(c,'SECTION VIEW • DIMENSIONS FROM THE PUBLISHED KEYING TABLE',72,204,17,W-144,T.mute);

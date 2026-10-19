@@ -27,6 +27,9 @@ node scripts/check-spec.mjs examples/lock/spec.js
 node scripts/preflight.mjs examples/lock/index.html --method paper --length short --aspect 9:16
 node scripts/render.mjs examples/lock/index.html --method paper --background ivory --length short --aspect 9:16 --still 9 --out ../work/lock.mp4
 node scripts/render.mjs examples/lock/index.html --method paper --background ivory --length short --aspect 9:16 --out ../work/lock.mp4
+# piece drawings from declared 2D geometry (synthetic demonstrations: a plate, a flange, a stepped bracket in section)
+node scripts/check-spec.mjs examples/demo-flange/spec.js
+node scripts/render.mjs examples/demo-flange/index.html --length short --still 12 --out ../work/flange.mp4
 node scripts/new.mjs gizmo --dir ../work --title "Gizmo"
 ```
 
