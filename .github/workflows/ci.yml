@@ -17,6 +17,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      # ubuntu-latest has no ffmpeg; the encoding, ffprobe colour/audio checks and the Draft film tests spawn both
+      - name: ffmpeg and ffprobe
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          command -v ffmpeg
+          command -v ffprobe
+          ffmpeg -version
+          ffprobe -version
       - name: Tests (the evidence gate, the DEFLATE / RAR5 models against zlib, version consistency)
         run: node --test tests/gate.test.mjs tests/kit.test.mjs tests/encoding.test.mjs tests/browser.test.mjs tests/media-server.test.mjs tests/versions.test.mjs
       # The browser-heavy files run one at a time: each opens headless Chromium sessions (browser.test.mjs opens five at once on purpose)
