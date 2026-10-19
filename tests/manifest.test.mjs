@@ -24,7 +24,7 @@ test('manifest: every module exists and every engine names its own modules', () 
   }
   assert.deepEqual(Object.keys(M.engines).sort(), [...P.methods].sort(), 'one manifest entry per presentation method');
   assert.ok(M.engines[M.legacy], 'the legacy engine exists');
-  for (const f of M.stack3d.concat(M.injected, M.specPage, M.domain)) assert.ok(M.order.includes(f), f + ' not in order');
+  for (const f of M.stack3d.concat(M.injected, M.specPage, M.domain, M.exporters)) assert.ok(M.order.includes(f), f + ' not in order');
 });
 
 test('manifest: example pages name only declared kit modules, in manifest order', () => {

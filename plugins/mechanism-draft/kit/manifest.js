@@ -12,7 +12,7 @@
 (function (g) {
   'use strict';
   const M = {
-    order: ['vendor/three.bundle.js', 'iso.js', 'core.js', 'presentation.js', 'geom2d.js', 'audio.js', 'samples.js', 'sound.js', 'gl.js', 'figure.js', 'parts.js', 'kin.js',
+    order: ['vendor/three.bundle.js', 'iso.js', 'core.js', 'presentation.js', 'geom2d.js', 'svg2d.js', 'audio.js', 'samples.js', 'sound.js', 'gl.js', 'figure.js', 'parts.js', 'kin.js',
       'enigma.js', 'cube.js', 'deflate.js', 'rar5.js', 'react-reconcile.js', 'spec-core.js', 'workflow-engine.js', 'paper-engine.js', 'paper-mesh.js', 'spec.js'],
     stack3d: ['vendor/three.bundle.js', 'gl.js', 'figure.js', 'parts.js'],
     // geom2d.js is pure math the gate needs for any spec with 2D drawing parts, whatever the engine (no DOM, no three.js)
@@ -29,6 +29,8 @@
     paperScenes: ['pin-section'],
     // vector paths that give Paper a view set made from declared 2D geometry (kit/geom2d.js viewSet), not from meshes
     paperViewSets: ['geometry'],
+    // kit modules that scripts use (Draft's SVG export, in Node) and no page loads
+    exporters: ['svg2d.js'],
     legacy: 'studio',
     compiler: 'spec.js',
     // object models a spec page names only when its spec uses them

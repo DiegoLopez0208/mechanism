@@ -30,6 +30,8 @@ node scripts/render.mjs examples/lock/index.html --method paper --background ivo
 # piece drawings from declared 2D geometry (synthetic demonstrations: a plate, a flange, a stepped bracket in section)
 node scripts/check-spec.mjs examples/demo-flange/spec.js
 node scripts/render.mjs examples/demo-flange/index.html --length short --still 12 --out ../work/flange.mp4
+# the same parts as SVG drawings: at 1:1 (1 unit = 1 mm) or fitted to an A4 sheet (scale written on it)
+node scripts/export-svg.mjs examples/demo-plate/spec.js --mode geometry-1to1 --out ../work/svg
 node scripts/new.mjs gizmo --dir ../work --title "Gizmo"
 ```
 

@@ -22,6 +22,8 @@ Needs Node 22+, Edge or Chrome, and `ffmpeg` (films only). No install step, no n
 - **Vector scenes** (no 3D model, no three.js): a spec with `paperScene: { kind: 'pin-section', ... }` is drawn as an animated section from the spec's own numbers (see `examples/lock`). Read `references/scenes.md` before writing one.
 - **Mesh sheets** (optional): any other spec is drawn as front/top/side orthographic sheets projected from its parts. That needs the optional mesh pack (three.js); without it the page stops with a load error naming the missing file. `skill-doctor` says whether it is installed.
 
+**SVG drawings of the 2D parts** (Draft 0.3, no browser): `node scripts/export-svg.mjs <spec.js> --mode geometry-1to1|sheet-fit --out <work>/svg` writes one SVG per `drawing` part. `geometry-1to1`: 1 user unit = 1 mm of the part (a hole declared Ø6.6 is a circle of radius 3.3). `sheet-fit`: an A4 sheet with a title block, the geometry scaled and the scale written as not 1:1. Circles and arcs stay exact; every dimension is a value of the geometry, coloured by its evidence; the spec must pass the gate; a layout too dense to be legible stops the export and names the labels. The file says it is not a manufacturing drawing (no tolerances, fits or finish). Details: `references/scenes.md`.
+
 Options: `--background ivory|porcelain|graphite|blueprint`, `--aspect 9:16|4:5|1:1`, `--length short|normal|extended` (30, 60, 90 s), `--fps`, `--still <t>` (PNG), `--encoder jpeg|browser`. Outputs: MP4 (H.264, BT.709, stereo AAC) and PNG stills.
 
 ## What is checked, and what is not

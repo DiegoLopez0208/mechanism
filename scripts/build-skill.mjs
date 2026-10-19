@@ -56,7 +56,7 @@ if (unlisted.length) fail('files the previous build did not write would be in th
 // Paper's vector engine and the compiler, plus the loader, its fonts and the manifest itself
 const ctx = vm.createContext({}); vm.runInContext(fs.readFileSync(path.join(root, 'kit', 'manifest.js'), 'utf8'), ctx);
 const M = ctx.MX_MANIFEST, paper = M.engines.paper;
-const core = M.order.filter((f) => (M.specPage.includes(f) && !M.stack3d.includes(f)) || M.injected.includes(f) || M.domain.includes(f) || paper.vector.modules.includes(f) || f === M.compiler).concat(['boot.js', 'fonts.js', 'manifest.js']);
+const core = M.order.filter((f) => (M.specPage.includes(f) && !M.stack3d.includes(f)) || M.injected.includes(f) || M.domain.includes(f) || (M.exporters || []).includes(f) || paper.vector.modules.includes(f) || f === M.compiler).concat(['boot.js', 'fonts.js', 'manifest.js']);
 const mesh = M.order.filter((f) => M.stack3d.includes(f) || (paper.modules.includes(f) && !paper.vector.modules.includes(f)));
 
 const files = new Map();      // destination (relative to the skill) -> source (absolute)
