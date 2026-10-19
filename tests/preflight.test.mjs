@@ -1,6 +1,6 @@
 // preflight.test.mjs - the visual preflight on synthetic cases: a copy of the lock example with a zoom that breaks the camera, and texts injected on purpose.
 // Needs a Chromium-based browser (the same one the renders use); the tests are skipped when there is none.
-import { test, after } from 'node:test';
+import { test, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -10,7 +10,18 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), PREFLIGHT = path.join(root, 'scripts', 'preflight.mjs');
 const HAS_BROWSER = [process.env.BROWSER, 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Google/Chrome/Application/chrome.exe', '/usr/bin/google-chrome'].filter(Boolean).some((b) => existsSync(b));
-const opts = { skip: HAS_BROWSER ? false : 'no Chromium browser found (set BROWSER=<path>)', timeout: 180000 };
+// Software WebGL (SwiftShader on a 4-vCPU CI runner) takes 130-170 s for one Studio preflight of lock; some tests run two
+const SPAWN_TIMEOUT = 420000, opts = { skip: HAS_BROWSER ? false : 'no Chromium browser found (set BROWSER=<path>)', timeout: 900000 };
+let current = '';      // the running test, for the timeout diagnostic (tests in one file run one at a time)
+beforeEach((t) => { current = t.name; });
+// every preflight goes through here: a run killed by the timeout fails with what is known about it, instead of an empty assertion
+const preflight = (args) => {
+  const t0 = Date.now(), r = spawnSync(process.execPath, [PREFLIGHT, ...args], { encoding: 'utf8', timeout: SPAWN_TIMEOUT });
+  if (r.error?.code === 'ETIMEDOUT') throw new Error(`preflight timed out after ${SPAWN_TIMEOUT / 1000} s (configured limit) in test "${current}"\n` +
+    `  elapsed ${((Date.now() - t0) / 1000).toFixed(1)} s, pid ${r.pid}, signal ${r.signal}, status ${r.status}\n  args: ${args.join(' ')}\n` +
+    `  stdout (${(r.stdout || '').length} chars, last 600): ${(r.stdout || '').slice(-600)}\n  stderr (last 1500): ${(r.stderr || '').slice(-1500)}`);
+  return r;
+};
 const tmp = mkdtempSync(path.join(os.tmpdir(), 'mx-preflight-test-'));
 after(() => { try { rmSync(tmp, { recursive: true, force: true }); } catch { /* busy */ } });
 
@@ -26,7 +37,7 @@ const variant = ({ zoom, inject, part, script, example = 'lock' } = {}) => {    
   if (part) { const run = path.join(dir, 'examples', example, 'run.js'); writeFileSync(run, 'window.SPEC.parts.push(' + JSON.stringify(part) + ');\n' + readFileSync(run, 'utf8')); }      // one more part in the spec before it runs
   return path.join(dir, 'examples', example, 'index.html');
 };
-const run = (page, ...extra) => { const r = spawnSync(process.execPath, [PREFLIGHT, page, '--length', 'short', '--step', '1', '--json', ...extra], { encoding: 'utf8', timeout: 170000 }); let json = null; try { json = JSON.parse(r.stdout); } catch { /* not json: the assertion that follows shows stderr */ } return { status: r.status, json, stderr: r.stderr }; };
+const run = (page, ...extra) => { const r = preflight([page, '--length', 'short', '--step', '1', '--json', ...extra]); let json = null; try { json = JSON.parse(r.stdout); } catch { /* not json: the assertion that follows shows stderr */ } return { status: r.status, json, stderr: r.stderr }; };
 const codes = (r) => new Set(r.json.findings.map((f) => f.code));
 
 test('an object zoomed out of the frame is reported as OBJECT_OFFSCREEN (a warning: exit code 0)', opts, () => {
@@ -80,7 +91,7 @@ for (const [method, background, reason] of NOT_RUN_CASES) test(`with --method ${
   const page = variant({ part: testPlate([[9, 0, 12, 12]]) }), r = run(page, '--method', method, '--background', background, '--skip', 'camera,labels,frame'); assert.ok(r.json, r.stderr);
   assert.deepEqual(r.json.notRun, [{ check: 'GEOMETRY_AREA', reason }]);
   assert.ok(!r.json.findings.some((x) => x.code.startsWith('GEOMETRY_AREA')), JSON.stringify(r.json.findings));
-  const text = spawnSync(process.execPath, [PREFLIGHT, page, '--length', 'short', '--step', '1', '--method', method, '--background', background, '--skip', 'camera,labels,frame'], { encoding: 'utf8', timeout: 170000 }).stdout;
+  const text = preflight([page, '--length', 'short', '--step', '1', '--method', method, '--background', background, '--skip', 'camera,labels,frame']).stdout;
   assert.match(text, new RegExp('NOT RUN  GEOMETRY_AREA  ' + reason)); assert.match(text, /not checked, not passed/); assert.doesNotMatch(text, /PASS: nothing found\.$/m);
 });
 
@@ -99,7 +110,7 @@ test('every report says whether the area check ran: run, NOT RUN, or GEOMETRY_AR
 });
 
 test('a hand-built page (no spec compiler) is refused before any check: exit code 1 and no PASS line', opts, () => {
-  const r = spawnSync(process.execPath, [PREFLIGHT, path.join(root, 'examples', 'phones', 'index.html'), '--length', 'short', '--step', '1'], { encoding: 'utf8', timeout: 170000 });
+  const r = preflight([path.join(root, 'examples', 'phones', 'index.html'), '--length', 'short', '--step', '1']);
   assert.equal(r.status, 1, r.stdout + r.stderr); assert.doesNotMatch(r.stdout, /PASS/); assert.match(r.stderr, /did not expose __frame\/__geom/);
 });
 
