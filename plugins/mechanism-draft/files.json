@@ -1,9 +1,9 @@
 {
  "name": "mechanism-draft",
- "version": "0.1.0",
+ "version": "0.4.0",
  "generatedBy": "scripts/build-skill.mjs draft",
  "files": {
-  ".claude-plugin/plugin.json": "cd391ba2a710e2d4e2d0cb2a14a04b1b4d3458eb1ae1e038996ff91c8cb89eed",
+  ".claude-plugin/plugin.json": "0be20ce6699b4e74588d11def53520485c35307f2764ff7aaec532f53bbbbb79",
   "LICENSE": "1b1396e1247ad634fa098cb45dce262713c7a750cac6893ae029a633b1cab3b2",
   "README.md": "4ec5158ee91b9ef923de747448a7c2cbde1bff467e2c13c86d4fe19ce8eb9bcc",
   "SKILL.md": "6ddc7f1a72aae3492032dd6132845d3090856ad5b9e8139acb0d0a4cc22b5e40",
@@ -52,7 +52,7 @@
   "scripts/preflight.mjs": "85d7b6c05144fdcba14dc8199eeb5fc0824b0f40d4cebf15b6b76a7db70e08a6",
   "scripts/render.mjs": "235027b5cc3695603aad0f1a8e68f8182bd9577fd84becce19bd1e5a89002098",
   "scripts/skill-doctor.mjs": "c8a1d1cbf6402489feb1b45d0a3cf72068def0089af27f716cfca2b5fe175740",
-  "skill.json": "9ab7a4c335d513bd7ed0ef3fb9874f5fc4e23e3961d8a9158bc63a366a1a7483"
+  "skill.json": "d586e7194a4ebe7e00bee91eac56489a083a6c173b6a6a1a503147c4179a378f"
  },
  "optional": {
   "mesh": {
