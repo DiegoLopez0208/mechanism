@@ -152,8 +152,11 @@ float mxFbm(vec3 p) { return 0.55 * mxNoise(p) + 0.3 * mxNoise(p * 2.03 + 7.1) +
     // (which renders the scene again for colour, normals and metalness), are blended on top of it
     composer.addPass(new TH.RenderPass(scene, camera));
     let ssr = null;
-    // on by default in renders (render.mjs opens the page with ?render=1); live viewers and the site keep their speed unless asked (?ssr=1)
-    const ssrOn = o.ssr != null ? o.ssr : typeof location !== 'undefined' && new URLSearchParams(location.search).get('render') === '1';
+    // on by default in renders (render.mjs opens the page with ?render=1); live viewers and the site keep their speed unless asked (?ssr=1).
+    // A software renderer (SwiftShader, llvmpipe: CI, a machine with no GPU) leaves it off: there compiling its shader alone outlasts the browser
+    // watchdog, and nobody watches those frames for reflections
+    const glx = renderer.getContext(), dri = glx.getExtension('WEBGL_debug_renderer_info'), software = /swiftshader|llvmpipe|software/i.test(String(glx.getParameter(dri ? dri.UNMASKED_RENDERER_WEBGL : glx.RENDERER)));
+    const ssrOn = o.ssr != null ? o.ssr : !software && typeof location !== 'undefined' && new URLSearchParams(location.search).get('render') === '1';
     if (ssrOn && !(o.pathtrace > 0)) {
       ssr = new SSRLayer({ renderer, scene, camera, width: RW, height: RH, selects: null });
       Object.assign(ssr, { thickness: 0.018, maxDistance: 140, opacity: 0.6, fresnel: true, distanceAttenuation: true, bouncing: false, blur: true, infiniteThick: false });
