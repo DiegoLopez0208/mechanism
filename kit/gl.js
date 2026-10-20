@@ -29,15 +29,19 @@
 
   // three's SSRPass composes its own (single-sampled) render with the reflections; this layer keeps only the reflections (OUTPUT.SSR, into a
   // private target) and blends them over the composer's multisampled frame, so nothing but the reflections changes
+  // The reflections are worked out at half resolution (they are blurred anyway) and the ray march is capped at SSR_STEPS steps (about 480 px of
+  // the full frame): three sizes it to the whole diagonal, thousands of steps a pixel, which a software renderer (CI) cannot finish in time.
+  const SSR_STEPS = 240;
   class SSRLayer extends TH.SSRPass {
-    constructor(o) { super(o); this.output = TH.SSRPass.OUTPUT.SSR; this.layer = new TH.WebGLRenderTarget(o.width, o.height, { type: TH.HalfFloatType }); }
+    constructor(o) { super(Object.assign({}, o, { width: Math.round(o.width / 2), height: Math.round(o.height / 2) })); this.output = TH.SSRPass.OUTPUT.SSR; this.layer = new TH.WebGLRenderTarget(this.width, this.height, { type: TH.HalfFloatType }); this.capSteps(); }
+    capSteps() { this.ssrMaterial.defines.MAX_STEP = Math.min(SSR_STEPS, this.ssrMaterial.defines.MAX_STEP || SSR_STEPS); this.ssrMaterial.needsUpdate = true; }
     render(renderer, writeBuffer, readBuffer) {
       super.render(renderer, this.layer, readBuffer);
       const cm = this.copyMaterial;
       cm.uniforms.tDiffuse.value = readBuffer.texture; cm.blending = TH.NoBlending; this._renderPass(renderer, cm, writeBuffer);
       cm.uniforms.tDiffuse.value = this.layer.texture; cm.blending = TH.NormalBlending; this._renderPass(renderer, cm, writeBuffer);
     }
-    setSize(w, h) { super.setSize(w, h); this.layer.setSize(w, h); }
+    setSize(w, h) { const hw = Math.round(w / 2), hh = Math.round(h / 2); super.setSize(hw, hh); this.layer.setSize(hw, hh); this.capSteps(); }
   }
 
   /* ------------------------------------------------------------ estudio de producto */
