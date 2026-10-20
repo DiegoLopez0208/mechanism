@@ -27,6 +27,60 @@
     }
   }
 
+  /* ------------------------------------------------------------ estudio de producto */
+  // the environment the metal reflects: a dark studio with softboxes, not a grey room. A large key softbox above and in front-left, two tall strips
+  // at the sides (rim), a back panel, a faint warm floor bounce. Values above 1 are HDR: PMREM keeps them, so a reflection reads as a bright panel.
+  G.studioEnvironment = () => {
+    const s = new TH.Scene(), box = new TH.BoxGeometry();
+    const room = new TH.Mesh(box, new TH.MeshBasicMaterial({ side: TH.BackSide, color: new TH.Color(0.3, 0.31, 0.33) })); room.scale.set(34, 18, 34); room.position.y = 7; s.add(room);
+    const panel = (sx, sy, sz, x, y, z, k, tint) => { const m = new TH.Mesh(box, new TH.MeshBasicMaterial({ color: new TH.Color(tint || '#ffffff').multiplyScalar(k) })); m.scale.set(sx, sy, sz); m.position.set(x, y, z); s.add(m); };
+    panel(16, 0.1, 12, -4, 13.5, 4, 5.5, '#fff6ea');    // key softbox, overhead front-left
+    panel(20, 9, 0.1, 0, 5, 16.5, 1.25);                // broad front fill, behind the camera: faces turned to the viewer read as lit metal
+    panel(0.1, 12, 3, -16.5, 5, -1, 4.0);               // left strip
+    panel(0.1, 12, 3, 16.5, 5, -3, 3.2, '#e6eeff');     // right strip, cooler
+    panel(16, 3.5, 0.1, 0, 5, -16.5, 2.4);              // back rim panel
+    panel(22, 0.1, 22, 0, -1.9, 0, 0.55, '#d9d2c2');    // floor bounce
+    return s;
+  };
+
+  /* ------------------------------------------------------------ detalle de superficie */
+  // Procedural micro-detail in the shader, not a texture: no UVs needed (extrusions, lathes and boxes all get it), resolution independent, the
+  // same every frame (no noise seed), and fixed to the part (object space), so it travels with a part that moves or explodes. It varies the
+  // roughness (what makes a highlight look machined, cast or moulded), the albedo very slightly, and the normal a little; it fades out where
+  // its cells would be smaller than a pixel, so a large object seen whole does not shimmer. Parameters live in material.userData.mxDetail
+  // (copied by clone(), unlike onBeforeCompile): [roughness amplitude, cells per mm, stretch along the part's x (brushed < 1), albedo amplitude, bump].
+  G.DETAIL = {
+    brushed: [0.32, 1.6, 0.035, 0.03, 0.12], cast: [0.3, 0.9, 1, 0.06, 0.35], polished: [0.18, 2.2, 0.08, 0.015, 0.06],
+    plastic: [0.22, 2.4, 1, 0.025, 0.12], rubber: [0.16, 3.2, 1, 0.045, 0.3], board: [0.2, 3.6, 1, 0.04, 0.15], paint: [0.14, 1.8, 1, 0.02, 0.05],
+  };
+  const DETAIL_GLSL = `
+varying vec3 vMxPos;
+uniform vec4 mxP; uniform float mxBump;
+float mxHash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+float mxNoise(vec3 x) { vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(mxHash(i), mxHash(i + vec3(1,0,0)), f.x), mix(mxHash(i + vec3(0,1,0)), mxHash(i + vec3(1,1,0)), f.x), f.y),
+             mix(mix(mxHash(i + vec3(0,0,1)), mxHash(i + vec3(1,0,1)), f.x), mix(mxHash(i + vec3(0,1,1)), mxHash(i + vec3(1,1,1)), f.x), f.y), f.z); }
+float mxFbm(vec3 p) { return 0.55 * mxNoise(p) + 0.3 * mxNoise(p * 2.03 + 7.1) + 0.15 * mxNoise(p * 4.11 + 3.7); }
+`;
+  const proto = TH.MeshPhysicalMaterial.prototype, baseKey = proto.customProgramCacheKey;
+  proto.customProgramCacheKey = function () { return (this.userData && this.userData.mxDetail ? 'mxd|' : '') + baseKey.call(this); };
+  proto.onBeforeCompile = function (shader) {
+    const d = this.userData && this.userData.mxDetail; if (!d) return;
+    shader.uniforms.mxP = { value: new TH.Vector4(d[0], d[1], d[2], d[3]) }; shader.uniforms.mxBump = { value: d[4] };
+    shader.vertexShader = 'varying vec3 vMxPos;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vMxPos = position;');
+    shader.fragmentShader = DETAIL_GLSL + shader.fragmentShader
+      .replace('#include <color_fragment>', `#include <color_fragment>
+  vec3 mxQ = vMxPos * mxP.y * vec3(mxP.z, 1.0, 1.0);
+  float mxFade = clamp(1.6 - 1.4 * length(fwidth(mxQ)), 0.0, 1.0);
+  float mxN = mxFbm(mxQ), mxN2 = mxFbm(mxQ * 0.37 + 11.0);
+  diffuseColor.rgb *= 1.0 + mxFade * mxP.w * (mxN2 * 2.0 - 1.0);`)
+      .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+  roughnessFactor = clamp(roughnessFactor * (1.0 + mxFade * mxP.x * (mxN * 2.0 - 1.0)), 0.03, 1.0);`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+  { float h = mxFade * mxBump * mxN * 0.02; vec3 sx = dFdx(-vViewPosition), sy = dFdy(-vViewPosition), r1 = cross(sy, normal), r2 = cross(normal, sx);
+    float det = dot(sx, r1); vec3 grad = sign(det) * (dFdx(h) * r1 + dFdy(h) * r2); if (abs(det) > 1e-9) normal = normalize(abs(det) * normal - grad); }`);
+  };
+
   /* ------------------------------------------------------------ escenario */
   // o: { w, h, fov (grados; 0 = ortografica), shadow (opacidad de la sombra en el suelo), floorY, key: [x,y,z],
   //      exposure, ao, bloom, envIntensity, bgInner, bgOuter }
@@ -48,7 +102,7 @@
     if (TG.glow) { const gc = TG.glow === 'accent' ? MX.THEME.teal : TG.glow, rg = bx.createRadialGradient(bgc.width * 0.5, bgc.height * 0.46, 10, bgc.width * 0.5, bgc.height * 0.46, bgc.height * 0.46); rg.addColorStop(0, MX.rgba(gc, TG.glowA || 0.34)); rg.addColorStop(1, MX.rgba(gc, 0)); bx.fillStyle = rg; bx.fillRect(0, 0, bgc.width, bgc.height); }
     if (TG.grid) { const gp = TG.grid.px, n = TG.grid.every || 5; for (let i = 0, x = 0; x <= bgc.width; x += gp, i++) { bx.strokeStyle = i % n ? TG.grid.minor : TG.grid.major; bx.lineWidth = i % n ? 1 : 1.4; bx.beginPath(); bx.moveTo(x + 0.5, 0); bx.lineTo(x + 0.5, bgc.height); bx.stroke(); } for (let j = 0, y = 0; y <= bgc.height; y += gp, j++) { bx.strokeStyle = j % n ? TG.grid.minor : TG.grid.major; bx.lineWidth = j % n ? 1 : 1.4; bx.beginPath(); bx.moveTo(0, y + 0.5); bx.lineTo(bgc.width, y + 0.5); bx.stroke(); } }
     const bgt = new TH.CanvasTexture(bgc); bgt.colorSpace = TH.SRGBColorSpace; scene.background = bgt;
-    const pm = new TH.PMREMGenerator(renderer); scene.environment = pm.fromScene(new TH.RoomEnvironment(), 0.04).texture; pm.dispose();
+    const pm = new TH.PMREMGenerator(renderer); scene.environment = pm.fromScene(o.environment === 'room' ? new TH.RoomEnvironment() : G.studioEnvironment(), 0.035).texture; pm.dispose();
     scene.environmentIntensity = o.envIntensity == null ? 0.74 : o.envIntensity;
     const camera = FOV > 0 ? new TH.PerspectiveCamera(FOV, W / H, 10, 4000) : new TH.OrthographicCamera(-1, 1, 1, -1, -2000, 2000);
     scene.add(new TH.HemisphereLight('#ffffff', '#d8d3c4', 0.28));
@@ -110,7 +164,12 @@
   };
   G.canvasTex = (w, h, fn) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); fn(x, w, h); const t = new TH.CanvasTexture(c); t.anisotropy = 8; t.colorSpace = TH.SRGBColorSpace; return t; };
   // material fisico: acepta cualquier parametro de MeshPhysicalMaterial (clearcoat, transmission, ior, thickness, iridescence, anisotropy, sheen...)
-  G.mat = (color, o = {}) => new TH.MeshPhysicalMaterial(Object.assign({ color, roughness: 0.6, metalness: 0 }, o));
+  // detail: a G.DETAIL name (brushed, cast, polished, plastic, rubber, board, paint) or an array; the shader then adds the surface micro-detail
+  G.mat = (color, o = {}) => {
+    const { detail, ...rest } = o, m = new TH.MeshPhysicalMaterial(Object.assign({ color, roughness: 0.6, metalness: 0 }, rest));
+    const d = Array.isArray(detail) ? detail : G.DETAIL[detail]; if (d) m.userData.mxDetail = d.slice();
+    return m;
+  };
   // vidrio con transmision real (refracta lo que tiene detras); thickness en mm
   G.glass = (tint, o = {}) => new TH.MeshPhysicalMaterial(Object.assign({ color: tint || '#ffffff', roughness: 0.04, metalness: 0, transmission: 1, ior: 1.5, thickness: 1.2, attenuationColor: tint || '#ffffff', attenuationDistance: 40, specularIntensity: 1, clearcoat: 0.3 }, o));
   // lamina plana encima de una cara. face: 'top' | 'px' (cara x+) | 'pz' (cara hacia el borde y-min). pos: [x, y, z] locales de la pieza (mundo three)

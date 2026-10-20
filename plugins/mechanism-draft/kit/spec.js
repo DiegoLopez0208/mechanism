@@ -182,6 +182,18 @@
         F.setView(VW[k]); const pts = cs.map((q) => st.project(q[0], q[1], q[2])), xs = pts.map((q) => q[0]), ys = pts.map((q) => q[1]), w = Math.max(1, Math.max(...xs) - Math.min(...xs)), h = Math.max(1, Math.max(...ys) - Math.min(...ys));
         VW[k].zoom *= Math.max(1, Math.min(2.4, Math.min(FW / w, FH / h)));      /* only ever enlarge: an object that already fills the stage keeps its view */
       });
+      // a mode view that still shows the object small (a flat card seen on edge from the front or the side) is replaced by the iso view turned a
+      // little, so every mode shot shows the object; the spec's own views are kept wherever they fill the stage
+      // (measured as the area of the projected box against the iso view's: a tall card seen on edge is tall but has almost no area)
+      const area = (v) => { F.setView(v); const pts = cs.map((q) => st.project(q[0], q[1], q[2])), xs = pts.map((q) => q[0]), ys = pts.map((q) => q[1]); return (Math.max(...xs) - Math.min(...xs)) * (Math.max(...ys) - Math.min(...ys)); };
+      // the yaw (at the iso pitch) that shows the most of the object; a default iso view that shows much less (it looks along a flat card) turns to it
+      let best = { yaw: VW.iso.yaw, a: area(VW.iso) };
+      for (let yw = -90; yw <= 90; yw += 15) { const a = area(Object.assign({}, VW.iso, { yaw: yw })); if (a > best.a * 1.001) best = { yaw: yw, a }; }
+      if (!(dir.views && dir.views.iso) && area(VW.iso) < 0.55 * best.a) { const z0 = VW.iso.zoom; VW.iso = Object.assign({}, VW.iso, { yaw: best.yaw }); VW.three = Object.assign({}, VW.three, { yaw: best.yaw + 16 }); VW.iso.zoom = z0; }
+      [['front', -16, 6], ['side', 18, -4], ['three', 10, 12]].forEach(([k, dy, dp]) => {
+        if (dir.views && dir.views[k]) return;
+        if (area(VW[k]) < 0.6 * best.a) VW[k] = Object.assign({}, VW.iso, { yaw: VW.iso.yaw + dy, pitch: VW.iso.pitch + dp });
+      });
     }
     const shot = (id, o) => { const p = parts.find((x) => x.id === id), dim = Math.max(p.size.x, p.size.y, p.size.z * 0.6) * (p.spec.tourDim || 1); /* part.tourDim widens the shot of a part whose motion carries it away from where the camera aims */ const ta = p.spec.tourAt || [0, 0, 0]; return Object.assign(F.shot(id, { dx: ta[0], dy: ta[1], dz: ta[2], yaw: o.yaw, pitch: o.pitch, zoom: clamp(W * 0.5 / dim, 1.2, 140), e: 1, cy: cy - 40 }), { dof: o.dof == null ? 0.5 : o.dof }); };
 
@@ -266,7 +278,7 @@
     keys.push([tXS, VW.expl, [0.4, 0, 0.15, 1]]);
     if (XHOLD > 0) keys.push([tXS + XHOLD, VW.expl]);      // the same view at both ends: the camera does not move during the hold
     const YP = dir.tourAngles || [[-38, 20], [-20, 12], [-58, 26], [-30, 8], [-48, 30]];      // director.tourAngles: [[yaw, pitch], ...] for objects whose natural view is not the default one
-    tourIds.forEach((id, j) => { const ts = tT0 + j * TD, [y, p] = YP[j % YP.length]; keys.push([ts + 0.3, shot(id, { yaw: y, pitch: p }), j ? E.settle : XEASE]); keys.push([ts + TD - 0.1, shot(id, { yaw: y + 9, pitch: p - 3, dof: 0.8 }), [0.2, 0, 0.8, 1]]); });
+    tourIds.forEach((id, j) => { const ts = tT0 + j * TD, [y, p] = YP[j % YP.length]; keys.push([ts + 0.3, shot(id, { yaw: y, pitch: p }), j ? E.settle : XEASE]); keys.push([ts + TD - 0.1, Object.assign(shot(id, { yaw: y + 9, pitch: p - 3, dof: 0.8 }), { zoom: shot(id, { yaw: y, pitch: p }).zoom * 1.08 }), [0.2, 0, 0.8, 1]]); });      // a slow push-in while the part turns
     keys.push([tR0 + RD, Object.assign({}, VW.iso, { zoom: VW.iso.zoom * 0.88 }), [0.4, 0, 0.2, 1]], [DUR, Object.assign({}, VW.iso, { zoom: VW.iso.zoom * 0.8, yaw: -26 })]);
     keys.sort((a, b) => a[0] - b[0]);
     for (let i = 1; i < keys.length; i++) if (keys[i][0] <= keys[i - 1][0]) keys[i][0] = keys[i - 1][0] + 0.01;
