@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 0.10.0 - 2026-10-20
+
+Studio looks like a product photograph.
+
+- **Lighting:** the metal now reflects a product studio (an overhead key softbox, a broad front fill, side strips, a back rim panel; HDR) instead of a grey room, so machined parts read as metal with clean panel highlights.
+- **Materials with surface detail:** procedural micro-detail in the shader (no textures, no UVs, deterministic, fixed to each part): brushed streaks on machined metal, mottling on cast metal, grain on plastics, rubber and boards; it fades out before it could shimmer. Painted parts have a clear coat.
+- **Framing that shows the object:** a default view that looks along a flat object turns to the angle that shows the most of it, mode views that would show it small are replaced, and each tour stop ends with a slow push-in.
+- Every Studio film, GIF and poster re-rendered; 720p copies on the `media` release. Golden frames: only the mode and exploded frames changed (reviewed), on Windows and Linux.
+
 ## 0.9.0 - 2026-10-20
 
 Drawings you can trust as far as they were checked: Mechanism Draft (dimensioned SVG drawings of flat parts) and a gate that no longer calls agreement with one source "verified". Draft plugin 0.4.0.
