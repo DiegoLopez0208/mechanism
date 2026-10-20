@@ -11,7 +11,7 @@
  *               conf, claims: [ids], info: { title, lines, conf } }],
  *     mechanism: { free, links: [{ t: 'fixed'|'same'|'ext'|'int', a, b, carrier }],
  *                  drive: { rpm, modes: [{ id, label, driver, shell, publish: { value, text, claim, tol }, formula }] } },
- *     director: { modeDur, tourDur, tour: [ids], views: {...} } }
+ *     director: { modeDur, tourDur, explodedHold, tour: [ids], views: {...} } }
  * Reglas: todo numero SPEC/MEASURED/DERIVED nombra su fuente; DERIVED trae su cruce; MEASURED trae su error; ESTIMATED trae su porque.
  */
 (function (g) {
@@ -182,8 +182,32 @@
   const PH = /\b(todo|tbd|fixme|lorem ipsum|placeholder|changeme|xxx+)\b/i, PH_URL = /^https?:\/\/(www\.)?(example\.(com|org|net)|localhost|127\.0\.0\.1|test\.com|foo\.bar)(\/|:|$)/i;
   const DIMS = ['w', 'h', 'd', 'r', 'ro', 'ri', 'm', 'len', 'length', 'width', 'height', 'depth', 'thick', 'thickness', 't', 'rad', 'radius', 'teeth', 'z', 'n'];
   const RANK = { spec: 0, measured: 1, derived: 2, estimated: 3 };
+  const SPEC_KEYS = new Set('id fig kicker title sub aspect style presentation brand stage up orient research parts mechanism director recognize workflowScene paperScene'.split(' '));
+  const PART_KEYS = new Set('id name kind p mat at explode body orbit conf claims info params why decor decals late cutaway tour tourAt tourDim rot spin motion engine cubie role slide compress'.split(' '));
+  // Confidence describes evidence for the part, not a measurement of every size.
+  S.sizeEvidence = (part) => {
+    const keys = Object.keys(part.p || {}).filter((k) => (DIMS.includes(k) || (part.kind === 'cubie' && k === 's') || k in (part.params || {})) && typeof part.p[k] === 'number');
+    const compared = keys.filter((k) => {
+      const q = (part.params || {})[k];
+      return q && q.conf !== 'estimated' && CONFS.includes(q.conf) && q.claim && Number.isFinite(q.value)
+        && Math.abs(part.p[k] - q.value) <= (q.tol == null ? Math.abs(q.value) * 0.001 : q.tol);
+    });
+    const unchecked = keys.filter((k) => !compared.includes(k));
+    return { part: part.id, compared, unchecked, status: !compared.length ? 'not compared' : unchecked.length ? 'partly compared' : 'compared',
+      label: compared.length ? 'SIZE ' + compared.length + '/' + keys.length + ' COMPARED' : 'SIZE NOT COMPARED' };
+  };
   S.validate = (spec) => {
     const paramRows = [], mixed = [], errors = [], warnings = [], R = spec.research || { sources: [], claims: [] }, src = {}, cl = {}, ids = new Set();
+    Object.keys(spec).filter((k) => !SPEC_KEYS.has(k)).forEach((k) => warnings.push('unknown spec key: ' + k));
+    if (spec.presentation != null) {
+      const p = spec.presentation;
+      if (typeof p !== 'object' || Array.isArray(p)) errors.push('presentation must be an object');
+      else {
+        if (p.method != null && !['studio', 'workflow', 'paper'].includes(p.method)) errors.push('unknown presentation method: ' + p.method);
+        if (p.background != null && !['graphite', 'blueprint', 'porcelain', 'ivory'].includes(p.background)) errors.push('unknown presentation background: ' + p.background);
+        Object.keys(p).filter(k => !['method', 'background'].includes(k)).forEach(k => warnings.push('unknown presentation key: ' + k));
+      }
+    }
     if (!Array.isArray(spec.parts) || !spec.parts.length) { errors.push('the spec has no parts: there is nothing to model'); spec = Object.assign({}, spec, { parts: [] }); }
     if (!(R.claims || []).length) errors.push('the spec has no claims: nothing says where any number comes from');
     if (!(R.sources || []).length) errors.push('the spec has no sources');
@@ -197,6 +221,7 @@
       if (c.conf === 'estimated' && !c.why) errors.push('claim ' + c.id + ' is ESTIMATED and does not say why nobody publishes it');
     });
     spec.parts.forEach((d) => {
+      Object.keys(d).filter((k) => !PART_KEYS.has(k)).forEach((k) => warnings.push('part ' + d.id + ': unknown part key: ' + k));
       if (ids.has(d.id)) errors.push('duplicate part: ' + d.id); ids.add(d.id);
       if (!KINDS.includes(d.kind)) errors.push('part ' + d.id + ': unknown kind ' + d.kind);
       if (!CONFS.includes(d.conf)) errors.push('part ' + d.id + ': missing conf (spec | measured | derived | estimated)');
@@ -247,6 +272,19 @@
     const cv = (spec.mechanism && spec.mechanism.calc && spec.mechanism.calc.vars) || {};
     Object.keys(cv).forEach((k) => { const o = cv[k], v = o !== null && typeof o === 'object' ? o.v : o, c = o !== null && typeof o === 'object' ? o.claim : null; if (!c) errors.push('variable ' + k + ' has no claim: a number nobody can trace'); else if (!cl[c]) errors.push('variable ' + k + ' cites a claim that does not exist: ' + c); if (v === undefined || v === null || (typeof v === 'number' && !isFinite(v))) errors.push('variable ' + k + ' has no usable value (' + String(v) + ')'); });
     const an = S.analyze(spec); an.problems.forEach((p) => errors.push(p));
+    const uncheckedCalculations = an.calc ? an.modes.filter((m) => !m.publish).map((m) => ({ id: m.id, label: m.label, inputs: m.used || [] })) : [];
+    uncheckedCalculations.forEach((m) => warnings.push('computed value "' + m.label + '" is shown without a published comparator: its value is not checked'));
+    const comparedInputs = new Set(an.modes.filter((m) => m.publish).flatMap((m) => m.used || []));
+    const uncheckedInputs = an.calc ? Object.keys(cv).filter((id) => !comparedInputs.has(id)).map((id) => ({
+      id, label: cv[id] && cv[id].label || id, modes: an.modes.filter((m) => (m.used || []).includes(id)).map((m) => m.label)
+    })) : [];
+    uncheckedInputs.forEach((v) => warnings.push('calc input ' + v.id + ' (' + v.label + ') has no published mode comparator' +
+      (v.modes.length ? ': used only by ' + v.modes.join(', ') : ': not used by any calculated mode')));
+    const links = (spec.mechanism && spec.mechanism.links) || [];
+    const uncheckedTeeth = spec.parts.filter((d) => teethOf(d) != null && !links.some((l) =>
+      (l.t === 'ext' || l.t === 'int') && (l.a === (d.body || d.id) || l.b === (d.body || d.id)))).map((d) => d.id);
+    uncheckedTeeth.forEach((id) => warnings.push('part ' + id + ': tooth count is outside the kinematic train and is not checked by meshing or ratios'));
+    const sizeEvidence = spec.parts.map(S.sizeEvidence);
     ((spec.mechanism && spec.mechanism.drive && spec.mechanism.drive.modes) || []).forEach((m) => { if (m.publish && m.publish.claim && !cl[m.publish.claim]) errors.push('mode ' + m.label + ' cites a claim that does not exist: ' + m.publish.claim); });
     const lines = []; lines.push('parts: ' + spec.parts.length + '   claims: ' + (R.claims || []).length + '   sources: ' + (R.sources || []).length);
     CONFS.forEach((k) => lines.push('  ' + k.toUpperCase().padEnd(10) + ' parts ' + spec.parts.filter((d) => d.conf === k).length + '   claims ' + (R.claims || []).filter((c) => c.conf === k).length));
@@ -281,7 +319,12 @@
       const inputs = m.used ? m.used.map((k) => calcVars[k] && typeof calcVars[k] === 'object' ? calcVars[k].claim : null).filter(Boolean) : (an.K ? gearClaims : []), exp = claimRoots(m.publish.claim), shared = new Set(), have = new Set();
       inputs.forEach((cid) => claimRoots(cid).forEach((r) => { have.add(r); if (exp.has(r)) shared.add(r); }));
       const row = { label: m.label, shared: Array.from(shared) }; (!have.size || !exp.size ? prov.unlinked : shared.size ? prov.sameSource : prov.independent).push(row); });
-    const estimated = (R.claims || []).filter((c) => c.conf === 'estimated').length, verdict = { state: errors.length ? 'DOES NOT PASS' : !checked ? (conversions ? 'ONLY CONVERSIONS' : 'NOTHING CHECKED') : pending ? 'INCOMPLETE' : 'VERIFIED', checked, conversions, failed, pending, independent: prov.independent.length, sameSource: prov.sameSource.length, unlinked: prov.unlinked.length, captions: capsInfo, estimated, dimensions: paramRows.length, mixed: mixed.length, recognition: recog, claims: (R.claims || []).length, sources: (R.sources || []).length, parts: spec.parts.length };
+    const estimated = (R.claims || []).filter((c) => c.conf === 'estimated').length, verdict = { state: errors.length ? 'DOES NOT PASS' : !checked ? (conversions ? 'ONLY CONVERSIONS' : 'NOTHING CHECKED') : pending ? 'INCOMPLETE' : 'VERIFIED', checked, conversions, failed, pending, independent: prov.independent.length, sameSource: prov.sameSource.length, unlinked: prov.unlinked.length, captions: capsInfo, estimated, dimensions: paramRows.length, mixed: mixed.length, recognition: recog, claims: (R.claims || []).length, sources: (R.sources || []).length, parts: spec.parts.length, uncheckedCalculations, uncheckedTeeth, sizeEvidence };
+    verdict.uncheckedInputs = uncheckedInputs;
+    if (uncheckedCalculations.length) lines.push('computed values without a published comparator: ' + uncheckedCalculations.map((m) => m.label).join(', '));
+    if (uncheckedInputs.length) lines.push('calc inputs without a published mode comparator: ' + uncheckedInputs.map((v) => v.id).join(', '));
+    if (uncheckedTeeth.length) lines.push('tooth counts outside the kinematic train: ' + uncheckedTeeth.join(', '));
+    lines.push('size evidence: ' + sizeEvidence.filter((s) => s.compared.length).length + '/' + sizeEvidence.length + ' parts have a drawn size compared with its source (confidence badges do not verify size)');
     if (!errors.length && !checked) warnings.push(conversions ? 'every check is a unit conversion (inch to mm, pound to kg): it cannot fail, so it is not evidence. Compare the drawn model with a figure the sheet gives in another way, or cross two sources (mark a real conversion with kind: "convert")' : 'no published figure is compared with the model: this is a description, not a verification');
     if (!errors.length && checked && conversions) warnings.push(conversions + ' of the checks are unit conversions and do not count as evidence');
     if (paramRows.length || mixed.length) lines.push('dimensions: ' + paramRows.length + ' compared with their source, ' + mixed.length + ' part(s) mix sourced and estimated dimensions');
@@ -291,7 +334,7 @@
       if (!prov.independent.length && prov.sameSource.length) warnings.push('CONSISTENT, not VERIFIED: no check uses a source independent of the inputs, so a wrong source would pass. Add a published figure from another source (or declare derives: [ids] only if it really copies)'); }
     // VERIFIED needs at least one check whose source is independent of the inputs. When every classified check shares its source with the model's inputs the figures agree, but a wrong source would agree too: CONSISTENT.
     if (verdict.state === 'VERIFIED' && !prov.independent.length && prov.sameSource.length > 0) verdict.state = 'CONSISTENT';
-    lines.push('verdict: ' + verdict.state + '   ' + checked + ' reproduced' + (conversions ? ' (+' + conversions + ' unit conversions, not counted)' : '') + ', ' + estimated + ' estimated, ' + pending + ' unchecked');
+    lines.push('verdict: ' + verdict.state + '   ' + checked + ' reproduced' + (conversions ? ' (+' + conversions + ' unit conversions, not counted)' : '') + ', ' + estimated + ' estimated, ' + pending + ' unchecked published comparisons' + (uncheckedCalculations.length ? ', ' + uncheckedCalculations.length + ' displayed without a published comparator' : ''));
     return { errors, warnings, lines, analysis: an, verdict };
   };
 })(typeof window !== 'undefined' ? window : globalThis);

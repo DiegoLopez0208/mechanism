@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- Studio camera, exploded view to the first tour stop: in the normal and extended cuts the whole exploded object is now held still for `director.explodedHold` seconds (0.9 by default) before the camera moves, and the move to the first stop is a 0.7 s smoothstep instead of the damped spring of f4495eb, which covered most of the way in two or three frames. The rest of the object fades as the camera starts (the fade no longer jumps to 70 % in one frame), the part card fades in as the camera lands, and the stop's bell still rings on the landing. Everything after the hold moves with it (normal and extended films are 0.5-1 s longer); the short cut keeps its timing and its audio is unchanged. `tests/camera.test.mjs` measures the hold, the move, the landing and the sync on lock, hub and rtx4090; the "exploded" golden frames (Windows and Linux) now show the exploded object.
+
+- Ecosystem foundation (branch `ecosystem-foundation`): an engine dependency manifest (`kit/manifest.js`), Workflow and vector Paper without three.js, Paper's mesh adapter split from its vector engine, explicit NOT RUN reporting of checks that do not run, a Paper visual-contract test, and Mechanism Draft 0.1 as a standalone plugin in `plugins/mechanism-draft/`. Hardening: `build-skill.mjs` refuses dangerous `--out` folders and removes only files its previous build wrote; `new.mjs` escapes `--title` and `--fig`; `skill-doctor.mjs --strict` and distinct states for optional packs; CI runs the manifest, Paper, preflight, Draft and version tests; `.claude-plugin/plugin.json` now carries the repository version (0.8.1) under the version policy in CONTRIBUTING.md.
+
+- Replace the first presentation prototypes with independent engines: Workflow is a Canvas2D industrial process scene; Paper is pure vector technical drawing with front/top/side orthographic views. Neither engine instantiates WebGL or composites Studio frames. Reuse evidence/model data, not the original scene rendering. Tests prohibit WebGL creation in both 2D engines and require byte-identical repeated CPU frames. Studio retains the product renderer.
+
+- Presentations: name the normal director Studio; add Workflow (model-driven process stations) and Paper (real mesh contours/silhouettes, numbered details and evidence annotations). Four independent backgrounds: Graphite, Blueprint, Porcelain and Ivory. CLI, URL and spec selection; 1.5x 3D supersampling for opted-in presentations; crisp Workflow/Paper overlays and synchronized deterministic timelines/audio. Existing films remain unchanged without opt-in. Add configuration, layout and browser tests; run them in CI.
+
+- Repeatability and regression: seed the GTAO denoiser's startup texture (the pass does not rotate noise between frames), preserve its sample/filter settings, and test bounded residual raster rounding. Four compact lossless golden frames per example on Windows/Linux, explicit regeneration, CI comparisons, and deliberately broken text/decor controls. No vendor rebuild or new dependency.
+
+- Render: accurate full-range BT.601 JPEG to limited-range BT.709 conversion, explicit primaries/transfer tags, and an opt-in software WebCodecs H.264 path (`--encoder browser`) with capability fallback and a scene-dependent bitrate budget. Audio, clipping, exports, stills and remux remain supported. `validate-render.mjs` compares decoded Chromium pixels against lossless references, including every evidence panel. Published media is not replaced.
+
+- Gate disclosures: displayed calculations without published comparators, tooth counts outside meshing links, and unknown spec/part keys now warn. Part cards and the register distinguish confidence from size comparisons, including which dimensions remain unchecked. These warnings do not change VERIFIED/CONSISTENT or count unchecked calculations as reproduced figures.
+- Browser lifecycle: shared port-zero CDP sessions, private profiles, bounded operations/frame watchdogs, one retry for watchdog failures, and cleanup of the owned PID tree on failure or interruption. All five browser scripts use the helper.
+
 ## 0.8.1 - 2026-10-16
 
 The gate stops agreeing with itself, and the site gets a face.

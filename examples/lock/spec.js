@@ -119,6 +119,7 @@
         { id: 'codes', label: 'How many keys', expr: 'combos', unit: 'codes', digits: 0, formula: 'six depths, five cuts, adjacent cuts within 4 steps (7776 before the rule)', show: ['key'], dim: 0.5 },
       ] },
     },
+    paperScene: { kind: 'pin-section', inch: IN, first: FIRST, pitch: PITCH, depth: DEPTH, pin: PIN, plug: PLUGD, code: CODE, wrong: WRONG, driver: DRV, cap: YCAP, keyway: YKW, keyTop: YTOP, tip: TIP, pinR: PR, chamber: CH, profile },
     director: { outro: { url: 'github.com/DiegoLopez0208/mechanism', line: 'a skill for Claude Code and other coding agents' },  cold: { dur: 8, question: 'Does the key that lines the pins up open the lock, and a key with one cut wrong not?' }, what: 'A pin tumbler lock, cut open. Each of the five stacks has a spring, a driver pin and a key pin. The right key lifts them until every split sits on the shear line.', legend: [{ color: '#b08d57', text: 'key and key pins' }, { color: '#9aa3ad', text: 'driver pins' }, { color: '#d98a4a', text: 'shear line' }], views: { iso: { yaw: -14, pitch: 26 }, front: { yaw: 0, pitch: 10 }, side: { yaw: 20, pitch: 22 }, three: { yaw: -8, pitch: 32 } }, modeDur: 3.6, tourAngles: [[-14, 22], [10, 16], [-22, 26], [14, 12]], tour: ['key', 'kp2', 'plugBase', 'houseCap'], short: { modes: ['unlock', 'wrong', 'aligned'], tour: ['key', 'kp2'] } },
   };
 })();

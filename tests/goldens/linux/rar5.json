@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "width": 360,
+  "height": 450,
+  "channels": 3,
+  "frames": [
+    {
+      "label": "mode sig",
+      "t": 20.156735632183914
+    },
+    {
+      "label": "exploded",
+      "t": 64.6287356321839
+    },
+    {
+      "label": "claims",
+      "t": 104.32873563218392
+    },
+    {
+      "label": "receipt",
+      "t": 121.65373563218391
+    }
+  ]
+}

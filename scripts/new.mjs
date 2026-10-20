@@ -4,9 +4,10 @@
 //   node scripts/new.mjs rubik --title "Rubik's cube"
 //   node scripts/check-spec.mjs examples/rubik/spec.js
 //
-// La pagina copia los scripts de examples/hub (la lista es fija: lo unico que cambia es spec.js).
+// La pagina toma el HTML de examples/hub y la lista de scripts de kit/manifest.js (lo unico que cambia es spec.js).
 import fs from 'node:fs';
 import path from 'node:path';
+import vm from 'node:vm';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const args = process.argv.slice(2), name = args.find((a) => !a.startsWith('--') && !(args[args.indexOf(a) - 1] || '').startsWith('--'));
@@ -19,16 +20,24 @@ const taken = ['spec.js', 'index.html', 'run.js'].filter((f) => fs.existsSync(pa
 if (taken.length) { console.error('ya existe ' + rel + ' (tiene ' + taken.join(', ') + '): elige otro nombre o borra esos archivos'); process.exit(1); }
 fs.mkdirSync(dir, { recursive: true });
 
-const hub = fs.readFileSync(path.join(root, 'examples/hub/index.html'), 'utf8');
-fs.writeFileSync(path.join(dir, 'index.html'), (work ? hub.split('../../kit/').join(kitUrl) : hub).replace(/<title>[^<]*<\/title>/, '<title>' + fig + ' - ' + title.replace(/[<>&]/g, '') + '</title>'));
-fs.copyFileSync(path.join(root, 'examples/hub/run.js'), path.join(dir, 'run.js'));
+// the page takes its markup from examples/hub and its script list from kit/manifest.js (the same table kit/boot.js reads)
+const ctx = vm.createContext({}); vm.runInContext(fs.readFileSync(path.join(root, 'kit/manifest.js'), 'utf8'), ctx);
+const scripts = ctx.MX_MANIFEST.pageModules([]).map((f) => '../../kit/' + f).concat('spec.js', '../../kit/' + ctx.MX_MANIFEST.compiler, 'run.js').join(',');
+// the markup template: examples/hub in the full repository; a standalone skill (scripts/build-skill.mjs) carries only its own examples
+const tpl = ['hub', ...fs.readdirSync(path.join(root, 'examples')).sort()].map((n) => path.join(root, 'examples', n)).find((d) => fs.existsSync(path.join(d, 'index.html')) && fs.existsSync(path.join(d, 'run.js')));
+// --title and --fig are free text: escaped for HTML in the page, JSON-encoded in spec.js, kept out of its comment, and never used as a replace() pattern
+const html = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const comment = (s) => String(s).replace(/\*\//g, '* /').replace(/[\r\n\u2028\u2029]+/g, ' ');
+const hub = fs.readFileSync(path.join(tpl, 'index.html'), 'utf8').replace(/data-scripts="[^"]*"/, () => 'data-scripts="' + scripts + '"');
+fs.writeFileSync(path.join(dir, 'index.html'), (work ? hub.split('../../kit/').join(kitUrl) : hub).replace(/<title>[^<]*<\/title>/, () => '<title>' + html(fig) + ' - ' + html(title) + '</title>'));
+fs.copyFileSync(path.join(tpl, 'run.js'), path.join(dir, 'run.js'));
 fs.writeFileSync(path.join(dir, 'spec.js'), `/*
- * spec.js - ${title}. Plantilla minima, BORRADOR: "node scripts/check-spec.mjs ${rel}/spec.js" falla hasta que cada TODO y example.com se reemplacen por lo que investigaste.
+ * spec.js - ${comment(title)}. Plantilla minima, BORRADOR: "node scripts/check-spec.mjs ${comment(rel)}/spec.js" falla hasta que cada TODO y example.com se reemplacen por lo que investigaste.
  * Reemplaza las fuentes, las afirmaciones y las piezas por lo que investigaste. Reglas: todo numero SPEC / MEASURED / DERIVED nombra su fuente
  * (DERIVED trae su cruce, MEASURED su error, ESTIMATED su motivo). Ver SKILL.md y examples/hub, examples/switch, examples/enigma.
  */
 window.SPEC = {
-  id: '${name}', fig: '${fig}', kicker: 'REAL OBJECT', title: ${JSON.stringify(title)}, sub: 'Every number says where it came from.',
+  id: '${name}', fig: ${JSON.stringify(fig)}, kicker: 'REAL OBJECT', title: ${JSON.stringify(title)}, sub: 'Every number says where it came from.',
   research: {
     sources: [
       { id: 'src1', title: 'TODO: the page or datasheet you opened', url: 'https://example.com/', fetched: '${new Date().toISOString().slice(0, 10)}', note: 'What you read there, and what you could not read.' },

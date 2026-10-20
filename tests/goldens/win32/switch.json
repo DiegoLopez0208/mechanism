@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "width": 360,
+  "height": 450,
+  "channels": 3,
+  "frames": [
+    {
+      "label": "mode pre",
+      "t": 9.184000000000001
+    },
+    {
+      "label": "exploded",
+      "t": 20
+    },
+    {
+      "label": "claims",
+      "t": 56.29999999999999
+    },
+    {
+      "label": "receipt",
+      "t": 73.62499999999999
+    }
+  ]
+}

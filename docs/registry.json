@@ -11,13 +11,175 @@
       "failed": 0,
       "pending": 0,
       "estimated": 2,
+      "sizeEvidence": [
+        {
+          "part": "wallL",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "h",
+            "r",
+            "t"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ukw",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "w"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ratchetL",
+          "compared": [],
+          "unchecked": [
+            "m",
+            "z",
+            "width"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rotorL",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "w"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ratchetM",
+          "compared": [],
+          "unchecked": [
+            "m",
+            "z",
+            "width"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rotorM",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "w"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ratchetR",
+          "compared": [],
+          "unchecked": [
+            "m",
+            "z",
+            "width"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rotorR",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "w"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "etw",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "w"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pawlL",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pawlM",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pawlR",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "axle",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "wallR",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "h",
+            "r",
+            "t"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        }
+      ],
+      "uncheckedCalculations": [],
+      "uncheckedInputs": [],
+      "uncheckedTeeth": [
+        "ratchetL",
+        "ratchetM",
+        "ratchetR"
+      ],
       "dimensions": 0,
       "mixed": 0,
       "parts": 14,
       "claims": 9,
       "sources": 3,
       "errors": 0,
-      "warnings": 0,
+      "warnings": 3,
       "recognition": {
         "features": 4,
         "blind": "recognised"
@@ -33,13 +195,611 @@
       "failed": 0,
       "pending": 0,
       "estimated": 4,
+      "sizeEvidence": [
+        {
+          "part": "axle",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "sun",
+          "compared": [],
+          "unchecked": [
+            "m",
+            "z",
+            "width"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "planet1",
+          "compared": [],
+          "unchecked": [
+            "m",
+            "z",
+            "width"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "planet2",
+          "compared": [],
+          "unchecked": [
+            "m",
+            "z",
+            "width"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "planet3",
+          "compared": [],
+          "unchecked": [
+            "m",
+            "z",
+            "width"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "planet4",
+          "compared": [],
+          "unchecked": [
+            "m",
+            "z",
+            "width"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin1",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin2",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin3",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin4",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "plateB",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "w"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "plateF",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "w"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ring",
+          "compared": [],
+          "unchecked": [
+            "m",
+            "z",
+            "ro",
+            "width"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "shell",
+          "compared": [],
+          "unchecked": [
+            "ro",
+            "ri",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "flangeL",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "w",
+            "n"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "flangeR",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "w",
+            "n"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "bearingL",
+          "compared": [],
+          "unchecked": [
+            "ri",
+            "ro",
+            "w"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "bearingR",
+          "compared": [],
+          "unchecked": [
+            "ri",
+            "ro",
+            "w"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "sprocket",
+          "compared": [],
+          "unchecked": [
+            "teeth",
+            "width"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "nutL",
+          "compared": [],
+          "unchecked": [
+            "h"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "nutR",
+          "compared": [],
+          "unchecked": [
+            "h"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke0L",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke1L",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke2L",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke3L",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke4L",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke5L",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke6L",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke7L",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke8L",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke9L",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke10L",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke11L",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke12L",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke13L",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke14L",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke15L",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke16L",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke17L",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke0R",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke1R",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke2R",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke3R",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke4R",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke5R",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke6R",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke7R",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke8R",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke9R",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke10R",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke11R",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke12R",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke13R",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke14R",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke15R",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke16R",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spoke17R",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rim",
+          "compared": [],
+          "unchecked": [
+            "ro",
+            "ri",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        }
+      ],
+      "uncheckedCalculations": [],
+      "uncheckedInputs": [],
+      "uncheckedTeeth": [
+        "sprocket"
+      ],
       "dimensions": 0,
       "mixed": 0,
       "parts": 58,
       "claims": 7,
       "sources": 3,
       "errors": 0,
-      "warnings": 0,
+      "warnings": 1,
       "recognition": {
         "features": 5,
         "blind": "recognised"
@@ -55,6 +815,354 @@
       "failed": 0,
       "pending": 0,
       "estimated": 3,
+      "sizeEvidence": [
+        {
+          "part": "block",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "head",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pan",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "crank",
+          "compared": [],
+          "unchecked": [
+            "n"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "flywheel",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "w"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rod1",
+          "compared": [],
+          "unchecked": [
+            "t"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "piston1",
+          "compared": [],
+          "unchecked": [
+            "d",
+            "h"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin1",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rod2",
+          "compared": [],
+          "unchecked": [
+            "t"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "piston2",
+          "compared": [],
+          "unchecked": [
+            "d",
+            "h"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin2",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rod3",
+          "compared": [],
+          "unchecked": [
+            "t"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "piston3",
+          "compared": [],
+          "unchecked": [
+            "d",
+            "h"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin3",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rod4",
+          "compared": [],
+          "unchecked": [
+            "t"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "piston4",
+          "compared": [],
+          "unchecked": [
+            "d",
+            "h"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin4",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "cover",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "cam-in",
+          "compared": [],
+          "unchecked": [
+            "len",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "v-in-1a",
+          "compared": [],
+          "unchecked": [
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "v-in-1b",
+          "compared": [],
+          "unchecked": [
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "v-in-2a",
+          "compared": [],
+          "unchecked": [
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "v-in-2b",
+          "compared": [],
+          "unchecked": [
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "v-in-3a",
+          "compared": [],
+          "unchecked": [
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "v-in-3b",
+          "compared": [],
+          "unchecked": [
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "v-in-4a",
+          "compared": [],
+          "unchecked": [
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "v-in-4b",
+          "compared": [],
+          "unchecked": [
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "cam-ex",
+          "compared": [],
+          "unchecked": [
+            "len",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "v-ex-1a",
+          "compared": [],
+          "unchecked": [
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "v-ex-1b",
+          "compared": [],
+          "unchecked": [
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "v-ex-2a",
+          "compared": [],
+          "unchecked": [
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "v-ex-2b",
+          "compared": [],
+          "unchecked": [
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "v-ex-3a",
+          "compared": [],
+          "unchecked": [
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "v-ex-3b",
+          "compared": [],
+          "unchecked": [
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "v-ex-4a",
+          "compared": [],
+          "unchecked": [
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "v-ex-4b",
+          "compared": [],
+          "unchecked": [
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        }
+      ],
+      "uncheckedCalculations": [],
+      "uncheckedInputs": [],
+      "uncheckedTeeth": [],
       "dimensions": 0,
       "mixed": 0,
       "parts": 36,
@@ -77,13 +1185,437 @@
       "failed": 0,
       "pending": 0,
       "estimated": 1,
+      "sizeEvidence": [
+        {
+          "part": "plugBase",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "plugW0",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "houseW0",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "plugW1",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "houseW1",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "plugW2",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "houseW2",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "plugW3",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "houseW3",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "plugW4",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "houseW4",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "plugW5",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "houseW5",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "houseCap",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "houseBase",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "shear",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "kp0",
+          "compared": [
+            "len"
+          ],
+          "unchecked": [
+            "r"
+          ],
+          "status": "partly compared",
+          "label": "SIZE 1/2 COMPARED"
+        },
+        {
+          "part": "dp0",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "sp0",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "kp1",
+          "compared": [
+            "len"
+          ],
+          "unchecked": [
+            "r"
+          ],
+          "status": "partly compared",
+          "label": "SIZE 1/2 COMPARED"
+        },
+        {
+          "part": "dp1",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "sp1",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "kp2",
+          "compared": [
+            "len"
+          ],
+          "unchecked": [
+            "r"
+          ],
+          "status": "partly compared",
+          "label": "SIZE 1/2 COMPARED"
+        },
+        {
+          "part": "dp2",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "sp2",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "kp3",
+          "compared": [
+            "len"
+          ],
+          "unchecked": [
+            "r"
+          ],
+          "status": "partly compared",
+          "label": "SIZE 1/2 COMPARED"
+        },
+        {
+          "part": "dp3",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "sp3",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "kp4",
+          "compared": [
+            "len"
+          ],
+          "unchecked": [
+            "r"
+          ],
+          "status": "partly compared",
+          "label": "SIZE 1/2 COMPARED"
+        },
+        {
+          "part": "dp4",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "sp4",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "key",
+          "compared": [],
+          "unchecked": [
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "keyW",
+          "compared": [],
+          "unchecked": [
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "keyBow",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "keyBowW",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        }
+      ],
+      "uncheckedCalculations": [
+        {
+          "id": "unlock",
+          "label": "The key goes in",
+          "inputs": [
+            "ntok"
+          ]
+        },
+        {
+          "id": "codes",
+          "label": "How many keys",
+          "inputs": [
+            "combos"
+          ]
+        }
+      ],
+      "uncheckedInputs": [
+        {
+          "id": "ntok",
+          "label": "steps",
+          "modes": [
+            "The key goes in"
+          ]
+        },
+        {
+          "id": "combos",
+          "label": "codes under MACS 4",
+          "modes": [
+            "How many keys"
+          ]
+        }
+      ],
+      "uncheckedTeeth": [],
       "dimensions": 5,
       "mixed": 5,
       "parts": 35,
       "claims": 7,
       "sources": 3,
       "errors": 0,
-      "warnings": 7,
+      "warnings": 11,
       "recognition": {
         "features": 3,
         "blind": "recognised"
@@ -99,13 +1631,551 @@
       "failed": 0,
       "pending": 0,
       "estimated": 1,
+      "sizeEvidence": [
+        {
+          "part": "body",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "die",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "h",
+            "r",
+            "t"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin1",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin2",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin3",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin4",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin5",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin6",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin7",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin8",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin9",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin10",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin11",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin12",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin13",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin14",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin15",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin16",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin17",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin18",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin19",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin20",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin21",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin22",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin23",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin24",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin25",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin26",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin27",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin28",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin29",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin30",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin31",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin32",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin33",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin34",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin35",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin36",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin37",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin38",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin39",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pin40",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        }
+      ],
+      "uncheckedCalculations": [
+        {
+          "id": "dens",
+          "label": "Transistor density",
+          "inputs": [
+            "transistors",
+            "area"
+          ]
+        }
+      ],
+      "uncheckedInputs": [
+        {
+          "id": "pins",
+          "label": "pins",
+          "modes": []
+        },
+        {
+          "id": "transistors",
+          "label": "transistors",
+          "modes": [
+            "Transistor density"
+          ]
+        },
+        {
+          "id": "area",
+          "label": "die",
+          "modes": [
+            "Transistor density"
+          ]
+        }
+      ],
+      "uncheckedTeeth": [],
       "dimensions": 0,
       "mixed": 0,
       "parts": 42,
       "claims": 8,
       "sources": 3,
       "errors": 0,
-      "warnings": 2,
+      "warnings": 6,
       "recognition": {
         "features": 3,
         "blind": "recognised"
@@ -121,6 +2191,1055 @@
       "failed": 0,
       "pending": 0,
       "estimated": 0,
+      "sizeEvidence": [
+        {
+          "part": "b0",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b1",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b2",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b3",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b4",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b5",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b6",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b7",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b8",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b9",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b10",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b11",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b12",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b13",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b14",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b15",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b16",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b17",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b18",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b19",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b20",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b21",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b22",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b23",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b24",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b25",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b26",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b27",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b28",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b29",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b30",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b31",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b32",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b33",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b34",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b35",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b36",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b37",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b38",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b39",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b40",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b41",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b42",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b43",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b44",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b45",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b46",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b47",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b48",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b49",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b50",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b51",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b52",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b53",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b54",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b55",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b56",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b57",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b58",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b59",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b60",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b61",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b62",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b63",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b64",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b65",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b66",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b67",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b68",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b69",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b70",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b71",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b72",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b73",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b74",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b75",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b76",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b77",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b78",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b79",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b80",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b81",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b82",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b83",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b84",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b85",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "b86",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        }
+      ],
+      "uncheckedCalculations": [],
+      "uncheckedInputs": [],
+      "uncheckedTeeth": [],
       "dimensions": 0,
       "mixed": 0,
       "parts": 87,
@@ -143,13 +3262,557 @@
       "failed": 0,
       "pending": 0,
       "estimated": 1,
+      "sizeEvidence": [
+        {
+          "part": "code",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "h",
+            "r",
+            "t"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "atom0",
+          "compared": [],
+          "unchecked": [
+            "ro",
+            "ri",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "atom1",
+          "compared": [],
+          "unchecked": [
+            "ro",
+            "ri",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "atom2",
+          "compared": [],
+          "unchecked": [
+            "ro",
+            "ri",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "nucleus",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "w"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "reactname",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "h",
+            "r",
+            "t"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "lblA",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "h",
+            "r",
+            "t"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "lblB",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "h",
+            "r",
+            "t"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "lblC",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "h",
+            "r",
+            "t"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ra0",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rb0",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rc0",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "bar0",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ra1",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rb1",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rc1",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "bar1",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ra2",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rb2",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rb2g",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rc2",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rc2g",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "bar2",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ra3",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rb3",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rc3",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "bar3",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ra4",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rb4",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rc4",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "bar4",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ra5",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rb5",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rc5",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "bar5",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ra6",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rb6",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rc6",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "bar6",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ra7",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rb7",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "rc7",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "bar7",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "probe",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        }
+      ],
+      "uncheckedCalculations": [
+        {
+          "id": "unfold",
+          "label": "One click, step by step",
+          "inputs": [
+            "nsteps"
+          ]
+        }
+      ],
+      "uncheckedInputs": [
+        {
+          "id": "nsteps",
+          "label": "steps",
+          "modes": [
+            "One click, step by step"
+          ]
+        }
+      ],
+      "uncheckedTeeth": [],
       "dimensions": 0,
       "mixed": 0,
       "parts": 44,
       "claims": 5,
       "sources": 4,
       "errors": 0,
-      "warnings": 0,
+      "warnings": 2,
       "recognition": {
         "features": 3,
         "blind": "recognised"
@@ -165,13 +3828,736 @@
       "failed": 0,
       "pending": 0,
       "estimated": 2,
+      "sizeEvidence": [
+        {
+          "part": "backplate",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "h",
+            "r",
+            "t"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "bracket",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "h",
+            "r",
+            "t"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pcb",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "h",
+            "r",
+            "t"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "package",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "h",
+            "r",
+            "t"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "die",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "h",
+            "r",
+            "t"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "fingers",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "h",
+            "r",
+            "t"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "power",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "base",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "h",
+            "r",
+            "t"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "fins",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "n",
+            "t"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "shroud",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "h",
+            "r",
+            "t"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ring",
+          "compared": [],
+          "unchecked": [
+            "ro",
+            "ri",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "fanA",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "t"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "fanB",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "t"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pipe1",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pipe2",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pipe3",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pipe4",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pipe5",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ps1",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ps2",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ps3",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ps4",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ps5",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ps6",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ps7",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ps8",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ps9",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ps10",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ps11",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ps12",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ps13",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ps14",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ps15",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ps16",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ps17",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "ps18",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "choke1",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "choke2",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "choke3",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "choke4",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "choke5",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "choke6",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "cap1",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "cap2",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "cap3",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "cap4",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "cap5",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "cap6",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "mem1",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "mem2",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "mem3",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "mem4",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "mem5",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "mem6",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "mem7",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "mem8",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "mem9",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "mem10",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "mem11",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "mem12",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        }
+      ],
+      "uncheckedCalculations": [
+        {
+          "id": "dens",
+          "label": "Transistor density",
+          "inputs": [
+            "transistors",
+            "die"
+          ]
+        }
+      ],
+      "uncheckedInputs": [
+        {
+          "id": "transistors",
+          "label": "transistors",
+          "modes": [
+            "Transistor density"
+          ]
+        },
+        {
+          "id": "die",
+          "label": "die",
+          "modes": [
+            "Transistor density"
+          ]
+        }
+      ],
+      "uncheckedTeeth": [],
       "dimensions": 0,
       "mixed": 0,
       "parts": 60,
       "claims": 15,
       "sources": 3,
       "errors": 0,
-      "warnings": 1,
+      "warnings": 4,
       "recognition": {
         "features": 4,
         "blind": "recognised"
@@ -187,6 +4573,245 @@
       "failed": 0,
       "pending": 0,
       "estimated": 2,
+      "sizeEvidence": [
+        {
+          "part": "DBL",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "DL",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "DFL",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "BL",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "L",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "FL",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "UBL",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "UL",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "UFL",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "DB",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "D",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "DF",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "B",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "F",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "UB",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "U",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "UF",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "DBR",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "DR",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "DFR",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "BR",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "R",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "FR",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "UBR",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "UR",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "UFR",
+          "compared": [],
+          "unchecked": [
+            "s"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        }
+      ],
+      "uncheckedCalculations": [],
+      "uncheckedInputs": [],
+      "uncheckedTeeth": [],
       "dimensions": 0,
       "mixed": 0,
       "parts": 26,
@@ -209,6 +4834,119 @@
       "failed": 0,
       "pending": 0,
       "estimated": 2,
+      "sizeEvidence": [
+        {
+          "part": "pinA",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "pinB",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "bottom",
+          "compared": [
+            "w",
+            "d"
+          ],
+          "unchecked": [
+            "h",
+            "wall",
+            "floor",
+            "r"
+          ],
+          "status": "partly compared",
+          "label": "SIZE 2/6 COMPARED"
+        },
+        {
+          "part": "leafA",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "leafB",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "spring",
+          "compared": [],
+          "unchecked": [
+            "r",
+            "wire",
+            "turns",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "stemBody",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "stemCap",
+          "compared": [],
+          "unchecked": [
+            "arm",
+            "thick",
+            "len"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "top",
+          "compared": [
+            "w",
+            "d"
+          ],
+          "unchecked": [
+            "h",
+            "wall",
+            "r"
+          ],
+          "status": "partly compared",
+          "label": "SIZE 2/5 COMPARED"
+        }
+      ],
+      "uncheckedCalculations": [],
+      "uncheckedInputs": [],
+      "uncheckedTeeth": [],
       "dimensions": 4,
       "mixed": 4,
       "parts": 9,
@@ -231,13 +4969,2124 @@
       "failed": 0,
       "pending": 0,
       "estimated": 1,
+      "sizeEvidence": [
+        {
+          "part": "in0",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in1",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in2",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in3",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in4",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in5",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in6",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in7",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in8",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in9",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in10",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in11",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in12",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in13",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in14",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in15",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in16",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in17",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in18",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in19",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in20",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in21",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in22",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in23",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in24",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in25",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in26",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in27",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in28",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in29",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in30",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in31",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in32",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in33",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in34",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in35",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in36",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in37",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in38",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in39",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in40",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in41",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in42",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in43",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in44",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in45",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in46",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in47",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "in48",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out0",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out1",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out2",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out3",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out4",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out5",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out6",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out7",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out8",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out9",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out10",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out11",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out12",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out13",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out14",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out15",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out16",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out17",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out18",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out19",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out20",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out21",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out22",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out23",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out24",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out25",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out26",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out27",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out28",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out29",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out30",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out31",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out32",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out33",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out34",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out35",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out36",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out37",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out38",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out39",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out40",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out41",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out42",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out43",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out44",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out45",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out46",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out47",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out48",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out49",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out50",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out51",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out52",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out53",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out54",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out55",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out56",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out57",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out58",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out59",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out60",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out61",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out62",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out63",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out64",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out65",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out66",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out67",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out68",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out69",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out70",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out71",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out72",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out73",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out74",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out75",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out76",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out77",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out78",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out79",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out80",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out81",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out82",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out83",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out84",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out85",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out86",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out87",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out88",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out89",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out90",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out91",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out92",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out93",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out94",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out95",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out96",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out97",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out98",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out99",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out100",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out101",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out102",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out103",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out104",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out105",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out106",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out107",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out108",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out109",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out110",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out111",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out112",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out113",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out114",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out115",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out116",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out117",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "out118",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "bookG",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "bookB",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "bookP",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "strap",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        },
+        {
+          "part": "buckle",
+          "compared": [],
+          "unchecked": [
+            "w",
+            "d",
+            "h",
+            "r"
+          ],
+          "status": "not compared",
+          "label": "SIZE NOT COMPARED"
+        }
+      ],
+      "uncheckedCalculations": [
+        {
+          "id": "unpack",
+          "label": "Unpacking",
+          "inputs": [
+            "ntok"
+          ]
+        },
+        {
+          "id": "ratio",
+          "label": "How much it packed",
+          "inputs": [
+            "ratio"
+          ]
+        }
+      ],
+      "uncheckedInputs": [
+        {
+          "id": "ntok",
+          "label": "tokens",
+          "modes": [
+            "Unpacking"
+          ]
+        },
+        {
+          "id": "ratio",
+          "label": "packed size",
+          "modes": [
+            "How much it packed"
+          ]
+        }
+      ],
+      "uncheckedTeeth": [],
       "dimensions": 0,
       "mixed": 0,
       "parts": 173,
       "claims": 11,
       "sources": 6,
       "errors": 0,
-      "warnings": 1,
+      "warnings": 5,
       "recognition": {
         "features": 3,
         "blind": "recognised"

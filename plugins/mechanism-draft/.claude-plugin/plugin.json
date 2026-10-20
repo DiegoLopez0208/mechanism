@@ -1,0 +1,13 @@
+{
+  "name": "mechanism-draft",
+  "version": "0.1.0",
+  "description": "Technical-drawing films of a mechanism from published evidence: a vector Paper sheet (sections, hatching, flat colours, no lighting), checked by the evidence gate, rendered to MP4 or PNG. Standalone part of Mechanism, without the 3D Studio film or the Workflow engine.",
+  "author": {
+    "name": "DiegoLopez0208",
+    "url": "https://github.com/DiegoLopez0208"
+  },
+  "homepage": "https://github.com/DiegoLopez0208/mechanism",
+  "repository": "https://github.com/DiegoLopez0208/mechanism",
+  "license": "MIT",
+  "keywords": ["technical-drawing", "section-view", "evidence", "video", "canvas"]
+}

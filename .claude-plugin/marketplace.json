@@ -10,6 +10,11 @@
       "name": "mechanism",
       "source": "./",
       "description": "Model a real object (hardware or software) from published evidence, check it against what is published, and film it with sound, an interactive viewer and an STL/GLB. A model whose numbers do not add up is not rendered."
+    },
+    {
+      "name": "mechanism-draft",
+      "source": "./plugins/mechanism-draft",
+      "description": "Mechanism Draft only: technical-drawing films (vector Paper sheets) checked by the evidence gate, without the 3D Studio film or the Workflow engine."
     }
   ]
 }

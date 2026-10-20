@@ -26,6 +26,8 @@
   MX.E.outElastic = (t) => { t = clamp(t, 0, 1); return t === 0 || t === 1 ? t : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * (2 * Math.PI / 3)) + 1; };
   MX.E.outExpo = (t) => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * clamp(t, 0, 1)));
   MX.E.ioExpo = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t < 0.5 ? Math.pow(2, 20 * t - 10) / 2 : (2 - Math.pow(2, -20 * t + 10)) / 2);
+  // camera arrival that settles like a damped spring (ratio .8: one small overshoot, no bounce) and lands exactly on 1; u is the 0..1 share of the move
+  MX.E.settle = (u) => { u = clamp(u, 0, 1); if (u >= 1) return 1; const w = 2 * Math.PI * 1.15, z = 0.8, wd = w * Math.sqrt(1 - z * z), s = 3.2 * u, sp = 1 - Math.exp(-z * w * s) * (Math.cos(wd * s) + z / Math.sqrt(1 - z * z) * Math.sin(wd * s)), end = 1 - Math.exp(-z * w * 3.2) * (Math.cos(wd * 3.2) + z / Math.sqrt(1 - z * z) * Math.sin(wd * 3.2)); return sp + (1 - end) * u * u * u; };
   MX.E.smooth = MX.E.bezier(0.45, 0, 0.2, 1);                         // arranque suave, frenado largo
   MX.E.snap = MX.E.bezier(0.7, 0, 0.15, 1);                           // corte de camara: arranque brusco, frenado seco
   // resorte subamortiguado: 0 -> 1 con rebote. f = frecuencia (Hz), z = amortiguamiento (0.2 rebota mucho, 0.7 casi nada)
@@ -148,9 +150,14 @@
   MX.run = (cfg) => {
     const W = cfg.w, H = cfg.h, FPS = cfg.fps || 30, DUR = cfg.duration;
     const cv = document.getElementById('c') || Object.assign(document.body.appendChild(document.createElement('canvas')), { id: 'c' });
-    cv.width = W; cv.height = H; const ctx = cv.getContext('2d'); MX.ctx = ctx;
+    cv.width = W; cv.height = H; const octx = cv.getContext('2d', cfg.contextOptions || {});
+    // supersampling: the scene is drawn on a canvas SS times larger (same W x H coordinates through the transform) and reduced
+    // to the output with high-quality smoothing, so text and thin lines come out anti-aliased like a 2x render
+    const SS = MX.SS = Math.max(1, Math.min(3, Math.round(Number(cfg.ss || new URLSearchParams(location.search).get('ss') || 1)) || 1));
+    const hi = SS > 1 ? Object.assign(document.createElement('canvas'), { width: W * SS, height: H * SS }) : cv, ctx = SS > 1 ? hi.getContext('2d', { alpha: false }) : octx; MX.ctx = ctx;
     const acc = document.createElement('canvas'); acc.width = W; acc.height = H; const actx = acc.getContext('2d');
-    const paint = (t) => { MX.ctx = ctx; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.filter = 'none'; cfg.draw(ctx, clamp(t, 0, DUR - 1e-6)); };
+    const present = () => { if (SS === 1) return; octx.setTransform(1, 0, 0, 1, 0, 0); octx.globalAlpha = 1; octx.filter = 'none'; octx.imageSmoothingEnabled = true; octx.imageSmoothingQuality = 'high'; octx.drawImage(hi, 0, 0, W, H); };
+    const paint = (t) => { MX.ctx = ctx; ctx.setTransform(SS, 0, 0, SS, 0, 0); ctx.globalAlpha = 1; ctx.filter = 'none'; cfg.draw(ctx, clamp(t, 0, DUR - 1e-6)); present(); };
     // motion blur: promedio de n subtiempos dentro de un obturador (fraccion del intervalo de frame)
     const frame = (t, n = 1, shutter = 0.5) => {
       if (cfg.blurAt) n = Math.min(n, cfg.blurAt(t));      // adaptativo: sin movimiento no hace falta desenfoque, y cada subframe cuesta un render
@@ -159,8 +166,9 @@
         paint(t + (i / (n - 1) - 0.5) * shutter / FPS);
         if (i === 0) { actx.globalAlpha = 1; actx.clearRect(0, 0, W, H); actx.drawImage(cv, 0, 0); } else { actx.globalAlpha = 1 / (i + 1); actx.drawImage(cv, 0, 0); }
       }
-      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.drawImage(acc, 0, 0);
+      octx.setTransform(1, 0, 0, 1, 0, 0); octx.globalAlpha = 1; octx.drawImage(acc, 0, 0);
     };
+    g.__paint = (t, n, shutter) => { frame(t, n, shutter); return cv; };      // the frame on the canvas with no encoding: for an encoder that takes the canvas itself (WebCodecs)
     g.__frame = (t, n, shutter, fmt) => { frame(t, n, shutter); return fmt === 'jpg' ? cv.toDataURL('image/jpeg', 0.97) : cv.toDataURL('image/png'); };
     g.__audioWav = () => {
       const raw = cfg.audio ? cfg.audio() : new Float32Array(Math.floor(DUR * (cfg.sr || 44100))), sr = (raw && raw.sr) || cfg.sr || 44100, ch = raw && raw.L ? [raw.L, raw.R] : [raw], N = ch[0].length, nch = ch.length;

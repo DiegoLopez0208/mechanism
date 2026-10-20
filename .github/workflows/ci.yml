@@ -7,16 +7,46 @@ on:
 permissions:
   contents: read
 
+# Two independent jobs (no `needs`): a slow or failing preflight does not stop the other groups, and the reverse.
+# Both are pinned to ubuntu-24.04, the system the Linux golden frames were captured on.
 jobs:
   gate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90      # about 35 min with SwiftShader on a 4-vCPU runner
+    env:
+      BROWSER_SOFTWARE: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Tests (the evidence gate, and the DEFLATE / RAR5 models against zlib)
-        run: node --test tests/gate.test.mjs tests/kit.test.mjs
+      # the runner image has no ffmpeg; the encoding, ffprobe colour/audio checks and the Draft film tests spawn both
+      - name: ffmpeg and ffprobe
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          command -v ffmpeg
+          command -v ffprobe
+          ffmpeg -version
+          ffprobe -version
+      - name: Tests (the evidence gate, the DEFLATE / RAR5 models against zlib, version consistency)
+        run: node --test tests/gate.test.mjs tests/kit.test.mjs tests/encoding.test.mjs tests/browser.test.mjs tests/media-server.test.mjs tests/versions.test.mjs
+      # The browser-heavy files run one at a time: each opens headless Chromium sessions (browser.test.mjs opens five at once on purpose)
+      - name: Render, colour tags, audio streams and encoder fallback
+        run: node --test --test-concurrency=1 tests/render.test.mjs tests/presentation.test.mjs
+      - name: Studio camera (exploded view hold, flight to the first stop, picture and sound in sync)
+        run: node --test --test-concurrency=1 tests/camera.test.mjs
+      - name: Engine manifest and Paper (vector scene, mesh adapter, visual contract)
+        run: node --test --test-concurrency=1 tests/manifest.test.mjs tests/paper.test.mjs tests/paper-contract.test.mjs
+      - name: Mechanism Draft as a standalone install (built outside the repository)
+        run: node --test --test-concurrency=1 tests/draft-skill.test.mjs
+      - name: The committed Draft plugin matches its files.json, with nothing extra
+        working-directory: plugins/mechanism-draft
+        run: node scripts/skill-doctor.mjs --strict
+      - name: Visual regression (compact lossless golden frames)
+        run: |
+          node scripts/visual-regression.mjs
+          node --test --test-name-pattern="local SSIM|injected text" tests/visual.test.mjs
       - name: Every shipped example passes its own gate
         shell: bash      # pipefail: a failing gate must not be hidden by tail
         run: |
@@ -30,3 +60,18 @@ jobs:
           if node scripts/check-spec.mjs examples/ci-draft/spec.js; then echo "the unfinished template passed the gate"; exit 1; fi
       - name: The register builds from the gate output
         run: node scripts/registry.mjs
+
+  # The visual preflight samples whole Studio films through software WebGL: about 35 min here. It needs only Node and the
+  # browser of the image (no ffmpeg: it encodes nothing).
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120     # each test has its own 900 s limit and each preflight run 420 s
+    env:
+      BROWSER_SOFTWARE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Visual preflight (camera, labels, frame, geometry area, NOT RUN reporting)
+        run: node --test --test-concurrency=1 tests/preflight.test.mjs

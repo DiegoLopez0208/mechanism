@@ -1,0 +1,55 @@
+{
+ "name": "mechanism-draft",
+ "version": "0.1.0",
+ "generatedBy": "scripts/build-skill.mjs draft",
+ "files": {
+  ".claude-plugin/plugin.json": "7920e5f2c1b8caf087fb745629e56c48689838aef49a2fb206a0467209416bec",
+  "LICENSE": "1b1396e1247ad634fa098cb45dce262713c7a750cac6893ae029a633b1cab3b2",
+  "README.md": "b38233c33fb05754af829490556a24c041731f278daaf54b27804f625cba6505",
+  "SKILL.md": "588a5322f2c6dfa690461969abfbf8b3d00c6d9acaba5a8a3a975d1a793feae5",
+  "THIRD_PARTY.md": "71405a7d03e754193dbfc1ca234f1ba71e4d925857750a6c27233e1133ae33f3",
+  "examples/lock/index.html": "9d0d46b5cd2ee4d0549e20ef1ef9d8b0ef1b25193026dca4cc2b1bfd6cfddeef",
+  "examples/lock/run.js": "fdde519e21f354e473dacdd9c508ef91f6ed64de72dd0c736ccf8626504af502",
+  "examples/lock/spec.js": "1eb1ca4c8e02cedee42846b923b77c7c615b9dda1fb018979ce3ff2f06593100",
+  "kit/boot.js": "7079efa34b264c4ca7449a9dc5aa65007eb370b6aee770b133591cb99ee6e071",
+  "kit/core.js": "bdd722ab57902039e4cab25644c13bce237906ead933484f75d3d57343e28cf1",
+  "kit/cube.js": "2e1fede9093abd373ddbab1dcd58161c418f66cc6f7fc691374d54d594ec2371",
+  "kit/deflate.js": "0ffec8633714eea54c352ffa0d0cadc904c5976f73a07bc6e81dcc7a51e27af6",
+  "kit/enigma.js": "b28144e8da5b67548e1b1715931f61f82caa0c691b10be871ca401ce50c77842",
+  "kit/fonts.js": "f4396ee030dfebbe3d7a932de1edbdcdb3c6e1e0e113faf75beffcacef0b9c78",
+  "kit/iso.js": "ee2720d0a7b6e0ea48602c217a8f7d47f2fafc18bd8d2fecdedcc1d7a5adb9cc",
+  "kit/kin.js": "757874c0d0cc431a20f6e7031caeaa66ea6ab599dd90031e8a60207508ad6240",
+  "kit/manifest.js": "da947fc2f8f9c2f98f2488cdf0393ac4fc377968ff6424c09c39c72fc6ae4853",
+  "kit/paper-engine.js": "7a6886479d962dc7cd3d5df15f74835ab25062bd9401e63b14c77a7db31d6c99",
+  "kit/presentation.js": "3ed176a160342ad52270465ea534db2f455d87f15677592299670cc8d28a9196",
+  "kit/rar5.js": "8b2a0553c9ff8c7b44eed6a78abe656eb5ba11c219111e59b31e866a577937e0",
+  "kit/react-reconcile.js": "478a08a5b7d39f87b32774bc7c5cb6df07db4ce83fc9bca6fff1fbd80ab3ce41",
+  "kit/samples.js": "a6c3859752acd1a2a54c4e0830f3aa14cfd15c1c91670a2899a9e1ab1677a4fe",
+  "kit/sound.js": "a7379d1a04a60d7ebedbfb9538a84190d9e24914f4fad876614f5e95267f0467",
+  "kit/spec-core.js": "d692338832a10e69c296e979cac48adf95989e3b30ca93a3900cb72aa7dac7a1",
+  "kit/spec.js": "c16257837836e8f9301f17763f5acbc3dd25f920a33e4f1bc40be6598feb0eae",
+  "references/checks.md": "7b92be38c3ec3837c59cadc495efb481c6fabd1dc958f7af3cc66f278bf205eb",
+  "references/scenes.md": "9b677c62265c99f485be47c1912d0dce804784ce4d6b7f579a2ca16a5a702628",
+  "scripts/check-spec.mjs": "dcb2e215ab7f967c24649c34c5469615cc2668b9b696da55e317e73935046238",
+  "scripts/lib/browser.mjs": "8441b581fe5ce2fc916071084a88bbdfb0a620f2d3f418ad744dc256b20ab537",
+  "scripts/lib/encoding.mjs": "bf63ccc1f3a3e579fbe45613a52bdbe53fad9b685cada72360dce5769d38422b",
+  "scripts/new.mjs": "7a16495ec85ad5e056d41255305e98ffa16421e905be102ef24b6bae4ce9d0dc",
+  "scripts/preflight.mjs": "85d7b6c05144fdcba14dc8199eeb5fc0824b0f40d4cebf15b6b76a7db70e08a6",
+  "scripts/render.mjs": "235027b5cc3695603aad0f1a8e68f8182bd9577fd84becce19bd1e5a89002098",
+  "scripts/skill-doctor.mjs": "c8a1d1cbf6402489feb1b45d0a3cf72068def0089af27f716cfca2b5fe175740",
+  "skill.json": "a2588ae3ce61f344e42cd8145c10c95385deefd5cd69a45ef200031813631693"
+ },
+ "optional": {
+  "mesh": {
+   "description": "Paper's projection of the model meshes (orthographic sheets of any spec without a vector paperScene): three.js and the figure, parts and mesh-adapter modules. Build it in with: node scripts/build-skill.mjs draft --out <dir> --with mesh (from the full Mechanism repository).",
+   "installed": false,
+   "files": {
+    "kit/vendor/three.bundle.js": "6f5eb0fd72ada778b941562656d51ed44ab092f5a329609af25b99257bfe0848",
+    "kit/gl.js": "727246e18cfbc778e4f49838b7bc9951c179e16d6f646541492792c9f534382c",
+    "kit/figure.js": "83f25719986d129fe293ffeb0afeae7c7ecb9147fc95bd848d11aab12ea442e5",
+    "kit/parts.js": "5b4769aceb68df69a06be982ea30fb5fd5cc3d45fbe4ab23f6d8d144d421bc9e",
+    "kit/paper-mesh.js": "2f5c35351682308d63d1ce044d0966dff3df22f21a1580c227a7bfda2f95e3fc"
+   }
+  }
+ }
+}

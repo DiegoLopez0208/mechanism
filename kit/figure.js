@@ -19,7 +19,8 @@
 
   MX.figure = (cfg) => {
     const W = cfg.w, H = cfg.h, FPS = cfg.fps || 30, axes = cfg.axes || 'plan';
-    const st = G.stage(Object.assign({ w: W, h: H }, cfg.stage || {}));
+    const stage = cfg.stage?.vectorOnly ? MX.paperMesh.stage : G.stage;
+    const st = stage(Object.assign({ w: W, h: H }, cfg.stage || {}));
     const F = { st, W, H, parts: [], byId: {}, overlays: [], axes };
     MX.P = F.P = axes === 'three' ? (x, y, z) => st.project(x, -z, y) : (x, y, z) => st.project(x, y, z);
     const toView = (v) => (axes === 'three' ? Object.assign({}, v, { ty: -v.tz, tz: v.ty }) : v);
@@ -61,7 +62,7 @@
       fadeKey[p.id] = key;
     }
     // estado s: { e (explosion 0..1), assemble(id) -> { k: 0..1 llegada, alpha }, focus, focusSet, focusA, vis(p), view }
-    F.apply = (s) => {
+    F.apply = (s, render = true) => {
       if (cfg.beforeRender) cfg.beforeRender(s);
       st.aoSkip.length = 0;
       F.parts.forEach((p) => {
@@ -71,12 +72,12 @@
         const sp = p.spin ? 1 - Math.min(1, a.k) : 0; p.group.rotation.set((p.spin ? p.spin.x * sp : 0) + (p.tilt ? p.tilt.x * ek : 0), (p.spin ? p.spin.y * sp : 0) + (p.tilt ? p.tilt.y * ek : 0), (p.spin ? p.spin.z * sp : 0) + (p.tilt ? p.tilt.z * ek : 0));
         if (p.pose) p.pose(s, p);                                  // pieza en movimiento (cinematica): ajusta posicion y giro despues del explosionado
         const inSet = !!(s.focusSet && s.focusSet.includes(p.id)), isF = s.focus === p.id || inSet, anyF = !!(s.focus || (s.focusSet && s.focusSet.length));
-        let f = a.alpha; if (anyF && !isF && s.focusA != null) f *= lerp(1, s.dimTo == null ? 0.14 : s.dimTo, s.focusA);
+        let f = a.alpha; if (anyF && !isF && s.focusA != null) f *= lerp(1, s.dimTo == null ? 0.14 : s.dimTo, s.dimA == null ? s.focusA : s.dimA);      // dimA: the rest may fade on its own clock (before the card)
         setFade(p, f); if (f < 0.95) st.aoSkip.push(p.group); const on = !!(isF && (s.focusA || 0) > 0.2); p.hi.visible = on && !p.est; if (p.dash) p.dash.visible = on;
         p.group.visible = s.vis ? s.vis(p) !== false : true;
       });
       if (s.light) { const az = s.light.az * Math.PI / 180, el = s.light.el * Math.PI / 180, r = 230; st.key.position.set(r * Math.cos(el) * Math.sin(az), r * Math.sin(el), r * Math.cos(el) * Math.cos(az)); }
-      F.setView(s.view); st.render();
+      F.setView(s.view); if (render) st.render();
     };
 
     /* ---------------------------------------------------------- camara por claves */
@@ -106,8 +107,8 @@
       c.beginPath(); c.moveTo(a1[0], a1[1]); c.lineTo(b1[0], b1[1]); c.stroke(); H2.arrow(a1, b1, 11); H2.arrow(b1, a1, 11);
       const mx = (a1[0] + b1[0]) / 2, my = (a1[1] + b1[1]) / 2; c.font = '500 22px ' + MX.MONO; const tw = c.measureText(label).width; c.fillStyle = T.paper; c.fillRect(mx - tw / 2 - 7, my - 17, tw + 14, 31); c.fillStyle = col; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(label, mx, my + 1); c.restore();
     };
-    H2.tag = (c, x, y, conf) => {                                       // pastilla discreta: fondo tenido, borde fino y texto del color de la categoria
-      c.save(); c.font = '600 12px ' + MX.SANS; if ('letterSpacing' in c) c.letterSpacing = '1.6px'; const s = CONF[conf] || String(conf).toUpperCase(), col = CCOL[conf] || T.ink, w = c.measureText(s).width + 20, r = 11;
+    H2.tag = (c, x, y, conf, sizeLabel) => {                                       // pastilla discreta: fondo tenido, borde fino y texto del color de la categoria
+      c.save(); c.font = '600 12px ' + MX.SANS; if ('letterSpacing' in c) c.letterSpacing = '1.6px'; const s = (CONF[conf] || String(conf).toUpperCase()) + (sizeLabel ? ' / ' + sizeLabel : ''), col = CCOL[conf] || T.ink, w = c.measureText(s).width + 20, r = 11;
       c.beginPath(); c.moveTo(x + r, y - 16); c.lineTo(x + w - r, y - 16); c.arc(x + w - r, y - 16 + r, r, -Math.PI / 2, Math.PI / 2); c.lineTo(x + r, y + 6); c.arc(x + r, y - 16 + r, r, Math.PI / 2, 1.5 * Math.PI); c.closePath(); c.fillStyle = MX.rgba(col, 0.13); c.fill(); c.strokeStyle = MX.rgba(col, 0.55); c.lineWidth = 1; c.stroke();
       c.fillStyle = col; c.textAlign = 'left'; c.textBaseline = 'alphabetic'; c.fillText(s, x + 10, y - 0.5); c.restore(); return w;
     };
@@ -121,7 +122,7 @@
     H2.info = (s) => {
       const p = F.byId[s.focus]; if (!p || !p.info || (s.focusA || 0) < 0.02) return; const c = MX.ctx, i = p.info, at0 = s.infoAt || [64, H - 340], lines = [i.title].concat(i.lines || []), at = [at0[0], Math.min(at0[1], H - 165 - lines.length * 30)];      // a card with many lines moves up so its source line ends above the footer
       MX.callout(F.anchor(p.id), at, lines, { alpha: s.focusA, size: 26, color: T.ink });
-      c.save(); c.globalAlpha = s.focusA; let x = at[0] + 10; const y = at[1] + lines.length * 30 + 14; [].concat(i.conf || []).forEach((k) => { x += H2.tag(c, x, y, k) + 8; }); c.restore();
+      c.save(); c.globalAlpha = s.focusA; let x = at[0] + 10; const y = at[1] + lines.length * 30 + 14; [].concat(i.conf || []).forEach((k, j) => { x += H2.tag(c, x, y, k, j === 0 && i.sizeEvidence ? i.sizeEvidence.label : null) + 8; }); c.restore();
       if (i.src) MX.text(i.src, at[0] + 10, y + 46, { size: 14, font: MX.MONO, color: T.mute, alpha: s.focusA, spacing: 0.6 });      // de donde sale lo que dice la ficha
     };
 
@@ -135,9 +136,10 @@
       F.overlays.forEach((fn) => fn(ctx, s)); H2.info(s); if (s.ui) s.ui(ctx);
     };
     F.run = (o) => {
-      const cam = F.camera(o.keys);
+      const cam = F.camera(o.keys), state = (t) => { const s = o.script(t); s.t = t; s.view = s.view || (o.drift === false ? cam(t) : F.drift(cam(t), t, o.drift == null ? 1 : o.drift)); return s; };
+      window.__pose = (t) => { const s = state(t); F.apply(s, false); return s; };      // the scene as it is at t, not drawn: for __geom and the timing tests, cheap even on a software GPU
       MX.run({ w: W, h: H, fps: FPS, duration: o.duration, blurAt: o.blurAt, poster: o.poster == null ? o.duration * 0.35 : o.poster,
-        draw: (ctx, t) => { const s = o.script(t); s.t = t; s.view = s.view || (o.drift === false ? cam(t) : F.drift(cam(t), t, o.drift == null ? 1 : o.drift)); F.frame(ctx, s); }, audio: () => (o.audio ? o.audio() : MX.audio.render({ duration: o.duration, cues: o.cues ? o.cues() : [], reverb: 0.2 })) });
+        draw: (ctx, t) => F.frame(ctx, state(t)), audio: () => (o.audio ? o.audio() : MX.audio.render({ duration: o.duration, cues: o.cues ? o.cues() : [], reverb: 0.2 })) });
     };
 
     /* ---------------------------------------------------------- modo explorar */

@@ -29,6 +29,22 @@ refuses to render when the numbers do not add up, and outputs a film, an interac
 
 ## What it does
 
+### Presentation methods and backgrounds
+
+Choose a rendering engine independently of its background. **Studio** is the normal WebGL product film (assembly, lighting, materials and operation). **Workflow** is an independent Canvas2D factory/process engine with stations, conveyors and moving data carriers; it does not build or show the Studio object. **Paper** is an independent Canvas2D drafting engine with orthographic front/top/side drawings, progressive strokes, exploded construction and numbered details. It reuses model geometry as data, never a shaded Studio image.
+
+```sh
+node scripts/render.mjs examples/lock/index.html --method studio --background porcelain --length short --aspect 9:16 --encoder browser --out work/studio.mp4
+node scripts/render.mjs examples/react/index.html --method workflow --background graphite --length short --aspect 9:16 --encoder browser --out work/workflow.mp4
+node scripts/render.mjs examples/lock/index.html --method paper --background ivory --length short --aspect 9:16 --encoder browser --out work/paper.mp4
+```
+
+Methods: `studio`, `workflow`, `paper`. Backgrounds: `graphite`, `blueprint`, `porcelain`, `ivory` (all twelve combinations). Use the same names in `?method=paper&background=blueprint` or `presentation: { method: 'paper', background: 'ivory' }` in the spec. Query options override the spec. Old `style`/`theme` films retain their appearance when no presentation option is supplied. Studio has the existing orbit/explore viewer; Workflow/Paper use their own playback canvas even with `?explore`.
+
+Studio renders 3D at 1.5x and downsamples to delivery resolution, retaining MSAA 4x (`stage.renderScale`: 1–2). Workflow/Paper do not create WebGL contexts: their graphics and typography are rasterized directly from vector paths using a deterministic CPU Canvas2D surface, with no 3D shading or temporal blur. Their short/normal/extended cuts are 30/60/90 seconds; Studio retains the object's original timing. Workflow's progress is illustrative, not measured latency. Paper's drawings are orthographic construction views, not to scale; estimates remain marked/dashed. Numeric evidence/verdict rules are unchanged. STL/GLB exports use Studio.
+
+`boot.js` loads `kit/presentation.js`, `kit/workflow-engine.js` and `kit/paper-engine.js` after `core.js`. Hand-written script lists should include these explicitly. Configuration, planning, factory layout and orthographic projection helpers also run in Node/vm without a DOM. No dependency or build step is added. See [presentation validation](docs/presentations.md).
+
 Ask your agent for an exploded view of something real: a machine, a chip, or **software** (a file format, a protocol, an algorithm's output). It does not draw what it can look up wrong:
 
 1. **Researches.** Searches, opens datasheets and teardowns, downloads the pictures and looks at them, measures them.
@@ -103,10 +119,18 @@ The one-line way, as a Claude Code plugin (Claude Code 2.1.275 or later):
 
 The skill then runs from the plugin folder, and your objects go in your own project.
 
+Only the technical-drawing part (Mechanism Draft 0.1: vector Paper sheets, the evidence gate and films, without the 3D Studio film or Workflow; 1.6 MB):
+
+```
+/plugin install mechanism-draft@mechanism
+```
+
+Draft is on the `ecosystem-foundation` branch until it reaches `main`; until then add the marketplace with `/plugin marketplace add DiegoLopez0208/mechanism#ecosystem-foundation`. Installed that way from GitHub on 2026-10-18; see [`plugins/mechanism-draft/README.md`](plugins/mechanism-draft/README.md).
+
 Or by hand, as a plain skill:
 
 ```bash
-# macOS / Linux: a partial clone, 4 MB (the repo also holds the films, the site and a long history, 85 MB or more, which you do not need to use the skill)
+# macOS / Linux: a sparse clone (omit site/media and most history; tests include compact golden frames)
 git clone --depth 1 --filter=blob:none --sparse https://github.com/DiegoLopez0208/mechanism ~/.claude/skills/mechanism
 git -C ~/.claude/skills/mechanism sparse-checkout set kit scripts examples data tools tests
 # Windows (PowerShell)
@@ -134,6 +158,12 @@ node scripts/render.mjs examples/my-object/index.html --remux out/my-object.mp4 
 ```
 
 ## How it works
+
+Rendering supports `--encoder jpeg` (the compatibility default) and `--encoder browser` (software H.264 through WebCodecs, copied into MP4). The browser path automatically falls back to JPEG when VideoEncoder or H.264 is unavailable. Its bitrate scales with frame size, fps and part count; `--bitrate <bits/s>` overrides it. Both paths preserve stereo sound, two-pass loudness normalization and clip timing. The JPEG path now converts full-range BT.601 samples to limited-range BT.709 with accurate rounding; both paths carry colour metadata in the H.264 stream as well as the container.
+
+Every browser script uses an isolated profile and an OS-selected CDP port. Render operations have a 30-second watchdog (`--timeout <seconds>`); the browser tree is stopped by its own PID and a stalled attempt is retried once from frame zero. `BROWSER_TIMEOUT_MS` configures the shared helper in the other tools. `CDP_PORT` is no longer used. For GPU-less CI, `BROWSER_SOFTWARE=1` explicitly selects SwiftShader.
+
+Reproduce encoder quality outside published media with `node scripts/validate-render.mjs lock winrar --out <work>/quality --encoder browser`. It saves lossless references and decoded frames from modes, tours and every claims/sources/receipt panel, reports RGB error/bias and local-window SSIM, and leaves visual review marked pending. Add `--video-dir <work>/films` to compare already rendered full films at the same times. A metric is not a visual approval.
 
 One spec in, everything out:
 
@@ -164,6 +194,10 @@ The director builds the film by itself: staggered assembly, a cutaway while the 
 
 ### The look
 
+Frames use a repeatable GTAO denoiser texture. The vendored GTAO pass does not rotate its noise every frame; its original simplex texture was randomized when a stage was created. The texture factory is now seeded without changing the AO settings or the application's randomness. Tiny GPU raster/compositing differences can still affect edge samples; the tests bound them rather than claiming every full-resolution PNG is byte-identical.
+
+`npm test` includes four visual golden frames per example (mode, exploded view, claims and receipt), plus controls that deliberately introduce text overflow and a floating decor part. The lossless references are zlib-compressed 360x450 RGB, with separate Windows/Linux sets to account for native fonts. Compare with `node scripts/visual-regression.mjs`; intentionally regenerate with `node scripts/visual-regression.mjs --update` (optional example names limit the set). Review the changed frames before accepting new goldens. CI only compares them and never regenerates them. The regression threshold combines mean SSIM, the worst 8x8 tile and the fraction of changed tiles so a small displaced part is not hidden by the background. These sampled frames do not certify every instant of a film.
+
 Every film is drawn as a **dossier**: a blue engineering drawing with a grid and ruler ticks, monospaced type, and a data block that counts how many numbers are SPEC, DERIVED and ESTIMATED. It is the look of evidence, not of a pretty explainer. The same engine can draw three other styles, chosen with `--style` (or `?style=` in the viewers) and defined as one table entry each in `MX.styles` (`kit/core.js`):
 
 | Style | Look |
@@ -184,6 +218,8 @@ It also refuses what a template leaves behind: `example.com` and `TODO` in sourc
 The same spec renders three films: `--length short` (about 30 s: the plain sentence, the unpacking or the first checks, the explode, two parts, the receipt), `normal` (the default: verdict-first opening, every check, the tour, the evidence pages) and `extended` (longer checks, up to 12 parts in the tour). `node scripts/render.mjs examples/hub/index.html --length short --out out/hub-short.mp4`. A spec can say what its short cut keeps: `director: { short: { modes: ['unpack', 'crc'], tour: ['out25', 'bookP'] } }` (a cube or a cipher keeps every phase, because their state runs through all of them) and its default with `director.length`.
 
 ### Provenance per dimension, and a register
+
+Part confidence (`SPEC`, `MEASURED`, `DERIVED`) describes its evidence, not verification of every drawn size. Part cards now say `SIZE NOT COMPARED` or `SIZE n/m COMPARED`; the register exposes each part's compared and unchecked dimensions. The gate also warns about computed values displayed without a published comparator, teeth outside meshing links, and unknown top-level spec or part keys (for example `cutawya`). These disclosures do not change the VERIFIED/CONSISTENT rules or turn a warning into a failed comparison.
 
 A part can say where each of its sizes comes from, and the gate compares the drawn size with the source:
 

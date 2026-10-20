@@ -8,31 +8,25 @@
 //   LABEL_OVERLAP        WARN  two visible texts overlap
 //   LABEL_CLIPPED        WARN  a visible text runs past the edge of the frame
 //   GEOMETRY_AREA_MISMATCH FAIL/WARN  a flat part (plate, profile) whose mesh does not cover its outline minus its holes (a hole outside the outline, a bad bridge): FAIL above 5 %, WARN above 1 %
+//   GEOMETRY_AREA_NOT_RUN  FAIL  the area check should have run and did not (it threw, or the engine gave no reason)
+//   GEOMETRY_AREA_UNREPORTED WARN the page does not say whether the area check ran (a hand-built page): nothing is counted as checked
+//   NOT RUN (not a finding) the area check does not apply to this render (no meshes are compiled: Workflow, Paper with a vector scene,
+//                  or --skip shape); listed with its reason, in JSON as notRun, and never counted as a pass
 // A WARN can be a deliberate choice (a close-up, a part that flies out): it never stops anything. FAIL is for what is wrong in every case.
 // Diagnostic only: the exit code is 0 unless you pass --strict.
 //
 //   node scripts/preflight.mjs <work>/<name>/index.html [--length short] [--step 0.25] [--skip camera,labels,frame] [--json] [--strict]
-import { spawn } from 'node:child_process';
-import { existsSync, rmSync } from 'node:fs';
+import { withBrowser } from './lib/browser.mjs';
+import { rmSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
-import os from 'node:os';
 
 const args = process.argv.slice(2), flags = new Set(['json', 'strict']), opt = (k, d) => { const i = args.indexOf('--' + k); return i >= 0 ? args[i + 1] : d; };
 const page = args.find((a, i) => !a.startsWith('--') && !(i > 0 && args[i - 1].startsWith('--') && !flags.has(args[i - 1].slice(2))));
 if (!page) { console.error('usage: node scripts/preflight.mjs <page.html> [--length short] [--step 0.25] [--skip camera,labels,frame] [--json] [--strict]'); process.exit(1); }
 const skip = new Set((opt('skip', '') || '').split(',').filter(Boolean)), STEP = Number(opt('step', 0.25)), JSON_OUT = args.includes('--json'), STRICT = args.includes('--strict');
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms)), PORT = 9550 + Math.floor(Math.random() * 40), profile = path.join(os.tmpdir(), 'mx-preflight-' + Date.now());
-const B = [process.env.BROWSER, 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Google/Chrome/Application/chrome.exe', '/usr/bin/google-chrome'].filter(Boolean).find((b) => existsSync(b));
-if (!B) { console.error('no Chromium browser found (set BROWSER=<path>)'); process.exit(1); }
-const proc = spawn(B, ['--headless=new', `--remote-debugging-port=${PORT}`, `--user-data-dir=${profile}`, '--hide-scrollbars', '--mute-audio', '--force_high_performance_gpu', '--no-first-run', '--force-device-scale-factor=1', 'about:blank'], { stdio: 'ignore' });
-let tab; for (let i = 0; i < 80 && !tab; i++) { await sleep(250); try { tab = (await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json()).find((t) => t.type === 'page'); } catch { /* starting */ } }
-if (!tab) { proc.kill(); console.error('the browser did not open its debugging port'); process.exit(1); }
-const ws = new WebSocket(tab.webSocketDebuggerUrl); await new Promise((r) => (ws.onopen = r)); let id = 0; const pend = new Map();
-ws.onmessage = (m) => { const d = JSON.parse(m.data); if (d.id && pend.has(d.id)) { pend.get(d.id)(d.result || d.error); pend.delete(d.id); } };
-const send = (method, params = {}) => new Promise((r) => { const i = ++id; pend.set(i, r); ws.send(JSON.stringify({ id: i, method, params })); });
-const ev = async (e) => { const r = await send('Runtime.evaluate', { expression: e, returnByValue: true, awaitPromise: true }); if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception ? r.exceptionDetails.exception.description : r.exceptionDetails.text); return r.result && r.result.value; };
-const done = (code) => { try { ws.close(); } catch { /* closed */ } proc.kill(); try { rmSync(profile, { recursive: true, force: true }); } catch { /* busy */ } process.exit(code); };
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 
 // every fillText on the frame canvas is recorded with its box on screen (the camera does not move them, so the transform is only a translate/scale)
 const RECORDER = `(() => { const o = CanvasRenderingContext2D.prototype.fillText; window.__rec = null;
@@ -47,15 +41,27 @@ const found = new Map();   // key -> { sev, code, subject, detail, first, last, 
 const note = (sev, code, subject, t, detail) => { const k = sev + '|' + code + '|' + subject, f = found.get(k); if (f) { f.last = t; f.n++; } else found.set(k, { sev, code, subject, detail, first: t, last: t, n: 1 }); };
 const area = (r) => Math.max(0, r[2] - r[0]) * Math.max(0, r[3] - r[1]), inter = (a, b) => [Math.max(a[0], b[0]), Math.max(a[1], b[1]), Math.min(a[2], b[2]), Math.min(a[3], b[3])];
 
-try {
+await withBrowser(async ({ send, ev }) => {
   await send('Page.enable');
-  await send('Page.navigate', { url: pathToFileURL(path.resolve(page)).href + '?render=1&t=0' + (opt('length', '') ? '&length=' + opt('length', '') : '') });
+  const url = new URL(pathToFileURL(path.resolve(page)));
+  for (const [key, value] of Object.entries({ render: '1', t: '0', length: opt('length', ''), aspect: opt('aspect', ''), method: opt('method', ''), background: opt('background', '') })) if (value !== '') url.searchParams.set(key, value);
+  await send('Page.navigate', { url: url.href });
   for (let i = 0; i < 100; i++) { await sleep(150); if (await ev('typeof window.__frame === "function" && typeof window.__geom === "function"')) break; if (i === 99) throw new Error('the page did not expose __frame/__geom: does the spec pass the gate? run check-spec.mjs'); }
   const info = JSON.parse(await ev('JSON.stringify(window.__specInfo ? window.__specInfo() : null)'));
   if (!info) throw new Error('this page has no __specInfo() (declarative specs only)');
-  if (info.errors && info.errors.length) { console.log('spec errors:\n  ' + info.errors.join('\n  ')); done(1); }
+  if (info.errors && info.errors.length) { console.log('spec errors:\n  ' + info.errors.join('\n  ')); throw new Error('spec errors'); }
   await ev(RECORDER);
-  if (!skip.has('shape')) JSON.parse(await ev('JSON.stringify(window.__shapeCheck ? window.__shapeCheck() : [])')).forEach((q) => note(Math.abs(q.ratio - 1) > 0.05 ? 'FAIL' : 'WARN', 'GEOMETRY_AREA_MISMATCH', q.id, 0, 'the triangulated area of "' + q.id + '" is ' + Math.round(q.ratio * 100) + '% of its outline minus its holes: a hole lies outside the outline or a bridge is wrong, so the mesh has a missing or extra piece. Open a frame of it.'));
+  // the area check over compiled meshes: it runs where the page says it does (window.__checks.geometryArea); a render that compiles no
+  // meshes says it did not run and why (NOT RUN); an omission the engine does not explain, or a check that throws, is a FAIL, never a pass
+  const notRun = [];
+  if (skip.has('shape')) notRun.push({ check: 'GEOMETRY_AREA', reason: 'skipped_by_option' });
+  else {
+    const area = JSON.parse(await ev('JSON.stringify((() => { const c = window.__checks && window.__checks.geometryArea; if (!c) return { status: "unreported" }; if (!c.run) return { status: "not-run", reason: c.reason, expected: !!c.expected }; if (typeof window.__shapeCheck !== "function") return { status: "error", error: "__checks says it runs but there is no __shapeCheck" }; try { return { status: "run", rows: window.__shapeCheck() }; } catch (e) { return { status: "error", error: String((e && e.message) || e) }; } })())'));
+    if (area.status === 'run') area.rows.forEach((q) => note(Math.abs(q.ratio - 1) > 0.05 ? 'FAIL' : 'WARN', 'GEOMETRY_AREA_MISMATCH', q.id, 0, 'the triangulated area of "' + q.id + '" is ' + Math.round(q.ratio * 100) + '% of its outline minus its holes: a hole lies outside the outline or a bridge is wrong, so the mesh has a missing or extra piece. Open a frame of it.'));
+    else if (area.status === 'not-run' && area.expected) notRun.push({ check: 'GEOMETRY_AREA', reason: area.reason });
+    else if (area.status === 'unreported') note('WARN', 'GEOMETRY_AREA_UNREPORTED', 'geometry area', 0, 'the page does not say whether the area check ran (no window.__checks.geometryArea): it is not counted as checked.');
+    else note('FAIL', 'GEOMETRY_AREA_NOT_RUN', 'geometry area', 0, area.status === 'error' ? 'the area check could not run: ' + area.error : 'the area check did not run and the engine gave no reason (' + area.reason + '): an unexplained omission is not a pass.');
+  }
   const cv = JSON.parse(await ev('JSON.stringify([MX.ctx.canvas.width, MX.ctx.canvas.height])')), FW = cv[0], FH = cv[1], frame = [0, 0, FW, FH], ph = info.phases;
   let samples = 0, prevText = new Map();
   for (let t = 0; t < info.duration; t += STEP) {
@@ -82,11 +88,13 @@ try {
     }
   }
   const rows = [...found.values()].sort((a, b) => (a.sev === b.sev ? a.first - b.first : a.sev === 'FAIL' ? -1 : 1)), fails = rows.filter((x) => x.sev === 'FAIL').length, warns = rows.length - fails;
-  if (JSON_OUT) console.log(JSON.stringify({ page, length: opt('length', 'normal'), duration: info.duration, samples, step: STEP, fail: fails, warn: warns, findings: rows.map((x) => ({ severity: x.sev, code: x.code, subject: x.subject, from: +x.first.toFixed(2), to: +x.last.toFixed(2), samples: x.n, suggestion: x.detail })) }, null, 2));
+  if (JSON_OUT) console.log(JSON.stringify({ page, length: opt('length', 'normal'), duration: info.duration, samples, step: STEP, fail: fails, warn: warns, findings: rows.map((x) => ({ severity: x.sev, code: x.code, subject: x.subject, from: +x.first.toFixed(2), to: +x.last.toFixed(2), samples: x.n, suggestion: x.detail })), notRun }, null, 2));
   else {
     console.log('VISUAL PREFLIGHT  ' + path.basename(path.dirname(path.resolve(page))) + '  (' + opt('length', 'normal') + ' cut, ' + info.duration + ' s, ' + samples + ' samples every ' + STEP + ' s)');
     for (const x of rows) console.log('\n' + x.sev + '  ' + x.code + '  ' + x.subject + '\n  t = ' + x.first.toFixed(2) + (x.last > x.first ? ' .. ' + x.last.toFixed(2) : '') + ' s  (' + x.n + ' samples)\n  ' + x.detail);
-    console.log('\n' + (fails ? 'FAILED: ' + fails + ' error(s), ' + warns + ' warning(s).' : warns ? 'PASS with ' + warns + ' warning(s): look at them, a close-up or a part that flies out can be deliberate.' : 'PASS: nothing found.'));
+    for (const x of notRun) console.log('\nNOT RUN  ' + x.check + '  ' + x.reason + (x.check === 'GEOMETRY_AREA' && x.reason !== 'skipped_by_option' ? '\n  no meshes are compiled in this render; run the Studio preflight (no --method) to check the flat parts of the model.' : ''));
+    const unchecked = notRun.length ? ' NOT RUN: ' + notRun.map((x) => x.check).join(', ') + ' (not checked, not passed).' : '';
+    console.log('\n' + (fails ? 'FAILED: ' + fails + ' error(s), ' + warns + ' warning(s).' : warns ? 'PASS with ' + warns + ' warning(s): look at them, a close-up or a part that flies out can be deliberate.' : notRun.length ? 'PASS: nothing found by the checks that ran.' : 'PASS: nothing found.') + unchecked);
   }
-  done(STRICT && fails ? 1 : 0);
-} catch (e) { console.error(e.message); done(1); }
+  process.exitCode = STRICT && fails ? 1 : 0;
+}).catch((e) => { console.error(e.message); process.exitCode = 1; });
