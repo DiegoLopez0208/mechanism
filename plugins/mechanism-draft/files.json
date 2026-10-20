@@ -40,7 +40,7 @@
   "kit/samples.js": "a6c3859752acd1a2a54c4e0830f3aa14cfd15c1c91670a2899a9e1ab1677a4fe",
   "kit/sound.js": "a7379d1a04a60d7ebedbfb9538a84190d9e24914f4fad876614f5e95267f0467",
   "kit/spec-core.js": "ec98b1d204aa39d05a47f7786ca1d2cc521147434078cfbe65aa8b379889b558",
-  "kit/spec.js": "d4b07efb0e62f2568105634676df138dd2db867224467fcb0651fe22c30ee329",
+  "kit/spec.js": "183c947ab311e22d356c7caed9fc92bccb7ebb6cb1df6364794e95c2b7814c09",
   "kit/svg2d.js": "6b636be9b469761c6ee54ad1c22a9707cd3a56dd98bab950140895255fc9013e",
   "references/checks.md": "f456c3282d8e114bedd38647c973e62abc9576855e3bde81c6a92a3a906ef9a4",
   "references/scenes.md": "8066afe24aae7fe141675eb3379934b053db5c717f0c5c300381715c22432c21",
@@ -60,9 +60,9 @@
    "installed": false,
    "files": {
     "kit/vendor/three.bundle.js": "6f5eb0fd72ada778b941562656d51ed44ab092f5a329609af25b99257bfe0848",
-    "kit/gl.js": "727246e18cfbc778e4f49838b7bc9951c179e16d6f646541492792c9f534382c",
+    "kit/gl.js": "88f4ae1acd7176714056fe1e853c04746c92aaba74693cdc844ad7b861f3eaa8",
     "kit/figure.js": "1ee705174f3aaf2f3aa150554e1f373f83014508ed646281c939b7ffd58d1e53",
-    "kit/parts.js": "5b4769aceb68df69a06be982ea30fb5fd5cc3d45fbe4ab23f6d8d144d421bc9e",
+    "kit/parts.js": "681df1ad544f10d6eccc8442c5d2e2e869882cc48226ee0f6c7b1c02a8090f8a",
     "kit/paper-mesh.js": "2f5c35351682308d63d1ce044d0966dff3df22f21a1580c227a7bfda2f95e3fc"
    }
   }
