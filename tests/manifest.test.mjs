@@ -64,6 +64,11 @@ test('manifest: vector scenes are one list, the one Paper draws, and an unknown 
   assert.ok(generic.includes('paper-mesh.js') && M.stack3d.every((f) => generic.includes(f)), 'Paper otherwise: the stack and the mesh adapter');
   assert.deepEqual(plain(M.needsFor('studio', lockLike)), plain(M.engines.studio), 'a vector scene changes nothing for Studio');
   assert.deepEqual(plain(M.needsFor('workflow', lockLike)), plain(M.engines.workflow));
+  // declared 2D geometry (Draft 0.2) is a vector path too: no stack, no mesh adapter; the geometry module is injected on every page
+  const geometry = { paperScene: { kind: 'geometry' } }, geo = plain(M.modulesFor('paper', lock, geometry));
+  assert.equal(M.vectorScene(geometry), true); assert.ok(!M.paperScenes.includes('geometry'), 'geometry is a view-set producer, not a drawn scene');
+  assert.ok(geo.includes('paper-engine.js') && geo.includes('geom2d.js') && !geo.includes('paper-mesh.js') && !geo.some((f) => M.stack3d.includes(f)), 'Paper with declared geometry: engine and geometry only');
+  assert.ok(M.injected.includes('geom2d.js') && plain(M.modulesFor('studio', lock)).includes('geom2d.js'), 'the gate needs geom2d.js whatever the engine');
 });
 
 test('new.mjs writes the manifest script list', () => {
@@ -110,6 +115,7 @@ test('real browser: each engine loads exactly the modules the manifest gives it'
     ['react', '', 'v.presentation={method:"workflow",background:"graphite"};', 'workflow', WF],       // the method only in the spec
     ['react', 'method=studio', 'v.presentation={method:"workflow"};', 'studio', RUN],                  // the URL wins over the spec
     ['lock', 'method=studio', 'v.presentation={method:"paper"};', 'studio', RUN],                      // a vector scene does not matter for Studio
+    ['demo-flange', '', null, 'paper', VEC],                                                          // declared 2D geometry: no stack, no adapter
   ];
   for (const [name, query, inject, engine, area] of cases) await withBrowser(async (b) => {
     await b.send('Page.enable');

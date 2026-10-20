@@ -23,7 +23,35 @@ A spec whose `paperScene.kind` is not a kind Draft draws is not a vector scene: 
 
 Any spec without a vector scene: Paper projects the compiled parts to front, top and side views, draws the tour parts in turn with numbered callouts, estimated parts dashed in amber. The views are not to scale.
 
-## Extension points (for later versions, not features of 0.1)
+## Declared 2D geometry: `kind: 'geometry'` (Draft 0.2)
+
+Flat pieces with no 3D model and no drawing code: each part of `kind: 'drawing'` declares its geometry in `p`, `kit/geom2d.js` checks it (in the gate, in Node and in the page) and turns it into the view set Paper draws, one sheet per part. See `examples/demo-plate`, `demo-flange` and `demo-section` (synthetic demonstrations, every number ESTIMATED).
+
+```js
+parts: [{ id: 'plate', name: 'Mounting plate', kind: 'drawing', mat: 'aluminum', conf: 'estimated', claims: ['...'],
+  p: { unit: 'mm', thickness: 4,
+    outline: { type: 'rect', w: 160, h: 100, r: 6 },                       // or { type: 'circle', d } or { type: 'polygon', points: [[x, y], ...] }
+    holes: [{ id: 'fix1', type: 'circle', d: 6.6, at: [-68, -38] }, { id: 'window', type: 'rect', w: 44, h: 22, r: 4, at: [-20, 8] }],
+    patterns: [{ id: 'bolts', type: 'polar', of: { type: 'circle', d: 11 }, n: 6, pcd: 110, start: 90 },
+               { id: 'vent', type: 'linear', of: { type: 'circle', d: 5 }, n: 5, step: [11, 0], at: [-22, -30] }],
+    lines: [{ type: 'segment', a: [x, y], b: [x, y], style: 'center' }, { type: 'arc', at: [x, y], r, from: 0, to: 90 }],
+    section: { name: 'A-A', hatch: { angle: 45, pitch: 3 } } },            // only when the drawing is a cut: the material is hatched
+  params: { 'outline.w': { value: 160, unit: 'mm', conf: 'spec', claim: '...' } } }],
+paperScene: { kind: 'geometry' }, presentation: { method: 'paper' }
+```
+
+| Rule | |
+|---|---|
+| Units | `mm` only; anything else is refused |
+| Shapes | `rect` (`w`, `h`, corner `r`, centre `at`), `circle` (`d`, centre `at`), `polygon` (`points`, any winding, closed implicitly, simple) |
+| Holes | every hole has an `id`, lies strictly inside the material and does not touch another; a pattern expands to `<id>.1 .. <id>.n` |
+| Dimensions | named: `outline.w`, `outline.h`, `outline.d`, `outline.r`, `<hole>.d`, `<hole>.w`, `<hole>.h`, `<hole>.x`, `<hole>.y` (from the left and bottom edge of the outline's box), `<pattern>.n`, `.d`, `.pcd`, `.step`, `thickness` |
+| Evidence | a dimension counts as compared only when `params` gives it a value with a non-estimated claim; every other dimension is drawn in ink and counted as declared, not verified |
+| Views | only the one declared: a plan, or a section when `section` is set. No side view is deduced from a flat outline; Studio refuses a `drawing` part |
+
+The mesh area check (`GEOMETRY_AREA`) does not run on this path and is reported `NOT RUN` (`vector_scene_without_mesh_projection`); the 2D checks above are part of the gate. Full description: `docs/draft-geometry.md` in the Mechanism repository.
+
+## Extension points (for later versions)
 
 - **New vector scenes** are entries of `MX.paperEngine.scenes` (`{ steps(scene), draw(c, a, k) }`) in `kit/paper-engine.js` and of `paperScenes` in `kit/manifest.js`; a test keeps the two lists equal.
-- **Anything drawn from geometry** goes through the plain view set the mesh adapter produces (`{ entries: [{ id, conf, anchor, views: { front|top|side: { points, bounds, offset } } }], parts }`). Dimensions, sections, SVG/PDF/DXF export and parametric geometry would be new producers or fields of that set; none exists yet.
+- **New geometry** (more shapes, constraints, export to SVG/PDF/DXF) belongs in `kit/geom2d.js`, which stays the source of truth: the view set is a drawing of it and nothing is read back from it.

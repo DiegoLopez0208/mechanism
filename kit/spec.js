@@ -66,9 +66,13 @@
     }
     // Paper with a vector scene it draws natively (kit/manifest.js paperScenes): no figure, no meshes, no view set. The gate above
     // (V) has already run on the spec data; only the mesh area check cannot run, and the page says so (__checks.geometryArea).
-    if (presentation?.enabled && presentation.method === 'paper' && (g.MX_MANIFEST ? g.MX_MANIFEST.vectorScene(spec) : !!(spec.paperScene && MX.paperEngine && Object.hasOwn(MX.paperEngine.scenes, spec.paperScene.kind)))) {
-      return MX.paperEngine.run({ spec, validation: V, config: presentation, views: null, shapeCheck: null, W, H, length: LEN });
+    // Declared 2D geometry (paperScene.kind 'geometry') is the same vector path: kit/geom2d.js turns it into the view set.
+    const geometry = !!(spec.paperScene && spec.paperScene.kind === 'geometry');
+    if (presentation?.enabled && presentation.method === 'paper' && (g.MX_MANIFEST ? g.MX_MANIFEST.vectorScene(spec) : !!(spec.paperScene && MX.paperEngine && (Object.hasOwn(MX.paperEngine.scenes, spec.paperScene.kind) || (geometry && MX.geom2d))))) {
+      return MX.paperEngine.run({ spec, validation: V, config: presentation, views: geometry ? MX.geom2d.viewSet(spec, S) : null, shapeCheck: null, W, H, length: LEN });
     }
+    // a flat piece has no 3D model: Studio, the mesh sheet and Workflow cannot show it, and nothing is invented for them
+    if (spec.parts.some((d) => d.kind === 'drawing')) { document.title = 'SPEC ERROR'; throw new Error('this spec has 2D drawing parts (kind: drawing), which have no 3D model: render it with --method paper and paperScene: { kind: \'geometry\' }'); }
 
     /* ---------------------------------------------------------- figura y piezas */
     let beforeHook = null;

@@ -76,7 +76,7 @@ test('skill-doctor: optional pack absent, incomplete, declared but gone, and add
 // build-skill.mjs is run from a disposable copy of the repository, so a guard that failed could only damage the copy
 test('build-skill refuses dangerous destinations and never removes files it did not write', () => {
   const fake = path.join(tmp, 'fake-repo'), skillDef = JSON.parse(fs.readFileSync(path.join(committed, 'skill.json'), 'utf8'));
-  for (const d of ['kit', 'examples/lock']) fs.cpSync(path.join(root, d), path.join(fake, d), { recursive: true });
+  for (const d of ['kit', ...skillDef.runtime.examples.map((e) => 'examples/' + e)]) fs.cpSync(path.join(root, d), path.join(fake, d), { recursive: true });      // every example the skill ships
   for (const f of ['scripts/build-skill.mjs', 'LICENSE', 'THIRD_PARTY.md', ...skillDef.runtime.scripts, ...skillDef.handwritten.map((h) => 'plugins/mechanism-draft/' + h)]) { fs.mkdirSync(path.dirname(path.join(fake, f)), { recursive: true }); fs.copyFileSync(path.join(root, f), path.join(fake, f)); }
   const build = (...a) => spawnSync(process.execPath, [path.join(fake, 'scripts', 'build-skill.mjs'), 'draft', ...a], { cwd: fake, encoding: 'utf8' });
   const snapshot = (dir) => { const out = {}; const walk = (d) => { for (const e of fs.readdirSync(d, { withFileTypes: true })) { const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else out[path.relative(dir, p)] = sha(p); } }; walk(dir); return out; };
@@ -129,6 +129,24 @@ test('the install renders the lock: same frames as the repository, no three.js, 
   assert.deepEqual(inside.checks, { geometryArea: { run: false, reason: 'vector_scene_without_mesh_projection', expected: true } });
   assert.deepEqual(inside.frames, repo.frames, 'the install draws the same frames as the repository');
   console.log(`draft install: time to __frame ${inside.ready} ms (repository page: ${repo.ready} ms)`);
+});
+
+test('Draft 0.2: the install gates and draws the three declared-geometry parts like the repository, with no three.js', browserOpts, async () => {
+  for (const name of ['demo-plate', 'demo-flange', 'demo-section']) {
+    const geom = (s) => s.split('\n').filter((l) => /^(geometry |verdict)/.test(l));
+    const inside = node(core, 'scripts/check-spec.mjs', 'examples/' + name + '/spec.js'), repo = node(root, 'scripts/check-spec.mjs', 'examples/' + name + '/spec.js');
+    assert.equal(inside.status, 0, inside.stdout + inside.stderr); assert.deepEqual(geom(inside.stdout), geom(repo.stdout)); assert.equal(geom(inside.stdout).length, 2);
+    const look = (dir) => withBrowser(async (b) => {
+      await b.send('Page.enable'); await b.send('Page.navigate', { url: pathToFileURL(path.join(dir, 'examples', name, 'index.html')).href + '?render=1&length=short' });
+      for (let i = 0; i < 300 && !(await b.ev('typeof __frame === "function"')); i++) await sleep(20);
+      return b.ev(`(async()=>{const h=async t=>{__paint(t,1,.5);const d=MX.ctx.getImageData(0,0,MX.ctx.canvas.width,MX.ctx.canvas.height).data;return [...new Uint8Array(await crypto.subtle.digest('SHA-256',d))].map(x=>x.toString(16).padStart(2,'0')).join('');};
+        return {three:typeof THREE,scripts:[...document.scripts].map(s=>s.src).filter(Boolean),method:__specInfo().method,frames:[await h(1),await h(12),await h(28)]};})()`);
+    }, { timeout: 60000, retries: 0 });
+    const a = await look(core), b = await look(root);
+    assert.equal(a.method, 'paper'); assert.equal(a.three, 'undefined', name + ': no three.js in the install');
+    const own = pathToFileURL(core).href; for (const s of a.scripts) assert.ok(s.startsWith(own), name + ': a script from outside the install: ' + s);
+    assert.deepEqual(a.frames, b.frames, name + ': the install draws the same frames as the repository');
+  }
 });
 
 test('the install exports what it declares: a PNG still and an MP4 clip, the same pictures as the repository', browserOpts, () => {

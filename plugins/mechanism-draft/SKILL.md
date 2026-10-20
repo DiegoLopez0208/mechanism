@@ -18,14 +18,15 @@ Needs Node 22+, Edge or Chrome, and `ffmpeg` (films only). No install step, no n
 
 ## What it draws
 
-- **Vector scenes** (no 3D model, no three.js): a spec with `paperScene: { kind: 'pin-section', ... }` is drawn as an animated section from the spec's own numbers (see `examples/lock`). `pin-section` is the only kind in this version; read `references/scenes.md` before writing one.
+- **Piece drawings from declared 2D geometry** (no 3D model, no three.js, no drawing code): parts of `kind: 'drawing'` whose `p` declares the geometry in mm (an outline: rect, circle or polygon; holes with stable ids; polar and linear patterns; centre lines and arcs; an optional section with hatching) and `paperScene: { kind: 'geometry' }`. The gate checks the geometry (closed contours, holes inside the material, no overlap, net area) and Paper draws each part with dimensions taken from it. Examples: `examples/demo-plate`, `demo-flange`, `demo-section` (synthetic, ESTIMATED). The schema and what a dimension needs to count as compared: `references/scenes.md`.
+- **Vector scenes** (no 3D model, no three.js): a spec with `paperScene: { kind: 'pin-section', ... }` is drawn as an animated section from the spec's own numbers (see `examples/lock`). Read `references/scenes.md` before writing one.
 - **Mesh sheets** (optional): any other spec is drawn as front/top/side orthographic sheets projected from its parts. That needs the optional mesh pack (three.js); without it the page stops with a load error naming the missing file. `skill-doctor` says whether it is installed.
 
 Options: `--background ivory|porcelain|graphite|blueprint`, `--aspect 9:16|4:5|1:1`, `--length short|normal|extended` (30, 60, 90 s), `--fps`, `--still <t>` (PNG), `--encoder jpeg|browser`. Outputs: MP4 (H.264, BT.709, stereo AAC) and PNG stills.
 
 ## What is checked, and what is not
 
-The gate checks the numbers against their published sources; the preflight checks text and layout frame by frame. With a vector scene the mesh area check cannot run and is reported as `NOT RUN  GEOMETRY_AREA` with its reason: that is not a pass. A passing gate means the numbers agree with their sources, not that the sources are right, that the drawing is to scale (it is not) or that the user approved it. Details: `references/checks.md`.
+The gate checks the numbers against their published sources; the preflight checks text and layout frame by frame. With a vector scene the mesh area check cannot run and is reported as `NOT RUN  GEOMETRY_AREA` with its reason: that is not a pass. A passing gate means the numbers agree with their sources, not that the sources are right, that the drawing is to scale (it is not) or that the user approved it. A piece drawing that passes is internally consistent: its dimensions count as compared only where `params` ties them to a sourced claim, and the sheet says how many are declared, not verified. A flat part is never given an invented side view or a 3D model; asking Studio for one is an error. Details: `references/checks.md`.
 
 Paper's look is fixed: strokes, hatching and flat fills; no gradients, shadows, filters or lighting.
 
