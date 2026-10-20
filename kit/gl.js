@@ -27,6 +27,19 @@
     }
   }
 
+  // three's SSRPass composes its own (single-sampled) render with the reflections; this layer keeps only the reflections (OUTPUT.SSR, into a
+  // private target) and blends them over the composer's multisampled frame, so nothing but the reflections changes
+  class SSRLayer extends TH.SSRPass {
+    constructor(o) { super(o); this.output = TH.SSRPass.OUTPUT.SSR; this.layer = new TH.WebGLRenderTarget(o.width, o.height, { type: TH.HalfFloatType }); }
+    render(renderer, writeBuffer, readBuffer) {
+      super.render(renderer, this.layer, readBuffer);
+      const cm = this.copyMaterial;
+      cm.uniforms.tDiffuse.value = readBuffer.texture; cm.blending = TH.NoBlending; this._renderPass(renderer, cm, writeBuffer);
+      cm.uniforms.tDiffuse.value = this.layer.texture; cm.blending = TH.NormalBlending; this._renderPass(renderer, cm, writeBuffer);
+    }
+    setSize(w, h) { super.setSize(w, h); this.layer.setSize(w, h); }
+  }
+
   /* ------------------------------------------------------------ estudio de producto */
   // the environment the metal reflects: a dark studio with softboxes, not a grey room. A large key softbox above and in front-left, two tall strips
   // at the sides (rim), a back panel, a faint warm floor bounce. Values above 1 are HDR: PMREM keeps them, so a reflection reads as a bright panel.
@@ -49,13 +62,16 @@
   // roughness (what makes a highlight look machined, cast or moulded), the albedo very slightly, and the normal a little; it fades out where
   // its cells would be smaller than a pixel, so a large object seen whole does not shimmer. Parameters live in material.userData.mxDetail
   // (copied by clone(), unlike onBeforeCompile): [roughness amplitude, cells per mm, stretch along the part's x (brushed < 1), albedo amplitude, bump].
+  // ... plus [5] macro amplitude: large, soft variation of the roughness (handling marks, smudges, areas polished by use: cells of about 10 mm),
+  // the cue that tells a real object from a perfect render; and [6] edge wear: where the surface turns sharply (screen-space curvature), metal
+  // is polished brighter and smoother and paint or plastic is rubbed lighter, as edges are on anything that has been handled
   G.DETAIL = {
-    brushed: [0.32, 1.6, 0.035, 0.03, 0.12], cast: [0.3, 0.9, 1, 0.06, 0.35], polished: [0.18, 2.2, 0.08, 0.015, 0.06],
-    plastic: [0.22, 2.4, 1, 0.025, 0.12], rubber: [0.16, 3.2, 1, 0.045, 0.3], board: [0.2, 3.6, 1, 0.04, 0.15], paint: [0.14, 1.8, 1, 0.02, 0.05],
+    brushed: [0.32, 1.6, 0.035, 0.03, 0.12, 0.34, 0.7], cast: [0.3, 0.9, 1, 0.06, 0.35, 0.28, 0.45], polished: [0.18, 2.2, 0.08, 0.015, 0.06, 0.4, 0.5],
+    plastic: [0.22, 2.4, 1, 0.025, 0.12, 0.26, 0.35], rubber: [0.16, 3.2, 1, 0.045, 0.3, 0.16, 0.15], board: [0.2, 3.6, 1, 0.04, 0.15, 0.2, 0.3], paint: [0.14, 1.8, 1, 0.02, 0.05, 0.3, 0.55],
   };
   const DETAIL_GLSL = `
 varying vec3 vMxPos;
-uniform vec4 mxP; uniform float mxBump;
+uniform vec4 mxP; uniform float mxBump; uniform vec2 mxE;
 float mxHash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
 float mxNoise(vec3 x) { vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
   return mix(mix(mix(mxHash(i), mxHash(i + vec3(1,0,0)), f.x), mix(mxHash(i + vec3(0,1,0)), mxHash(i + vec3(1,1,0)), f.x), f.y),
@@ -66,16 +82,21 @@ float mxFbm(vec3 p) { return 0.55 * mxNoise(p) + 0.3 * mxNoise(p * 2.03 + 7.1) +
   proto.customProgramCacheKey = function () { return (this.userData && this.userData.mxDetail ? 'mxd|' : '') + baseKey.call(this); };
   proto.onBeforeCompile = function (shader) {
     const d = this.userData && this.userData.mxDetail; if (!d) return;
-    shader.uniforms.mxP = { value: new TH.Vector4(d[0], d[1], d[2], d[3]) }; shader.uniforms.mxBump = { value: d[4] };
+    shader.uniforms.mxP = { value: new TH.Vector4(d[0], d[1], d[2], d[3]) }; shader.uniforms.mxBump = { value: d[4] }; shader.uniforms.mxE = { value: new TH.Vector2(d[5] || 0, d[6] || 0) };
     shader.vertexShader = 'varying vec3 vMxPos;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vMxPos = position;');
     shader.fragmentShader = DETAIL_GLSL + shader.fragmentShader
       .replace('#include <color_fragment>', `#include <color_fragment>
   vec3 mxQ = vMxPos * mxP.y * vec3(mxP.z, 1.0, 1.0);
   float mxFade = clamp(1.6 - 1.4 * length(fwidth(mxQ)), 0.0, 1.0);
   float mxN = mxFbm(mxQ), mxN2 = mxFbm(mxQ * 0.37 + 11.0);
-  diffuseColor.rgb *= 1.0 + mxFade * mxP.w * (mxN2 * 2.0 - 1.0);`)
+  float mxM = mxFbm(vMxPos * mxP.y * 0.06 + 3.3);      // macro: about 10 mm cells, never fades (it is larger than a pixel at any zoom)
+  float mxEdge = 0.0;
+  #ifndef FLAT_SHADED
+    mxEdge = smoothstep(0.06, 0.32, length(fwidth(normalize(vNormal)))) * mxE.y;
+  #endif
+  diffuseColor.rgb *= 1.0 + mxFade * mxP.w * (mxN2 * 2.0 - 1.0) + 0.05 * mxE.x * (mxM * 2.0 - 1.0) + 0.14 * mxEdge;`)
       .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
-  roughnessFactor = clamp(roughnessFactor * (1.0 + mxFade * mxP.x * (mxN * 2.0 - 1.0)), 0.03, 1.0);`)
+  roughnessFactor = clamp(roughnessFactor * (1.0 + mxFade * mxP.x * (mxN * 2.0 - 1.0)) * (1.0 + mxE.x * (mxM * 2.0 - 1.0)) * (1.0 - 0.55 * mxEdge), 0.03, 1.0);`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
   { float h = mxFade * mxBump * mxN * 0.02; vec3 sx = dFdx(-vViewPosition), sy = dFdy(-vViewPosition), r1 = cross(sy, normal), r2 = cross(normal, sx);
     float det = dot(sx, r1); vec3 grad = sign(det) * (dFdx(h) * r1 + dFdy(h) * r2); if (abs(det) > 1e-9) normal = normalize(abs(det) * normal - grad); }`);
@@ -93,7 +114,11 @@ float mxFbm(vec3 p) { return 0.55 * mxNoise(p) + 0.3 * mxNoise(p * 2.03 + 7.1) +
     const renderer = new TH.WebGLRenderer({ canvas: cv, antialias: false, alpha: false, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
     renderer.setPixelRatio(1); renderer.setSize(RW, RH, false);
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = TH.PCFSoftShadowMap;
-    renderer.toneMapping = TH.NeutralToneMapping; renderer.toneMappingExposure = o.exposure == null ? ((MX.THEME.gl && MX.THEME.gl.exposure) || 1.0) : o.exposure;
+    // tone map: 'agx-punchy' (the default) is AgX, which rolls bright highlights off like a photograph, with Blender's Punchy look giving back the
+    // saturation and contrast AgX takes away; 'agx' is plain AgX; 'neutral' (the look up to 0.10) keeps the maker's colours exactly
+    const tmap = o.toneMap || (MX.THEME.gl && MX.THEME.gl.toneMap) || 'agx-punchy';
+    renderer.toneMapping = tmap === 'neutral' ? TH.NeutralToneMapping : TH.AgXToneMapping;
+    renderer.toneMappingExposure = (o.exposure == null ? ((MX.THEME.gl && MX.THEME.gl.exposure) || 1.0) : o.exposure) * (tmap === 'neutral' ? 1 : 1.18);
     const scene = new TH.Scene();
     // fondo: papel con un velo de luz suave (se dibuja dentro de la escena para que el posprocesado lo vea)
     const TG = MX.THEME.gl || {}, night = !!MX.THEME.dark;
@@ -118,13 +143,26 @@ float mxFbm(vec3 p) { return 0.55 * mxNoise(p) + 0.3 * mxNoise(p * 2.03 + 7.1) +
     // posprocesado: render con MSAA en HalfFloat -> GTAO -> Bokeh (opcional) -> Bloom -> OutputPass (tone mapping + sRGB)
     const rt = new TH.WebGLRenderTarget(RW, RH, { type: TH.HalfFloatType, samples: 4 });
     const composer = new TH.EffectComposer(renderer, rt); composer.setPixelRatio(1); composer.setSize(RW, RH);
+    // ssr: screen-space reflections, the metal reflects the parts next to it (not only the studio). As in Eevee it is a reflection LAYER over the
+    // normal render: the multisampled render pass (its edges, its floor shadow) stays, and only the reflections, worked out by three's SSRPass
+    // (which renders the scene again for colour, normals and metalness), are blended on top of it
     composer.addPass(new TH.RenderPass(scene, camera));
+    let ssr = null;
+    // on by default in renders (render.mjs opens the page with ?render=1); live viewers and the site keep their speed unless asked (?ssr=1)
+    const ssrOn = o.ssr != null ? o.ssr : typeof location !== 'undefined' && new URLSearchParams(location.search).get('render') === '1';
+    if (ssrOn && !(o.pathtrace > 0)) {
+      ssr = new SSRLayer({ renderer, scene, camera, width: RW, height: RH, selects: null });
+      Object.assign(ssr, { thickness: 0.018, maxDistance: 140, opacity: 0.6, fresnel: true, distanceAttenuation: true, bouncing: false, blur: true, infiniteThick: false });
+      composer.addPass(ssr);
+    }
     const ao = new RepeatableGTAO(scene, camera, W, H); ao.blendIntensity = o.ao == null ? 1.15 : o.ao;
     ao.updateGtaoMaterial({ radius: 7, distanceExponent: 1.4, thickness: 4, scale: 2.2, samples: 24, distanceFallOff: 1.2, screenSpaceRadius: false });
     ao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 12 }); composer.addPass(ao);
     const bokeh = new TH.BokehPass(scene, camera, { focus: 600, aperture: 0, maxblur: 0.01 }); bokeh.enabled = false; composer.addPass(bokeh);
     const bloom = new TH.UnrealBloomPass(new TH.Vector2(W, H), o.bloom == null ? (TG.bloom != null ? TG.bloom : (night ? 0.035 : 0.12)) : o.bloom, 0.45, TG.thr || (night ? 0.985 : 0.92)); composer.addPass(bloom);
     composer.addPass(new TH.OutputPass());
+    if (tmap === 'agx-punchy') composer.addPass(new TH.ShaderPass({ uniforms: { tDiffuse: { value: null } }, vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+      fragmentShader: 'uniform sampler2D tDiffuse; varying vec2 vUv; void main() { vec4 c = texture2D(tDiffuse, vUv); float l = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722)); vec3 s = mix(vec3(l), c.rgb, 1.28); s = (s - 0.5) * 1.08 + 0.5; gl_FragColor = vec4(clamp(s, 0.0, 1.0), c.a); }' }));
     const st = { renderer, scene, camera, composer, canvas: cv, floor, key, fill, rim, ao, bokeh, bloom, view: null, W, H, fov: FOV, aoSkip: [] };
 
     // vista: yaw (0 = mirando el borde y-min, 90 = mirando el borde x-max), pitch (0 = elevacion, 90 = planta), zoom (px por mm en el plano del blanco),
@@ -148,7 +186,38 @@ float mxFbm(vec3 p) { return 0.55 * mxNoise(p) + 0.3 * mxNoise(p * 2.03 + 7.1) +
     // la oclusion ambiental ignora las piezas atenuadas (si no, un fantasma translucido proyectaria sombra como si fuese solido)
     const aoRender = ao.render.bind(ao);
     ao.render = function (...args) { const hidden = []; st.aoSkip.forEach((o2) => { if (o2.visible) { o2.visible = false; hidden.push(o2); } }); aoRender(...args); hidden.forEach((o2) => { o2.visible = true; }); };
-    st.render = () => composer.render();
+    // only metal reflects (the shadow floor and the dielectrics would otherwise mirror the object); the list is taken at the first render, when
+    // the parts exist, and kept (a part that is hidden is not drawn, so it reflects nothing)
+    st.ssr = ssr;
+    // pathtrace: N samples of a real path tracer (three-gpu-pathtracer, loaded by kit/boot.js with ?pathtrace) instead of the raster pipeline, for
+    // stills: light bounces between parts, soft shadows and reflections come out of the physics. The environment is the same studio (as a cube
+    // map); the shadow floor and the shader micro-detail are raster-only and are left out; the frame is composed over the page's background.
+    let pt = null, ptEnv = null; const ptBg = new TH.Scene(); ptBg.background = scene.background;
+    st.pathTrace = (samples) => {
+      if (!g.THREE_PT) throw new Error('pathtrace: kit/vendor/pathtracer.bundle.js is not loaded (open the page with ?pathtrace)');
+      if (!pt) {
+        pt = new g.THREE_PT.WebGLPathTracer(renderer); Object.assign(pt, { renderDelay: 0, minSamples: 0, fadeDuration: 0, rasterizeScene: false, bounces: 8, filterGlossyFactor: 0.5 }); pt.tiles.set(2, 2);
+        pt.renderToCanvasCallback = (target, r, quad) => { r.setRenderTarget(null); const ac = r.autoClear; r.autoClear = false; r.clear(); r.render(ptBg, camera); quad.material.transparent = true; quad.material.blending = TH.NormalBlending; quad.render(r); r.autoClear = ac; };
+        const crt = new TH.WebGLCubeRenderTarget(512, { type: TH.HalfFloatType }); new TH.CubeCamera(0.1, 100, crt).update(renderer, G.studioEnvironment()); ptEnv = crt.texture;
+      }
+      // asynchronous, a few samples at a time with a pause between them: one long burst of GPU work loses the WebGL context (the driver's timeout).
+      // MX.run's __frame waits for st.ptPending and draws the frame again with st.ptHold set, which keeps the accumulated image on the canvas.
+      const bg = scene.background, env = scene.environment, fl = floor.visible;
+      scene.background = null; scene.environment = ptEnv; floor.visible = false;
+      pt.setScene(scene, camera); pt.reset();
+      st.ptPending = (async () => {
+        try {
+          for (let i = 0; i < 2400 && pt.isCompiling; i++) await new Promise((r) => setTimeout(r, 25));
+          let guard = 0; while (pt.samples < samples && guard++ < samples * 8) { pt.renderSample(); renderer.getContext().finish(); await new Promise((r) => setTimeout(r, 0)); }
+        } finally { scene.background = bg; scene.environment = env; floor.visible = fl; }
+      })();
+    };
+    if (o.pathtrace > 0) g.__ptStage = st;
+    st.render = () => {
+      if (o.pathtrace > 0) { if (!st.ptHold) st.pathTrace(o.pathtrace); return; }
+      if (ssr && !ssr.selects) { const sel = []; scene.traverse((m) => { if (m.isMesh && m !== floor && m.material && !Array.isArray(m.material) && m.material.metalness >= 0.5) sel.push(m); }); ssr.selects = sel; }
+      composer.render();
+    };
     st.blit = (ctx) => { ctx.drawImage(cv, 0, 0, W, H); };
     return st;
   };

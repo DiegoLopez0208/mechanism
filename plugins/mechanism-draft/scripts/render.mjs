@@ -36,7 +36,7 @@ const png = (d) => Buffer.from(d.split(',')[1], 'base64');
 await withBrowser(async ({ send, ev: evalJs, progress, stopWatchdog, onCleanup }) => {
   await send('Page.enable');
   const url = new URL(pathToFileURL(path.resolve(page)));
-  for (const [key, value] of Object.entries({ render: '1', t: '0', theme: opt('style', opt('theme', '')), length: opt('length', ''), aspect: opt('aspect', ''), method: METHOD, background: BACKGROUND, ss: opt('ss', '') })) if (value !== '') url.searchParams.set(key, value);
+  for (const [key, value] of Object.entries({ render: '1', t: '0', theme: opt('style', opt('theme', '')), length: opt('length', ''), aspect: opt('aspect', ''), method: METHOD, background: BACKGROUND, ss: opt('ss', ''), ssr: opt('ssr', ''), tonemap: opt('tonemap', ''), pathtrace: opt('pathtrace', '') })) if (value !== '') url.searchParams.set(key, value);
   await send('Page.navigate', { url: url.href });
   for (let i = 0; i < 100; i++) { await sleep(150); if (await evalJs('typeof window.__frame === "function"')) break; if (i === 99) throw new Error('la pagina no expuso __frame (usa MX.run); titulo de la pagina: ' + await evalJs('document.title')); }      // kit/boot.js writes the load error (a missing module) into the title
   mkdirSync(path.dirname(OUT), { recursive: true });

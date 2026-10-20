@@ -6,7 +6,9 @@
 (function () {
   'use strict';
   const self = document.currentScript, list = (self.getAttribute('data-scripts') || '').split(',').map((s) => s.trim()).filter(Boolean), base = self.src.replace(/boot\.js.*$/, '');
-  const load = (src) => new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.async = false; s.onload = res; s.onerror = () => rej(new Error('no se pudo cargar ' + src)); document.head.appendChild(s); });
+  const load0 = (src) => new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.async = false; s.onload = res; s.onerror = () => rej(new Error('no se pudo cargar ' + src)); document.head.appendChild(s); });
+  // ?pathtrace (render.mjs --pathtrace): the path tracer is loaded right after three.js, and only then
+  const load = async (src) => { await load0(src); if (/three\.bundle\.js$/.test(src) && new URLSearchParams(location.search).has('pathtrace')) await load0(src.replace(/three\.bundle\.js$/, 'pathtracer.bundle.js')); };
   const q = new URLSearchParams(location.search), theme = q.get('style') || q.get('theme') || self.getAttribute('data-theme') || 'dossier';
   // Which modules each engine needs comes from kit/manifest.js. On a spec page the 3D stack (three.js and the modules that run it
   // when they load) is held back until just before the compiler: by then the page's own spec has loaded, so the engine is known

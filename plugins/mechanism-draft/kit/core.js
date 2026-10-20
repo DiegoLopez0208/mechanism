@@ -169,7 +169,13 @@
       octx.setTransform(1, 0, 0, 1, 0, 0); octx.globalAlpha = 1; octx.drawImage(acc, 0, 0);
     };
     g.__paint = (t, n, shutter) => { frame(t, n, shutter); return cv; };      // the frame on the canvas with no encoding: for an encoder that takes the canvas itself (WebCodecs)
-    g.__frame = (t, n, shutter, fmt) => { frame(t, n, shutter); return fmt === 'jpg' ? cv.toDataURL('image/jpeg', 0.97) : cv.toDataURL('image/png'); };
+    g.__frame = (t, n, shutter, fmt) => {
+      const out = () => (fmt === 'jpg' ? cv.toDataURL('image/jpeg', 0.97) : cv.toDataURL('image/png'));
+      frame(t, n, shutter);
+      // a path-traced still (kit/gl.js, ?pathtrace): its shader compiles asynchronously; wait for it, then draw the frame again with every sample
+      const ps = g.__ptStage; if (!ps || !ps.ptPending) return out();
+      return (async () => { await ps.ptPending; ps.ptPending = null; ps.ptHold = true; try { frame(t, n, shutter); } finally { ps.ptHold = false; } return out(); })();
+    };
     g.__audioWav = () => {
       const raw = cfg.audio ? cfg.audio() : new Float32Array(Math.floor(DUR * (cfg.sr || 44100))), sr = (raw && raw.sr) || cfg.sr || 44100, ch = raw && raw.L ? [raw.L, raw.R] : [raw], N = ch[0].length, nch = ch.length;
       const b = new ArrayBuffer(44 + N * nch * 2), v = new DataView(b), w = (o, str) => { for (let i = 0; i < str.length; i++) v.setUint8(o + i, str.charCodeAt(i)); };
