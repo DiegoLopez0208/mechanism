@@ -1,6 +1,6 @@
 # Draft 0.2: parametric vector geometry
 
-Status: implemented on `feature/draft-parametric-02` (not merged). Scope: flat piece drawings from declared 2D geometry, with no
+Status: on `main` (Draft 0.2, PR #2). Scope: flat piece drawings from declared 2D geometry, with no
 per-object drawing code, checked by the same gate as every other spec.
 
 ## Pipeline

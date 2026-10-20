@@ -125,7 +125,7 @@ Only the technical-drawing part (Mechanism Draft: dimensioned SVG drawings of fl
 /plugin install mechanism-draft@mechanism
 ```
 
-Draft is not on `main` yet. Each stage is on its own development branch, and the marketplace must name the branch: `ecosystem-foundation` has Draft 0.1 (Paper sheets and films), `feature/draft-svg-03` adds the SVG export, `feature/draft-real-rpi4-04` the Raspberry Pi 4 example, `feature/draft-beta-hardening-05` the evidence classes and the fixes from the first stranger test. For example `/plugin marketplace add DiegoLopez0208/mechanism#feature/draft-real-rpi4-04`. See [`plugins/mechanism-draft/README.md`](plugins/mechanism-draft/README.md).
+Add the marketplace first if you have not: `/plugin marketplace add DiegoLopez0208/mechanism`. Draft is on `main` (0.1 Paper sheets and films, 0.2 parametric 2D geometry, 0.3 SVG export, 0.4 the Raspberry Pi 4 example, BH-1 evidence classes and the fixes from the first stranger tests). See [`plugins/mechanism-draft/README.md`](plugins/mechanism-draft/README.md).
 
 Or by hand, as a plain skill:
 

@@ -1,6 +1,6 @@
 # Draft 0.3: engineering SVG export
 
-Status: implemented on `feature/draft-svg-03` (not merged). Scope: an SVG drawing of each 2D `drawing` part, written from the
+Status: on `main` (Draft 0.3, PR #3). Scope: an SVG drawing of each 2D `drawing` part, written from the
 geometry `kit/geom2d.js` validated, with its dimensions, in two explicit scales. No PDF or DXF, no tolerances.
 
 ## Pipeline

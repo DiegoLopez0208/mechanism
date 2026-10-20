@@ -1,6 +1,6 @@
 # Evidence classes and verdicts (BH-1)
 
-Status: implemented on `feature/draft-beta-hardening-05` (not merged). This is the contract `kit/spec-core.js` enforces and `kit/geom2d.js`,
+Status: on `main` (BH-1, PR #5). This is the contract `kit/spec-core.js` enforces and `kit/geom2d.js`,
 `kit/svg2d.js` and the Paper sheet display. It came out of the first stranger test of Draft 0.4, where a spec whose only source was the
 user's own request passed as VERIFIED.
 
