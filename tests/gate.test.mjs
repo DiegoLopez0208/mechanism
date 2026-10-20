@@ -244,7 +244,7 @@ test('params: a part stronger than its weakest dimension is reported as mixed', 
   assert.equal(r.errors.length, 0, r.errors.join('; '));
   assert.equal(r.verdict.mixed, 1);
   assert.ok(r.warnings.some((w) => /dimension h is ESTIMATED/.test(w)));
-  assert.ok(r.lines.some((l) => /^dimensions: 1 compared with their source \(1 spec\), 1 estimated, 1 part\(s\) mix confidence classes \(spec, estimated\)$/.test(l)), r.lines.join('\n'));
+  assert.ok(r.lines.includes('dimensions: 1 checked against a document, 0 derived, 0 measured (with uncertainty), 0 declared by the user, 1 estimated; 0 independently verified; 1 part(s) mix confidence classes (spec, estimated)'), r.lines.join('\n'));
 });
 
 test('params: published + derived dimensions (none estimated) are not reported as estimated', () => {
@@ -253,7 +253,7 @@ test('params: published + derived dimensions (none estimated) are not reported a
   assert.equal(r.errors.length, 0, r.errors.join('; '));
   assert.equal(r.verdict.mixed, 1);
   const line = r.lines.find((l) => l.startsWith('dimensions: '));
-  assert.equal(line, 'dimensions: 2 compared with their source (1 spec, 1 derived), 0 estimated, 1 part(s) mix confidence classes (spec, derived)');
+  assert.equal(line, 'dimensions: 1 checked against a document, 1 derived, 0 measured (with uncertainty), 0 declared by the user, 0 estimated; 0 independently verified; 1 part(s) mix confidence classes (spec, derived)');
   assert.doesNotMatch(line, /estimated dimensions|mix sourced and estimated/);
   assert.equal(r.verdict.state, mutate(() => {}).verdict.state, 'the wording does not move the verdict');
 });
@@ -277,7 +277,10 @@ test('the shipped examples keep passing with an honest verdict', () => {
   for (const name of ['hub', 'switch', 'enigma', 'k20a', 'rubik', 'rtx4090', 'mos6502', 'rar5', 'winrar', 'lock', 'react']) {
     const r = validateExample(name);
     assert.equal(r.errors.length, 0, name + ': ' + r.errors.join('; '));
-    assert.equal(r.verdict.state, name === 'lock' ? 'CONSISTENT' : 'VERIFIED', name);      // the lock takes every figure from one page (Lockwiki): consistent with it, not independently verified
+    // BH-1: VERIFIED needs a check whose sources are disjoint from its inputs'. The lock takes every figure from one page (Lockwiki); switch compares
+    // its travel with the very claim it was drawn from; k20a and rubik compute from inputs on the same page as the published figure (not traced: the
+    // gate cannot establish independence); enigma's test vectors cite no claim. All five pass as CONSISTENT, none as VERIFIED.
+    assert.equal(r.verdict.state, ['lock', 'switch', 'enigma', 'k20a', 'rubik'].includes(name) ? 'CONSISTENT' : 'VERIFIED', name);
     assert.ok(r.verdict.checked >= 2, name + ' compares fewer than 2 published figures');
   }
 });
@@ -330,4 +333,87 @@ test('calc expressions can use sqrt, abs, min, max and PI without the Math prefi
   assert.equal(r.verdict.state, 'VERIFIED');
   const keep = mutate((s) => { s.mechanism.calc.vars.max = { v: 3, claim: 'c1' }; s.mechanism.drive.modes[0].expr = 'max'; });
   assert.equal(keep.errors.length, 0, 'a variable named like a Math function keeps its own meaning: ' + keep.errors.join('; '));
+});
+
+/* ---- BH-1: evidence classes and independence (each of these passed as VERIFIED, or could not be written honestly, before) */
+const GX = load([path.join(root, 'kit/geom2d.js')]).MX;
+const plate = (src, conf, extra = {}) => ({
+  id: 'plate', title: 'Plate',
+  research: { sources: [src], claims: [{ id: 'size', conf, text: 'The plate is 120 mm wide and 80 mm high.', src: [src.id] }] },
+  parts: [{ id: 'plate', name: 'Plate', kind: 'drawing', conf, claims: ['size'], p: { unit: 'mm', outline: { type: 'rect', w: 120, h: 80 } },
+    params: { 'outline.w': { value: 120, unit: 'mm', conf, claim: 'size' }, 'outline.h': { value: 80, unit: 'mm', conf, claim: 'size' } } }],
+  paperScene: { kind: 'geometry' }, recognize: { object: 'a plate', iconic: [{ text: 'flat', parts: ['plate'] }, { text: 'rectangular', parts: ['plate'] }] }, ...extra,
+});
+const DOC = { id: 'sheet', title: 'Drawing sheet', url: 'https://github.com/DiegoLopez0208/mechanism', fetched: '2026-10-19' };
+const USER = { id: 'brief', kind: 'user', title: 'The request of the person who asked', received: '2026-10-19', note: 'plate 120 x 80 mm' };
+
+test('a drawing whose only checks are its own dimensions against the figures they were drawn from is CONSISTENT, never VERIFIED', () => {
+  const r = GX.spec.validate(plate(DOC, 'spec'));
+  assert.equal(r.errors.length, 0, r.errors.join('; '));
+  assert.equal(r.verdict.state, 'CONSISTENT', 'two dimensions transcribed from one sheet are not independent evidence (Draft 0.4 said VERIFIED here)');
+  assert.equal(r.verdict.independent, 0); assert.equal(r.verdict.transcription, 2);
+  assert.ok(r.lines.some((l) => /^provenance: 0 independent, 0 same source as the inputs, 0 with no sourced inputs, 2 dimension\(s\) compared with the figure they were drawn from \(never independent\)/.test(l)), r.lines.join('\n'));
+  assert.ok(r.warnings.some((w) => /^CONSISTENT, not VERIFIED: .*2 compare a drawn dimension with the figure it was drawn from/.test(w)), r.warnings.join('\n'));
+});
+
+test('numbers the person who asked gave: a user source with no url, USER claims and dimensions, never VERIFIED', () => {
+  const r = GX.spec.validate(plate(USER, 'user'));
+  assert.equal(r.errors.length, 0, 'no url is needed (and none invented) for a user request: ' + r.errors.join('; '));
+  assert.equal(r.verdict.state, 'CONSISTENT'); assert.equal(r.verdict.userDeclared, 2); assert.equal(r.verdict.userSources, 1); assert.equal(r.verdict.independent, 0);
+  assert.ok(r.warnings.some((w) => /2 of them given by the person who asked, not published/.test(w)), r.warnings.join('\n'));
+  // the summary names them for what they are: declared by the user, none checked against a document, none independently verified
+  const dims = r.lines.find((l) => l.startsWith('dimensions: '));
+  assert.equal(dims, 'dimensions: 0 checked against a document, 0 derived, 0 measured (with uncertainty), 2 declared by the user, 0 estimated; 0 independently verified; 0 part(s) mix confidence classes');
+  assert.doesNotMatch(dims, /compared with (their|a) source/, 'a number the user gave is not "compared with a source"');
+  const views = GX.geom2d.viewSet(plate(USER, 'user'), GX.spec).parts.plate.dimCount;
+  assert.equal(views.user, 2); assert.equal(views.compared, 0, 'a number the person gave is not "compared with a source"');
+  // the request is not a publication, and a document is not the request
+  const asSpec = GX.spec.validate(plate(USER, 'spec')); assert.ok(asSpec.errors.some((e) => /is SPEC but cites the request of the person who asked/.test(e)), asSpec.errors.join('\n'));
+  const docAsUser = GX.spec.validate(plate(DOC, 'user')); assert.ok(docAsUser.errors.some((e) => /is USER .* but cites a document/.test(e)), docAsUser.errors.join('\n'));
+  const withUrl = GX.spec.validate(plate({ ...USER, url: 'https://example.invalid/request' }, 'user')); assert.ok(withUrl.errors.some((e) => /it has no url, do not give it one/.test(e)));
+  const noUrl = GX.spec.validate(plate({ id: 'sheet', title: 'A sheet', fetched: '2026-10-19' }, 'spec')); assert.ok(noUrl.errors.some((e) => /no url: if the numbers come from the person who asked, declare the source kind: "user"/.test(e)), noUrl.errors.join('\n'));
+  const odd = GX.spec.validate(plate({ ...USER, kind: 'chat' }, 'user')); assert.ok(odd.errors.some((e) => /unknown kind "chat"/.test(e)));
+});
+
+test('the minimal spec in the Draft SKILL.md passes the gate as written, and the gate says what SKILL.md says it says', () => {
+  const md = fs.readFileSync(path.join(root, 'plugins/mechanism-draft/SKILL.md'), 'utf8'), code = /```js\n([\s\S]*?)```/.exec(md);
+  assert.ok(code, 'SKILL.md has a js example'); const src = code[1].replace(/^ {3}/gm, '');
+  assert.match(src, /src: \['request'\]/, 'the example shows src as an array'); assert.doesNotMatch(src.replace(/\/\/.*$/gm, ''), /[{,]\s*source\s*:/, 'and never a "source" field');
+  const c = load([path.join(root, 'kit/geom2d.js')]); vm.runInContext(src, c);
+  const r = c.MX.spec.validate(c.SPEC); assert.equal(r.errors.length, 0, r.errors.join('; ')); assert.equal(r.verdict.state, 'CONSISTENT');
+  const dims = r.lines.find((l) => l.startsWith('dimensions: ')); assert.ok(md.includes(dims.replace(/; \d+ part\(s\).*$/, '')), 'SKILL.md quotes the real dimensions line: ' + dims);
+});
+
+test('placeholder URLs are refused, on every reserved domain and their subdomains; real ones are not', () => {
+  for (const url of ['https://example.invalid/pedido-usuario', 'https://foo.test/', 'http://docs.example/a', 'https://example.com', 'https://www.example.org/x', 'https://cdn.example.net/a.pdf', 'https://EXAMPLE.NET./', 'https://example.com:8080/x', 'https://user@example.org/', 'https://a.b.invalid', 'http://localhost:3000/', 'http://127.0.0.1/']) {
+    assert.ok(GX.spec.placeholderUrl(url), url + ' should be refused');
+    assert.ok(GX.spec.validate(plate({ ...DOC, url }, 'spec')).errors.some((e) => /placeholder text or an example URL/.test(e)), url);
+  }
+  for (const url of ['https://www.raspberrypi.com/documentation/computers/sbcs.html', 'https://pip-assets.raspberrypi.com/a.pdf', 'https://contest.com/', 'https://testing.dev/', 'https://example.co.uk/', 'https://en.wikipedia.org/wiki/Example.com'])
+    assert.ok(!GX.spec.placeholderUrl(url), url + ' is a real address');
+});
+
+test('a dimension has the class of its evidence: a SPEC number its claim does not state is refused on a drawing (it is DERIVED)', () => {
+  // the Pico case: 49 = 51 - 2 was declared SPEC, citing a claim that prints 2 and 51
+  const s = plate(DOC, 'spec'); s.research.claims[0].text = 'The plate is 120 mm wide; the second edge is 40 mm from the first, twice.';
+  const r = GX.spec.validate(s);
+  assert.ok(r.errors.some((e) => /params\.outline\.h = 80 is SPEC but its claim size does not state 80: if it is computed from stated numbers it is DERIVED/.test(e)), r.errors.join('\n'));
+  s.research.claims.push({ id: 'h', conf: 'derived', text: 'The height is 2 x 40 = 80 mm.', src: ['sheet'], cross: 'the sheet draws both halves 40 mm' });
+  s.parts[0].params['outline.h'] = { value: 80, unit: 'mm', conf: 'derived', claim: 'h' };
+  const ok = GX.spec.validate(s); assert.equal(ok.errors.length, 0, ok.errors.join('; ')); assert.equal(ok.verdict.dimensionsBy.derived, 1); assert.equal(ok.verdict.dimensionsBy.spec, 1);
+  s.parts[0].params['outline.h'].conf = 'spec'; assert.ok(GX.spec.validate(s).errors.some((e) => /is SPEC but its claim h is DERIVED/.test(e)));
+  // the older 3D parts get a warning, not an error (their specs predate the rule)
+  const old = mutate((q) => { q.parts[0].params = { w: { value: 10, conf: 'spec', claim: 'cpub' } }; });
+  assert.ok(!old.errors.some((e) => /does not state/.test(e)) && old.warnings.some((w) => /params\.w = 10 is SPEC but its claim cpub does not state 10/.test(w)), old.warnings.join('\n'));
+});
+
+test('a dimension read off a picture is MEASURED with its method and uncertainty, and is never counted as printed by the source', () => {
+  const s = plate(DOC, 'spec');
+  s.research.claims.push({ id: 'px', conf: 'measured', text: 'The height reads 80 mm off Figure 3.', src: ['sheet'], error: 'about 0.1 mm at a 6x render' });
+  s.parts[0].params['outline.h'] = { value: 80, unit: 'mm', conf: 'measured', claim: 'px', tol: 0.1 };
+  const missing = GX.spec.validate(s); assert.ok(missing.errors.some((e) => /is MEASURED but its claim px does not say how \(method/.test(e)), missing.errors.join('\n'));
+  Object.assign(s.research.claims[1], { method: 'read off Figure 3 rendered at 6x, scaled by its printed 120 mm', uncertainty: 0.1 });
+  const r = GX.spec.validate(s); assert.equal(r.errors.length, 0, r.errors.join('; ')); assert.equal(r.verdict.state, 'CONSISTENT'); assert.equal(r.verdict.dimensionsBy.measured, 1);
+  const dc = GX.geom2d.viewSet(s, GX.spec).parts.plate.dimCount; assert.equal(dc.measured, 1); assert.equal(dc.published, 1); assert.equal(dc.compared, 1, 'a reading off a picture is not "compared with a source"');
+  s.research.claims[1].uncertainty = -1; assert.ok(GX.spec.validate(s).errors.some((e) => /uncertainty must be a number/.test(e)));
 });

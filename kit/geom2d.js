@@ -13,6 +13,10 @@
 (function (g) {
   'use strict';
   const MX = g.MX = g.MX || {}, G = MX.geom2d = {};
+  // what a drawn dimension's evidence is, strongest first: compared (a figure a source prints), derived (computed from printed figures), measured
+  // (read off by a stated method, with its uncertainty), user (given by the person who asked), declared (in the spec, compared with nothing), estimated
+  G.STATUS = ['compared', 'derived', 'measured', 'user', 'declared', 'estimated'];
+  const EVIDENCE = { spec: 'compared', derived: 'derived', measured: 'measured', user: 'user' };
   G.UNITS = ['mm'];
   const LIN = 1e-6;      // mm: closer than this is touching
   const isNum = (v) => typeof v === 'number' && Number.isFinite(v), isPt = (v) => Array.isArray(v) && v.length === 2 && isNum(v[0]) && isNum(v[1]);
@@ -226,7 +230,10 @@
     });
     for (const { h, n, size, key, st } of groups.values()) {
       if (h.type === 'circle') dims.push({ key, value: h.d, kind: 'dia', c: V([h.cx, h.cy]), r: h.r, angle: lead(h, (n > 1 ? n + '× ' : '') + size), len: L, text: (n > 1 ? n + '× ' : '') + size, status: st });
-      else { const hb = bbox(h); dims.push({ key, value: hb[2] - hb[0], kind: 'note', c: V(centre(h)), r: Math.min(hb[2] - hb[0], hb[3] - hb[1]) / 2, angle: lead(h, (n > 1 ? n + '× ' : '') + size), len: L, text: (n > 1 ? n + '× ' : '') + size, status: st }); }
+      else {      // "w x h" is two dimensions in one callout: both keys and both values travel with it, and it shows the weaker evidence of the two
+        const hb = bbox(h), keyH = h.id + '.h', both = [st, status(keyH)].sort((p, q) => G.STATUS.indexOf(q) - G.STATUS.indexOf(p))[0];
+        dims.push({ key, value: hb[2] - hb[0], keys: [key, keyH], values: [hb[2] - hb[0], hb[3] - hb[1]], kind: 'note', c: V(centre(h)), r: Math.min(hb[2] - hb[0], hb[3] - hb[1]) / 2, angle: lead(h, (n > 1 ? n + '× ' : '') + size), len: L, text: (n > 1 ? n + '× ' : '') + size, status: both });
+      }
     }
     m.patterns.forEach((q) => {
       const key = q.type === 'polar' ? q.id + '.pcd' : q.id + '.step', first = m.holes.find((h) => h.from === q.id), sz = q.of.type === 'circle' ? 'Ø' + num(q.of.d) : num(bbox(q.of)[2] - bbox(q.of)[0]) + ' x ' + num(bbox(q.of)[3] - bbox(q.of)[1]);
@@ -244,12 +251,15 @@
     for (const part of (spec.parts || []).filter((q) => q.kind === 'drawing')) {
       const m = G.build(part.p); if (m.errors.length) throw new Error('part ' + part.id + ': geometry: ' + m.errors[0]);
       const ev = S && S.sizeEvidence ? S.sizeEvidence(part) : { compared: [], label: 'SIZE NOT COMPARED' }, prm = part.params || {};
-      const status = (key) => (key && ev.compared.includes(key) ? 'compared' : key && prm[key] && prm[key].conf === 'estimated' ? 'estimated' : 'declared');
+      // the evidence a drawn dimension carries: the class of the figure the gate compared it with (G.STATUS), or declared / estimated when it has none
+      const status = (key) => { const q = key && prm[key]; if (key && ev.compared.includes(key)) return EVIDENCE[q.conf] || 'compared'; return q && q.conf === 'estimated' ? 'estimated' : 'declared'; };
       const view = drawing(m, status);
       entries.push({ id: part.id, conf: part.conf, anchor: view.anchor, views: { front: view } });
       const count = (st) => view.dims.filter((e) => e.status === st).length;
+      // compared = checked against a figure a source prints (published) or computes from printed ones (derived); measured and user-declared numbers are
+      // counted apart: a reading off a picture and a number the person who asked gave are not a publication
       parts[part.id] = { sizeLabel: ev.label, param: null, facts: m.facts, thickness: m.thickness, material: part.mat || null, label: view.label,
-        dimCount: { compared: count('compared'), declared: count('declared'), estimated: count('estimated') } };
+        dimCount: { compared: count('compared') + count('derived'), published: count('compared'), derived: count('derived'), measured: count('measured'), user: count('user'), declared: count('declared'), estimated: count('estimated') } };
     }
     return { layout: 'piece', entries, parts };
   };

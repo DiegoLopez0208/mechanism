@@ -119,13 +119,13 @@ The one-line way, as a Claude Code plugin (Claude Code 2.1.275 or later):
 
 The skill then runs from the plugin folder, and your objects go in your own project.
 
-Only the technical-drawing part (Mechanism Draft 0.1: vector Paper sheets, the evidence gate and films, without the 3D Studio film or Workflow; 1.6 MB):
+Only the technical-drawing part (Mechanism Draft: dimensioned SVG drawings of flat parts at 1:1 or on an A4 sheet, vector Paper sheets and films, the evidence gate; without the 3D Studio film or Workflow; 1.6 MB):
 
 ```
 /plugin install mechanism-draft@mechanism
 ```
 
-Draft is on the `ecosystem-foundation` branch until it reaches `main`; until then add the marketplace with `/plugin marketplace add DiegoLopez0208/mechanism#ecosystem-foundation`. Installed that way from GitHub on 2026-10-18; see [`plugins/mechanism-draft/README.md`](plugins/mechanism-draft/README.md).
+Draft is not on `main` yet. Each stage is on its own development branch, and the marketplace must name the branch: `ecosystem-foundation` has Draft 0.1 (Paper sheets and films), `feature/draft-svg-03` adds the SVG export, `feature/draft-real-rpi4-04` the Raspberry Pi 4 example, `feature/draft-beta-hardening-05` the evidence classes and the fixes from the first stranger test. For example `/plugin marketplace add DiegoLopez0208/mechanism#feature/draft-real-rpi4-04`. See [`plugins/mechanism-draft/README.md`](plugins/mechanism-draft/README.md).
 
 Or by hand, as a plain skill:
 
@@ -209,9 +209,9 @@ Every film is drawn as a **dossier**: a blue engineering drawing with a grid and
 
 ### The verdict is three-state, never a bare "pass"
 
-The gate ends with `verdict: VERIFIED   8 reproduced, 1 estimated, 0 unchecked`. Only one thing earns VERIFIED: at least one published figure was compared with the model, all of them matched, and none is pending. A model that compares nothing says `NOTHING CHECKED` (a description, not a verification); a pending comparison says `INCOMPLETE`; any mismatch is `DOES NOT PASS`. `node scripts/check-spec.mjs <spec> --json verdict.json` writes the report (verdict, errors, spec and kit SHA-256, Node version, date).
+The gate ends with `verdict: VERIFIED   8 reproduced, 1 estimated, 0 unchecked`. Only one thing earns VERIFIED: every published figure compared with the model matched, none is pending, and at least one of the checks is independent, meaning the sources of the published figure share nothing with the sources of the inputs the model computed it from. If everything matches but no check is independent, the state is `CONSISTENT`: the checks share their source with the inputs, or compare a drawn dimension with the very figure it was drawn from (a transcription check), or have inputs the gate cannot trace. A model that compares nothing says `NOTHING CHECKED` (a description, not a verification); a pending comparison says `INCOMPLETE`; any mismatch is `DOES NOT PASS`. Evidence classes (SPEC, USER, MEASURED, DERIVED, ESTIMATED) and the rule: [`docs/draft-evidence.md`](docs/draft-evidence.md). `node scripts/check-spec.mjs <spec> --json verdict.json` writes the report (verdict, errors, spec and kit SHA-256, Node version, date).
 
-It also refuses what a template leaves behind: `example.com` and `TODO` in sources, claims or part names, non-positive or non-finite dimensions, a spec with no parts, a calculated variable with no claim, an expression that gives `undefined`/`NaN`/`Infinity`, an invalid tolerance and an ESTIMATED part with no reason. `node scripts/new.mjs` starts a draft that fails until it is filled in. Every one of those cases is a test in `tests/gate.test.mjs` (`npm test`) and runs in CI.
+It also refuses what a template leaves behind: placeholder addresses (`example.com`, `.org`, `.net` and their subdomains, the reserved `.invalid`, `.test` and `.example`, `localhost`) and `TODO` in sources, claims or part names, non-positive or non-finite dimensions, a spec with no parts, a calculated variable with no claim, an expression that gives `undefined`/`NaN`/`Infinity`, an invalid tolerance and an ESTIMATED part with no reason. `node scripts/new.mjs` starts a draft that fails until it is filled in. Every one of those cases is a test in `tests/gate.test.mjs` (`npm test`) and runs in CI.
 
 ### Three lengths
 

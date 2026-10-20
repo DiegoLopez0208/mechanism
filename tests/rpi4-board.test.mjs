@@ -47,6 +47,11 @@ test('spec, geom2d and the 1:1 SVG agree: four <circle r="1.35"> at the DXF cent
   const d = attr(/<path id="pcb-outline"[^>]*>/.exec(svg)[0], 'd'); assert.equal((d.match(/A3 3 /g) || []).length, 4, 'four exact R3 arcs');
   const xs = [...d.matchAll(/[ML](-?[\d.]+) (-?[\d.]+)/g)].map((q) => [+q[1], +q[2]]); assert.equal(Math.max(...xs.map((p) => p[0])) - Math.min(...xs.map((p) => p[0])), 85); assert.equal(Math.max(...xs.map((p) => p[1])) - Math.min(...xs.map((p) => p[1])), 56);
   assert.equal(report.verdict, 'CONSISTENT'); assert.equal(report.dimCount.declared, 0); assert.equal(report.dimCount.compared, report.dims, 'every drawn dimension is compared with the drawing');
+  // BH-1: printed and derived are told apart in the file (class, colour, data-evidence) and counted apart
+  assert.equal(report.dimCount.published, 6); assert.equal(report.dimCount.derived, 2); assert.equal(report.dimCount.measured, 0); assert.equal(report.dimCount.user, 0);
+  for (const k of ['h-br.x', 'h-tl.y']) assert.match(svg, new RegExp('<g class="dim linear compared derived" data-key="' + k + '" data-value="[\\d.]+" data-evidence="derived"><line [^>]*stroke="#1f5a96"'), k + ' is drawn as derived');
+  assert.match(svg, /<g class="dim linear compared" data-key="h-bl.x" data-value="3.5" data-evidence="compared"><line [^>]*stroke="#00737c"/, 'a printed figure stays teal');
+  assert.match(svg, /DIMENSIONS FROM THE GEOMETRY: 8 compared with a source \(6 printed by it, 2 derived from printed figures\), 0 measured/);
   assert.match(svg, /NOT A MANUFACTURING DRAWING/);
   // the short 3.5 dimensions put their text outside the span, with the dimension line run on to it (the 1:1 layout needs it)
   const g = /<g class="dim linear compared" data-key="h-bl.x"[^>]*>([\s\S]*?)<\/g>/.exec(svg)[1]; assert.equal((g.match(/<line /g) || []).length, 4, 'two extension lines, the dimension line and its run-on');
@@ -59,7 +64,7 @@ test('the gate: every dimension compared with the PDF, the hole pitch from the D
   assert.equal(V.verdict.independent, 0); assert.equal(V.verdict.sameSource, 2); assert.equal(V.verdict.dimensions, 15); assert.equal(V.verdict.estimated, 0);
   assert.ok(V.warnings.some((w) => /CONSISTENT, not VERIFIED/.test(w)));
   // published (spec) and derived dimensions, none estimated: the summary says so, not "estimated"
-  assert.ok(V.lines.includes('dimensions: 15 compared with their source (11 spec, 4 derived), 0 estimated, 1 part(s) mix confidence classes (spec, derived)'), V.lines.join('\n'));
+  assert.ok(V.lines.includes('dimensions: 11 checked against a document, 4 derived, 0 measured (with uncertainty), 0 declared by the user, 0 estimated; 0 independently verified; 1 part(s) mix confidence classes (spec, derived)'), V.lines.join('\n'));
   assert.ok(V.lines.some((l) => /phase Horizontal hole pitch: 58\.00  published 58  ok/.test(l)) && V.lines.some((l) => /phase Vertical hole pitch: 49\.00  published 49  ok/.test(l)));
   // the values the PDF does not print (61.5, 52.5) are DERIVED, with their cross-check, not passed off as printed
   const cl = Object.fromEntries(c.SPEC.research.claims.map((q) => [q.id, q])); assert.equal(cl['datums-far'].conf, 'derived'); assert.ok(cl['datums-far'].cross);
@@ -105,7 +110,9 @@ test('Paper draws the board from the same spec with no three.js and no WebGL; th
     assert.equal(r.three, 'undefined'); assert.deepEqual(r.ctx, ['2d']); assert.deepEqual(r.info.errors, []);
     assert.deepEqual(r.checks, { geometryArea: { run: false, reason: 'vector_scene_without_mesh_projection', expected: true } });
     for (const s of ['85', '56', 'R3', '4× Ø2.7', '61.5', '52.5']) assert.ok(r.texts.includes(s), s + ' is drawn');
-    assert.match(r.texts.join(' '), /8 DIMENSIONS COMPARED WITH A SOURCE • 0 DECLARED, NOT VERIFIED/);
+    // BH-1: the two positions computed from the datums (61.5, 52.5) are named as derived, and drawn dashed, not as printed figures
+    assert.match(r.texts.join(' '), /8 DIMENSIONS COMPARED WITH A SOURCE \(2 DERIVED\) • 0 DECLARED, NOT VERIFIED/);
+    assert.match(r.texts.join(' '), /TEAL: PRINTED BY THE SOURCE • TEAL DASHED: DERIVED/);
     await b.send('Page.navigate', { url: pathToFileURL(path.join(root, 'examples', 'rpi4-board', 'index.html')).href + '?render=1&method=studio' });
     let title = ''; for (let i = 0; i < 200 && title !== 'SPEC ERROR'; i++) { title = await b.ev('document.title'); if (title !== 'SPEC ERROR') await sleep(50); }
     assert.equal(title, 'SPEC ERROR', 'no 3D model is invented for a flat board drawing');

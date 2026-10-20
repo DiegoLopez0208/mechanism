@@ -38,4 +38,4 @@ for (const r of results) {
 }
 for (const r of results) { const target = path.join(out, r.file); fs.writeFileSync(target, r.svg); written.push({ file: target, ...r.report }); }
 if (args.includes('--json')) console.log(JSON.stringify({ spec: ctx.SPEC.id, mode, files: written }, null, 2));
-else for (const w of written) console.log(w.file + '  ' + w.mode + '  scale ' + w.scaleText + '  ' + w.dims + ' dimensions (' + w.dimCount.compared + ' compared, ' + w.dimCount.declared + ' declared, ' + w.dimCount.estimated + ' estimated)  gate ' + w.verdict + (w.collisions.length ? '  ' + w.collisions.length + ' COLLISIONS ALLOWED' : ''));
+else for (const w of written) console.log(w.file + '  ' + w.mode + '  scale ' + w.scaleText + '  ' + w.dims + ' dimensions (' + w.dimCount.published + ' checked against a document, ' + w.dimCount.derived + ' derived, ' + w.dimCount.measured + ' measured, ' + w.dimCount.user + ' declared by the user, ' + w.dimCount.declared + ' declared, not verified, ' + w.dimCount.estimated + ' estimated)  gate ' + w.verdict + (w.collisions.length ? '  ' + w.collisions.length + ' COLLISIONS ALLOWED' : ''));

@@ -5,20 +5,28 @@
  *
  * Forma del spec (ver examples/hub/spec.js):
  *   { id, fig, kicker, title, sub, aspect,
- *     research: { sources: [{ id, title, url, fetched, note }],
- *                 claims:  [{ id, text, conf: 'spec'|'measured'|'derived'|'estimated', value, unit, src: [ids], cross, error, why }] },
+ *     research: { sources: [{ id, title, url, fetched, note, derives: [ids] } | { id, kind: 'user', title, received, note }],
+ *                 claims:  [{ id, text, conf: 'spec'|'user'|'measured'|'derived'|'estimated', value, unit, src: [ids], cross, error, method, uncertainty, why }] },
  *     parts: [{ id, name, kind, p: { ...medidas en mm... }, mat, at: [x, y, z], explode: [x, y, z], body, orbit: { center, r, a0, around },
  *               conf, claims: [ids], info: { title, lines, conf } }],
  *     mechanism: { free, links: [{ t: 'fixed'|'same'|'ext'|'int', a, b, carrier }],
  *                  drive: { rpm, modes: [{ id, label, driver, shell, publish: { value, text, claim, tol }, formula }] } },
  *     director: { modeDur, tourDur, explodedHold, tour: [ids], views: {...} } }
  * Reglas: todo numero SPEC/MEASURED/DERIVED nombra su fuente; DERIVED trae su cruce; MEASURED trae su error; ESTIMATED trae su porque.
+ * Evidence classes (docs/draft-evidence.md):
+ *   SPEC       printed by a source (a document someone can open: url).      USER       given by the person who asked (a source of kind 'user', no url).
+ *   MEASURED   obtained by measuring (error; on a 2D drawing also method and uncertainty: an extraction uncertainty is not a tolerance).
+ *   DERIVED    computed from other numbers (cross).                         ESTIMATED  assumed (why).
+ * Verdict: VERIFIED only when at least one check compares the model with a figure whose sources are disjoint from the sources of its inputs.
+ * A drawn dimension compared with the very figure it was drawn from (params) is a transcription check: it catches a typo, it is never independent.
+ * Checks whose inputs cannot be traced, and test vectors with no claim, do not establish independence either. Everything that passes without an
+ * independent check is CONSISTENT.
  */
 (function (g) {
   'use strict';
   const MX = (g.MX = g.MX || {}), S = (MX.spec = MX.spec || {});
   const KINDS = ['gear', 'ring', 'sprocket', 'shaft', 'pin', 'disc', 'flange', 'tube', 'plate', 'bearing', 'spring', 'nut', 'bolt', 'box', 'block', 'cross', 'rotor', 'crankshaft', 'conrod', 'piston', 'engblock', 'camshaft', 'valve', 'cubie', 'fan', 'fins', 'profile', 'drawing'];      // drawing: a flat piece declared as 2D geometry (kit/geom2d.js), drawn by Paper only
-  const CONFS = ['spec', 'measured', 'derived', 'estimated'];
+  const CONFS = ['spec', 'user', 'measured', 'derived', 'estimated'];      // user: a number the person who asked gave (DECLARED BY USER), not a publication
   S.KINDS = KINDS; S.CONFS = CONFS;
   const teethOf = (d) => (d.kind === 'gear' || d.kind === 'ring' ? d.p.z : d.kind === 'sprocket' ? d.p.teeth : null);
   const startPos = (d) => (d.orbit ? [d.orbit.center[0] + d.orbit.r * Math.cos(d.orbit.a0 * Math.PI / 180), d.orbit.center[1] + d.orbit.r * Math.sin(d.orbit.a0 * Math.PI / 180), d.at ? d.at[2] : 0] : d.at);
@@ -179,9 +187,23 @@
 
   // validacion de evidencia + mecanismo; devuelve { errors, warnings, lines }
   // texto de relleno: lo que deja una plantilla sin completar
-  const PH = /\b(todo|tbd|fixme|lorem ipsum|placeholder|changeme|xxx+)\b/i, PH_URL = /^https?:\/\/(www\.)?(example\.(com|org|net)|localhost|127\.0\.0\.1|test\.com|foo\.bar)(\/|:|$)/i;
+  // a placeholder URL: the example domains (and any subdomain of them), the reserved test TLDs .invalid, .test and .example (RFC 2606 / 6761),
+  // and the loopback addresses the contract has always refused (a source is a page someone else can open)
+  const PH = /\b(todo|tbd|fixme|lorem ipsum|placeholder|changeme|xxx+)\b/i;
+  const PH_URL = { test: (url) => {
+    const m = /^[a-z][a-z0-9+.-]*:\/\/(?:[^/?#@]*@)?(\[[^\]]*\]|[^/?#:]*)/i.exec(String(url || '')); if (!m) return false;
+    const host = m[1].toLowerCase().replace(/\.$/, '');
+    return /(^|\.)example\.(com|org|net)$/.test(host) || /(^|\.)(invalid|test|example)$/.test(host) || ['localhost', '127.0.0.1', 'test.com', 'foo.bar'].includes(host);
+  } };
+  S.placeholderUrl = PH_URL.test;
   const DIMS = ['w', 'h', 'd', 'r', 'ro', 'ri', 'm', 'len', 'length', 'width', 'height', 'depth', 'thick', 'thickness', 't', 'rad', 'radius', 'teeth', 'z', 'n'];
-  const RANK = { spec: 0, measured: 1, derived: 2, estimated: 3 };
+  const RANK = { spec: 0, measured: 1, derived: 2, user: 3, estimated: 4 };      // only orders how weak a dimension is (the "mix" report)
+  // a number a claim states: its value, or any number written in its text (a published figure may be printed in another unit or as a radius / diameter)
+  const NUMS = /(?<![\w.])-?(?:\d+(?:\.\d+)?|\.\d+)/g, STATE_FACT = [1, 25.4, 1 / 25.4, 10, 0.1, 2, 0.5];      // ".218 in" is a number too
+  // strict (2D drawings): the number itself, or the same length in the unit the claim writes (inches, centimetres); never a multiple of another number
+  const claimStates = (c, v, tol, strict) => { if (!c) return false; const t = String(c.text || ''), facts = !strict ? STATE_FACT : [1].concat(/\d\s*(in\b|inch|")/i.test(t) ? [25.4] : [], /\d\s*cm\b/i.test(t) ? [10] : []);
+    return [].concat(c.value != null ? [c.value] : [], (t.replace(/(\d),(\d{3})/g, '$1$2').match(NUMS) || []).map(Number))
+      .some((x) => Number.isFinite(x) && facts.some((f) => Math.abs(x * f - v) <= Math.max(tol, 1e-9))); };
   const SPEC_KEYS = new Set('id fig kicker title sub aspect style presentation brand stage up orient research parts mechanism director recognize workflowScene paperScene'.split(' '));
   const PART_KEYS = new Set('id name kind p mat at explode body orbit conf claims info params why decor decals late cutaway tour tourAt tourDim rot spin motion engine cubie role slide compress'.split(' '));
   // Confidence describes evidence for the part, not a measurement of every size.
@@ -214,13 +236,31 @@
     if (!Array.isArray(spec.parts) || !spec.parts.length) { errors.push('the spec has no parts: there is nothing to model'); spec = Object.assign({}, spec, { parts: [] }); }
     if (!(R.claims || []).length) errors.push('the spec has no claims: nothing says where any number comes from');
     if (!(R.sources || []).length) errors.push('the spec has no sources');
-    (R.sources || []).forEach((s) => { if (!s.id || !s.title || !/^https?:\/\//.test(s.url || '')) errors.push('incomplete source: ' + JSON.stringify(s).slice(0, 80)); if (!s.fetched) warnings.push('source ' + s.id + ' has no fetch date'); if (PH_URL.test(s.url || '') || PH.test(s.title || '') || PH.test(s.note || '')) errors.push('source ' + s.id + ' is placeholder text or an example URL (' + String(s.url).slice(0, 40) + '): replace it with the page you really opened'); src[s.id] = s; });
+    // a source is a document (url) or, kind 'user', the request of the person who asked: traceable to them, never a publication, so it has no url to invent
+    (R.sources || []).forEach((s) => {
+      if (s.kind != null && s.kind !== 'user') errors.push('source ' + s.id + ': unknown kind ' + JSON.stringify(s.kind) + ' (a document has a url; the request of the person who asked is kind: "user")');
+      if (s.kind === 'user') {
+        if (!s.id || !s.title) errors.push('incomplete source: ' + JSON.stringify(s).slice(0, 80));
+        if (s.url != null) errors.push('source ' + s.id + ' is the request of the person who asked (kind: "user"): it has no url, do not give it one');
+        if (!s.received && !s.fetched) warnings.push('source ' + s.id + ' has no date (received: the day the request came)');
+      } else {
+        if (!s.id || !s.title || !/^https?:\/\//.test(s.url || '')) errors.push('incomplete source: ' + JSON.stringify(s).slice(0, 80) + (s.url ? '' : ' (no url: if the numbers come from the person who asked, declare the source kind: "user")'));
+        if (!s.fetched) warnings.push('source ' + s.id + ' has no fetch date');
+      }
+      if (PH_URL.test(s.url || '') || PH.test(s.title || '') || PH.test(s.note || '')) errors.push('source ' + s.id + ' is placeholder text or an example URL (' + String(s.url).slice(0, 40) + '): replace it with the page you really opened' + (s.kind === 'user' ? '' : ', or if the numbers come from the person who asked, declare the source kind: "user" with no url'));
+      src[s.id] = s;
+    });
+    const isUser = (sid) => !!src[sid] && src[sid].kind === 'user';
     (R.claims || []).forEach((c) => {
       cl[c.id] = c; if (!CONFS.includes(c.conf)) errors.push('claim ' + c.id + ': invalid conf (' + c.conf + ')');
       if (!c.text) errors.push('claim ' + c.id + ' has no text'); else if (PH.test(c.text) || PH.test(c.why || '')) errors.push('claim ' + c.id + ' is placeholder text (TODO / TBD): write the real claim');
       if (c.conf !== 'estimated') { if (!c.src || !c.src.length) errors.push('claim ' + c.id + ' (' + c.conf + ') names no source'); (c.src || []).forEach((s) => { if (!src[s]) errors.push('claim ' + c.id + ' cites a source that does not exist: ' + s); }); }
+      // the request of the person who asked is USER evidence: it is not a publication (SPEC) nor a measurement (MEASURED); a USER claim cites only it
+      if ((c.conf === 'spec' || c.conf === 'measured') && (c.src || []).some(isUser)) errors.push('claim ' + c.id + ' is ' + c.conf.toUpperCase() + ' but cites the request of the person who asked (' + (c.src || []).filter(isUser).join(', ') + '): a number they gave is conf: "user" (DECLARED BY USER), not a publication');
+      if (c.conf === 'user' && (c.src || []).some((s) => src[s] && !isUser(s))) errors.push('claim ' + c.id + ' is USER (declared by the person who asked) but cites a document (' + (c.src || []).filter((s) => src[s] && !isUser(s)).join(', ') + '): a printed number is conf: "spec"');
       if (c.conf === 'derived' && !c.cross) errors.push('claim ' + c.id + ' is DERIVED and has no cross-check against a second published number');
       if (c.conf === 'measured' && !c.error) errors.push('claim ' + c.id + ' is MEASURED and does not state its error');
+      if (c.conf === 'measured' && c.uncertainty != null && !(typeof c.uncertainty === 'number' && isFinite(c.uncertainty) && c.uncertainty >= 0)) errors.push('claim ' + c.id + ': uncertainty must be a number (in the unit of the value) >= 0');
       if (c.conf === 'estimated' && !c.why) errors.push('claim ' + c.id + ' is ESTIMATED and does not say why nobody publishes it');
     });
     spec.parts.forEach((d) => {
@@ -253,8 +293,16 @@
             else if (typeof drawn !== 'number') errors.push('part ' + d.id + ': ' + k + ' is not a number, it cannot be compared with its source');
             else if (unitClash(q, cl[q.claim])) errors.push('part ' + d.id + ': params.' + k + ' ' + unitClash(q, cl[q.claim]));
             else if (Math.abs(drawn - q.value) > tol) errors.push('part ' + d.id + ': ' + k + ' is drawn at ' + drawn + ' but the source says ' + q.value + ' (tolerance ' + tol + ')');
-            else if (q.conf !== 'estimated') paramRows.push({ part: d.id, key: k, drawn, value: q.value, conf: q.conf });
+            else if (q.conf !== 'estimated') paramRows.push({ part: d.id, key: k, drawn, value: q.value, conf: q.conf, claim: q.claim });
           }
+          // the class of a dimension is the class of the evidence it cites; a printed (SPEC) or given (USER) number must be one its claim states, otherwise it
+          // was computed (DERIVED, with its cross-check) or read off a picture (MEASURED, with method and uncertainty). On a 2D drawing these are errors; on the
+          // older 3D parts, warnings (their specs predate the rule).
+          const c = q.claim && cl[q.claim], strict = d.kind === 'drawing', flag = (msg) => (strict ? errors : warnings).push('part ' + d.id + ': params.' + k + ' ' + msg);
+          if (c && q.conf !== 'estimated' && c.conf !== q.conf && c.conf !== 'estimated') flag('is ' + q.conf.toUpperCase() + ' but its claim ' + c.id + ' is ' + String(c.conf).toUpperCase() + ': a dimension has the class of the evidence it cites');
+          if (c && (q.conf === 'spec' || q.conf === 'user') && typeof q.value === 'number' && isFinite(q.value) && !claimStates(c, q.value, q.tol == null ? Math.abs(q.value) * 0.001 : q.tol, strict))
+            flag('= ' + q.value + ' is ' + q.conf.toUpperCase() + ' but its claim ' + c.id + ' does not state ' + q.value + ': if it is computed from stated numbers it is DERIVED (cite a derived claim with its cross-check)');
+          if (strict && c && q.conf === 'measured' && (!c.method || !(typeof c.uncertainty === 'number'))) flag('is MEASURED but its claim ' + c.id + ' does not say how (method: e.g. "read off Figure 3 at 6x, scaled by its printed dimensions") and how well (uncertainty, in mm): an extraction uncertainty is recorded, never turned into a tolerance');
         });
         if (d.conf && worst >= 0 && RANK[d.conf] < worst) { mixed.push(d.id); [d.conf].concat(Object.keys(d.params).map((k) => (d.params[k] || {}).conf)).forEach((c) => { if (CONFS.includes(c)) mixedConfs.add(c); }); warnings.push('part ' + d.id + ' is ' + d.conf.toUpperCase() + ' but its dimension ' + worstK + ' is ' + d.params[worstK].conf.toUpperCase() + ': the card lists both'); }
       }
@@ -321,12 +369,21 @@
     const rootsOf = (id, seen) => { seen = seen || new Set(); if (seen.has(id)) return seen; seen.add(id); const s = (R.sources || []).find((q) => q.id === id); ((s && s.derives) || []).forEach((p) => rootsOf(p, seen)); return seen; };
     const claimRoots = (cid) => { const out = new Set(), c = (R.claims || []).find((q) => q.id === cid); ((c && c.src) || []).forEach((s) => rootsOf(s).forEach((r) => out.add(r))); return out; };
     const calcVars = (spec.mechanism && spec.mechanism.calc && spec.mechanism.calc.vars) || {}, gearClaims = spec.parts.filter((d) => teethOf(d)).flatMap((d) => d.claims || []);
-    const prov = { independent: [], sameSource: [], unlinked: [] };
-    modesV.forEach((m) => { if (!(m.ok === true && !m.conv) || !m.publish || !m.publish.claim) return;
+    // every passing check is classified; only "independent" can make VERIFIED:
+    //   independent    the published figure's sources and the inputs' sources are disjoint (both known)
+    //   sameSource     they share a source (or one derives from the other): the two agree, a wrong source would agree too
+    //   unlinked       the inputs cannot be traced to any source: independence is not established
+    //   transcription  a drawn dimension (params) against the figure it was drawn from: catches a typo, never independent
+    //   unclassified   a test vector or comparison with no claim to trace: independence is not established
+    const prov = { independent: [], sameSource: [], unlinked: [], transcription: [], unclassified: [] };
+    modesV.forEach((m) => { if (!(m.ok === true && !m.conv)) return;
+      if (!m.publish || !m.publish.claim) { prov.unclassified.push({ label: m.label || m.id || 'test vector', shared: [] }); return; }
       const inputs = m.used ? m.used.map((k) => calcVars[k] && typeof calcVars[k] === 'object' ? calcVars[k].claim : null).filter(Boolean) : (an.K ? gearClaims : []), exp = claimRoots(m.publish.claim), shared = new Set(), have = new Set();
       inputs.forEach((cid) => claimRoots(cid).forEach((r) => { have.add(r); if (exp.has(r)) shared.add(r); }));
       const row = { label: m.label, shared: Array.from(shared) }; (!have.size || !exp.size ? prov.unlinked : shared.size ? prov.sameSource : prov.independent).push(row); });
-    const estimated = (R.claims || []).filter((c) => c.conf === 'estimated').length, verdict = { state: errors.length ? 'DOES NOT PASS' : !checked ? (conversions ? 'ONLY CONVERSIONS' : 'NOTHING CHECKED') : pending ? 'INCOMPLETE' : 'VERIFIED', checked, conversions, failed, pending, independent: prov.independent.length, sameSource: prov.sameSource.length, unlinked: prov.unlinked.length, captions: capsInfo, estimated, dimensions: paramRows.length, mixed: mixed.length, recognition: recog, claims: (R.claims || []).length, sources: (R.sources || []).length, parts: spec.parts.length, uncheckedCalculations, uncheckedTeeth, sizeEvidence };
+    paramRows.forEach((r) => prov.transcription.push({ label: r.part + ' ' + r.key, shared: Array.from(claimRoots(r.claim)), conf: r.conf }));
+    const dimsBy = {}; CONFS.forEach((c) => { dimsBy[c] = paramRows.filter((r) => r.conf === c).length; }); dimsBy.estimated = estDims;
+    const estimated = (R.claims || []).filter((c) => c.conf === 'estimated').length, verdict = { state: errors.length ? 'DOES NOT PASS' : !checked ? (conversions ? 'ONLY CONVERSIONS' : 'NOTHING CHECKED') : pending ? 'INCOMPLETE' : prov.independent.length ? 'VERIFIED' : 'CONSISTENT', checked, conversions, failed, pending, independent: prov.independent.length, sameSource: prov.sameSource.length, unlinked: prov.unlinked.length, transcription: prov.transcription.length, unclassified: prov.unclassified.length, userDeclared: dimsBy.user, dimensionsBy: dimsBy, captions: capsInfo, estimated, dimensions: paramRows.length, mixed: mixed.length, recognition: recog, claims: (R.claims || []).length, sources: (R.sources || []).length, userSources: (R.sources || []).filter((s) => s.kind === 'user').length, parts: spec.parts.length, uncheckedCalculations, uncheckedTeeth, sizeEvidence };
     verdict.uncheckedInputs = uncheckedInputs;
     if (uncheckedCalculations.length) lines.push('computed values without a published comparator: ' + uncheckedCalculations.map((m) => m.label).join(', '));
     if (uncheckedInputs.length) lines.push('calc inputs without a published mode comparator: ' + uncheckedInputs.map((v) => v.id).join(', '));
@@ -336,14 +393,21 @@
     if (!errors.length && !checked) warnings.push(conversions ? 'every check is a unit conversion (inch to mm, pound to kg): it cannot fail, so it is not evidence. Compare the drawn model with a figure the sheet gives in another way, or cross two sources (mark a real conversion with kind: "convert")' : 'no published figure is compared with the model: this is a description, not a verification');
     if (!errors.length && checked && conversions) warnings.push(conversions + ' of the checks are unit conversions and do not count as evidence');
     // compared means drawn = the cited figure; it says nothing of independence (that is the provenance line). Classes are named as they are: SPEC + DERIVED is not "estimated"
-    if (paramRows.length || mixed.length) { const by = CONFS.map((c) => [c, paramRows.filter((r) => r.conf === c).length]).filter(([, n]) => n).map(([c, n]) => n + ' ' + c);
-      lines.push('dimensions: ' + paramRows.length + ' compared with their source' + (by.length ? ' (' + by.join(', ') + ')' : '') + ', ' + estDims + ' estimated, ' + mixed.length + ' part(s) mix confidence classes' + (mixed.length ? ' (' + CONFS.filter((c) => mixedConfs.has(c)).join(', ') + ')' : '')); }
+    // each class named for what it is: a number the user gave is "declared by the user", not "compared with a source"; and a drawn dimension is only
+    // ever compared with the figure it was drawn from, so none of them is independently verified (that takes a computed check: the provenance line)
+    if (paramRows.length || mixed.length) {
+      lines.push('dimensions: ' + dimsBy.spec + ' checked against a document, ' + dimsBy.derived + ' derived, ' + dimsBy.measured + ' measured (with uncertainty), ' + dimsBy.user + ' declared by the user, ' + estDims + ' estimated; 0 independently verified; '
+        + mixed.length + ' part(s) mix confidence classes' + (mixed.length ? ' (' + CONFS.filter((c) => mixedConfs.has(c)).join(', ') + ')' : '')); }
     lines.push('recognisable: ' + (recog.declared ? recog.features + ' iconic features built, blind test ' + recog.blind : 'not declared'));
-    if (!errors.length && checked) { lines.push('provenance: ' + prov.independent.length + ' independent, ' + prov.sameSource.length + ' same source as the inputs, ' + prov.unlinked.length + ' with no sourced inputs, ' + (checked - prov.independent.length - prov.sameSource.length - prov.unlinked.length) + ' other (dimensions, test vectors) not classified');
+    if (!errors.length && checked) { lines.push('provenance: ' + prov.independent.length + ' independent, ' + prov.sameSource.length + ' same source as the inputs, ' + prov.unlinked.length + ' with no sourced inputs, ' + prov.transcription.length + ' dimension(s) compared with the figure they were drawn from (never independent), ' + prov.unclassified.length + ' test vector(s) not classified');
       if (prov.sameSource.length) warnings.push(prov.sameSource.length + ' check(s) compare the model with a figure from the same source that fed it (' + prov.sameSource.map((r) => r.label + ' [' + r.shared.join(', ') + ']').slice(0, 4).join('; ') + '): they show the two agree, not that the source is right. Compare with a figure from another source, or say in the source that it derives from another (derives: [ids])');
-      if (!prov.independent.length && prov.sameSource.length) warnings.push('CONSISTENT, not VERIFIED: no check uses a source independent of the inputs, so a wrong source would pass. Add a published figure from another source (or declare derives: [ids] only if it really copies)'); }
-    // VERIFIED needs at least one check whose source is independent of the inputs. When every classified check shares its source with the model's inputs the figures agree, but a wrong source would agree too: CONSISTENT.
-    if (verdict.state === 'VERIFIED' && !prov.independent.length && prov.sameSource.length > 0) verdict.state = 'CONSISTENT';
+      // VERIFIED needs at least one check whose sources are disjoint from its inputs'. Anything else that passes shows agreement, not that the source is right.
+      if (!prov.independent.length && !pending) { const why = [];
+        if (prov.sameSource.length) why.push(prov.sameSource.length + ' share their source with the inputs');
+        if (prov.transcription.length) why.push(prov.transcription.length + ' compare a drawn dimension with the figure it was drawn from' + (dimsBy.user ? ' (' + dimsBy.user + ' of them given by the person who asked, not published)' : ''));
+        if (prov.unlinked.length) why.push(prov.unlinked.length + ' have inputs traced to no source (' + prov.unlinked.map((r) => r.label).slice(0, 3).join(', ') + ')');
+        if (prov.unclassified.length) why.push(prov.unclassified.length + ' are test vectors with no claim to trace');
+        warnings.push('CONSISTENT, not VERIFIED: no check compares the model with a figure from a source independent of its inputs (' + why.join('; ') + '), so a wrong source would pass. Add a published figure from another source and link the inputs to their claims (or declare derives: [ids] only if one source really copies another)'); } }
     lines.push('verdict: ' + verdict.state + '   ' + checked + ' reproduced' + (conversions ? ' (+' + conversions + ' unit conversions, not counted)' : '') + ', ' + estimated + ' estimated, ' + pending + ' unchecked published comparisons' + (uncheckedCalculations.length ? ', ' + uncheckedCalculations.length + ' displayed without a published comparator' : ''));
     return { errors, warnings, lines, analysis: an, verdict };
   };

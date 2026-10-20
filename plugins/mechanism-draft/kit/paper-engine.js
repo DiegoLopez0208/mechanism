@@ -109,7 +109,10 @@
   }
   /* ---- a piece drawing from a view set of declared 2D geometry (kit/geom2d.js, layout 'piece'): the same code for any part.
    * Every number on it is a value of the geometry; the colour of a dimension says what the gate knows about it. */
-  const DIMCOL = (T, st) => (st === 'compared' ? T.teal : st === 'estimated' ? T.ember : T.ink);
+  // the evidence of a dimension (geom2d G.STATUS) in the theme's own colours, with a dash for the classes that are not a printed figure:
+  // teal printed by the source, teal dashed derived from printed figures, ink dotted measured by a stated method, ink given by the person who asked or not verified, ember estimated
+  const DIMCOL = (T, st) => (st === 'compared' || st === 'derived' ? T.teal : st === 'estimated' ? T.ember : T.ink);
+  const DIMDASH = (st) => (st === 'derived' ? [9, 5] : st === 'measured' ? [3, 4] : []);
   const arrow = (c, x, y, ang, s) => { c.beginPath(); c.moveTo(x, y); c.lineTo(x - s * Math.cos(ang - .32), y - s * Math.sin(ang - .32)); c.lineTo(x - s * Math.cos(ang + .32), y - s * Math.sin(ang + .32)); c.closePath(); c.fill(); };
   function pieceDrawing(c, v, rect, T, reveal, FS) {
     const [l, t, r, b] = v.bounds, k = Math.min(rect.w / (r - l), rect.h / (b - t)), mx = rect.x + rect.w / 2 - (l + r) / 2 * k, my = rect.y + rect.h / 2 - (t + b) / 2 * k;
@@ -144,7 +147,7 @@
     // dimensions, in sheet pixels around the lines the geometry placed
     c.save(); c.globalAlpha = reveal; const fs = 19 * FS;
     for (const d of v.dims) {
-      const col = DIMCOL(T, d.status); c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 1.3; c.font = '600 ' + fs + 'px ' + MX.SANS;
+      const col = DIMCOL(T, d.status); c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 1.3; c.font = '600 ' + fs + 'px ' + MX.SANS; c.setLineDash(DIMDASH(d.status));
       if (d.kind === 'linear') {
         const h = d.dir === 'h', a = [X(d.a[0]), Y(d.a[1])], e = [X(d.b[0]), Y(d.b[1])], at = h ? Y(d.at) : X(d.at), s = h ? Math.sign(at - a[1]) || 1 : Math.sign(at - a[0]) || 1;
         c.beginPath();
@@ -171,10 +174,10 @@
     if (a.closing) {      // the review: every part side by side, then the gate's verdict
       const n = entries.length, cw = main.w / n;
       entries.forEach((e, i) => { pieceDrawing(c, e.views.front, { x: main.x + i * cw + 10, y: main.y + main.h * .15, w: cw - 20, h: main.h * .7 }, T, 0, FS * .7); text(c, String(i + 1).padStart(2, '0') + ' / ' + e.views.front.label, main.x + i * cw + 10, main.y + main.h + 10, 16, cw - 20, T.mute, 600); });
-      const el = a.t - plan.end, y = main.y + main.h + 90, dc = Object.values(parts).reduce((s, q) => ({ compared: s.compared + q.dimCount.compared, declared: s.declared + q.dimCount.declared }), { compared: 0, declared: 0 });
+      const el = a.t - plan.end, y = main.y + main.h + 90, dc = Object.values(parts).reduce((s, q) => ({ compared: s.compared + q.dimCount.compared, measured: s.measured + (q.dimCount.measured || 0), user: s.user + (q.dimCount.user || 0), declared: s.declared + q.dimCount.declared }), { compared: 0, measured: 0, user: 0, declared: 0 });
       M.rise(c, 'DRAWING REVIEW / ' + (validation.verdict?.state || 'NOTHING CHECKED'), 72, y, compact ? 28 : 36, W - 144, T.ink, 700, el);
       M.rise(c, n + ' parts drawn from their declared geometry: every contour closed, every hole inside the material, none overlapping. That is internal consistency, not evidence.', 72, y + 60, 22, W - 144, T.mute, 500, el - .3, .03);
-      M.rise(c, dc.compared + ' dimensions compared with a source • ' + dc.declared + ' declared, not verified', 72, y + 150, 22, W - 144, dc.compared ? T.teal : T.mute, 600, el - .6, .03);
+      M.rise(c, dc.compared + ' dimensions compared with a source' + (dc.measured ? ' • ' + dc.measured + ' measured' : '') + (dc.user ? ' • ' + dc.user + ' given by the person who asked' : '') + ' • ' + dc.declared + ' declared, not verified', 72, y + 150, 22, W - 144, dc.compared ? T.teal : T.mute, 600, el - .6, .03);
     } else {
       const item = a.intro ? plan.items[0] : a.item, e = byId[item.id], v = e.views.front, info = parts[item.id], f = info.facts;
       const reveal = a.intro ? smooth((a.t - 1) / 1.8) : smooth(a.progress * 4);
@@ -187,9 +190,9 @@
       const n1 = x => x.toFixed(1), facts = [
         'NET AREA ' + n1(f.netArea) + ' mm²  =  OUTLINE ' + n1(f.outlineArea) + ' − ' + f.holes + ' HOLE' + (f.holes === 1 ? '' : 'S') + ' ' + n1(f.holeArea),
         'OVERALL ' + n1(f.width) + ' × ' + n1(f.height) + ' mm' + (info.thickness != null ? ' • THICKNESS ' + info.thickness + ' mm (STATED: NO SIDE VIEW IS DRAWN FROM IT)' : ' • THICKNESS NOT GIVEN') + (info.material ? ' • ' + String(info.material).toUpperCase() : ''),
-        info.dimCount.compared + ' DIMENSIONS COMPARED WITH A SOURCE • ' + info.dimCount.declared + ' DECLARED, NOT VERIFIED' + (info.dimCount.estimated ? ' • ' + info.dimCount.estimated + ' ESTIMATED' : '')];
+        info.dimCount.compared + ' DIMENSIONS COMPARED WITH A SOURCE' + (info.dimCount.derived ? ' (' + info.dimCount.derived + ' DERIVED)' : '') + (info.dimCount.measured ? ' • ' + info.dimCount.measured + ' MEASURED' : '') + (info.dimCount.user ? ' • ' + info.dimCount.user + ' GIVEN BY THE PERSON WHO ASKED' : '') + ' • ' + info.dimCount.declared + ' DECLARED, NOT VERIFIED' + (info.dimCount.estimated ? ' • ' + info.dimCount.estimated + ' ESTIMATED' : '')];
       facts.forEach((s, i) => { y += M.rise(c, s, 72, y, compact ? 18 : 20, W - 144, i === 2 && info.dimCount.compared ? T.teal : T.ink, 600, el - .4 - i * .1, .02) + 8; });
-      text(c, 'TEAL: COMPARED WITH A SOURCE • INK: DECLARED IN THE SPEC, NOT VERIFIED • AMBER: ESTIMATED', 72, y + 10, 15, W - 144, T.mute, 600);
+      text(c, 'TEAL: PRINTED BY THE SOURCE' + (info.dimCount.derived ? ' • TEAL DASHED: DERIVED' : '') + (info.dimCount.measured ? ' • INK DOTTED: MEASURED (UNCERTAINTY, NOT A TOLERANCE)' : '') + ' • INK: ' + (info.dimCount.user ? 'GIVEN BY THE PERSON WHO ASKED, OR ' : '') + 'DECLARED IN THE SPEC, NOT VERIFIED • AMBER: ESTIMATED', 72, y + 10, 15, W - 144, T.mute, 600);
     }
     line(c, [45, H - 110], [W - 45, H - 110], T.plateEdge, 1.5); line(c, [W * .58, H - 110], [W * .58, H - 45], T.plateEdge, 1);
     text(c, String(spec.fig || spec.id).toUpperCase() + ' / ' + config.background.toUpperCase(), 72, H - 72, 17, W * .5, T.ink, 600);
