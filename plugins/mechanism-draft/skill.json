@@ -5,6 +5,7 @@
     "scripts": [
       "scripts/render.mjs",
       "scripts/check-spec.mjs",
+      "scripts/export-svg.mjs",
       "scripts/preflight.mjs",
       "scripts/new.mjs",
       "scripts/skill-doctor.mjs",

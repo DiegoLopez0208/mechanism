@@ -51,6 +51,20 @@ paperScene: { kind: 'geometry' }, presentation: { method: 'paper' }
 
 The mesh area check (`GEOMETRY_AREA`) does not run on this path and is reported `NOT RUN` (`vector_scene_without_mesh_projection`); the 2D checks above are part of the gate. Full description: `docs/draft-geometry.md` in the Mechanism repository.
 
+### SVG export (Draft 0.3)
+
+`node scripts/export-svg.mjs <spec.js> --mode geometry-1to1|sheet-fit --out <dir> [--json] [--allow-collisions]`, no browser. `kit/svg2d.js` writes the view set of each `drawing` part (all of it from `geom2d.build()`): one element per contour (`<circle>` for circles, exact `A` arcs for rounded corners), the material as one even-odd path (hatched with a `<pattern>` in a section), centre and hidden lines, and the dimensions with `data-key` / `data-value`.
+
+| | `geometry-1to1` | `sheet-fit` |
+|---|---|---|
+| `width` / `height` | the drawing's extent in mm | `297mm` x `210mm` (A4 landscape) |
+| `viewBox` | in model mm (1 unit = 1 mm; y is the model's, flipped) | `0 0 297 210` (1 unit = 1 mm of paper) |
+| geometry | its declared size | scaled by k, written as `SCALE 1:x (NOT 1:1)` |
+
+Text (3.5 mm) and strokes (0.5 / 0.25 mm) are document sizes, never geometry. Labels are placed avoiding contours, dimension lines, other labels and the sheet border; if one cannot be placed the export stops and says which (`--allow-collisions` writes it anyway and reports it). Spec text is escaped, ids are slugs, nothing from the spec becomes markup; files go to `<out>/<spec id>-<part id>.svg` and never replace a file the tool did not write. Every file states the geometry is valid, how many dimensions are compared, declared or estimated, the gate's verdict, what did not run, and that it is not a manufacturing drawing.
+
+Limits: no tolerances, fits, finish or certified material (not approved for manufacture); one view per part; 1:1 is geometric (a viewer honours the declared mm size, a printer may not: check a print with a rule); the `sheet-fit` scale is whatever fits, not a normalised drafting scale; a dense layout may be refused; no PDF or DXF.
+
 ## Extension points (for later versions)
 
 - **New vector scenes** are entries of `MX.paperEngine.scenes` (`{ steps(scene), draw(c, a, k) }`) in `kit/paper-engine.js` and of `paperScenes` in `kit/manifest.js`; a test keeps the two lists equal.

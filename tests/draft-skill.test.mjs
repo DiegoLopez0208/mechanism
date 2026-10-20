@@ -149,6 +149,16 @@ test('Draft 0.2: the install gates and draws the three declared-geometry parts l
   }
 });
 
+test('Draft 0.3: the install exports the same SVG files as the repository, byte for byte, with no browser', () => {
+  for (const mode of ['geometry-1to1', 'sheet-fit']) for (const name of ['demo-plate', 'demo-flange', 'demo-section']) {
+    const a = path.join(work, 'svg-in-' + mode), b = path.join(work, 'svg-repo-' + mode);
+    const ri = node(core, 'scripts/export-svg.mjs', 'examples/' + name + '/spec.js', '--mode', mode, '--out', a), rr = node(root, 'scripts/export-svg.mjs', 'examples/' + name + '/spec.js', '--mode', mode, '--out', b);
+    assert.equal(ri.status, 0, ri.stderr); assert.equal(rr.status, 0, rr.stderr);
+    const f = fs.readdirSync(a).find((x) => x.startsWith(name + '-')); assert.ok(f, name + ' ' + mode);
+    assert.equal(fs.readFileSync(path.join(a, f), 'utf8'), fs.readFileSync(path.join(b, f), 'utf8'), name + ' ' + mode + ': the install writes the same file');
+  }
+});
+
 test('the install exports what it declares: a PNG still and an MP4 clip, the same pictures as the repository', browserOpts, () => {
   const out = path.join(work, 'clip.mp4'), repoOut = path.join(work, 'repo-clip.mp4'), args = ['examples/lock/index.html', '--method', 'paper', '--background', 'ivory', '--length', 'short', '--aspect', '9:16'];
   const still = node(core, 'scripts/render.mjs', ...args, '--still', '9', '--out', out); assert.equal(still.status, 0, still.stderr);

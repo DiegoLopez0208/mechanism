@@ -176,8 +176,10 @@
     ops.push(['Z']);
   }
   function drawing(m, status) {
-    const o = m.outline, b = bbox(o), segs = [], arcs = [], region = [], lines = [], dims = [];
-    contour(o, segs, arcs, region); m.holes.forEach((h) => contour(h, segs, arcs, region));
+    const o = m.outline, b = bbox(o), segs = [], arcs = [], region = [], lines = [], dims = [], contours = [];
+    // each contour on its own (id, role, path ops; a circle also as { c, r }), and all of them as the region Paper fills even-odd
+    const add = (s, id, role) => { const ops = []; contour(s, segs, arcs, ops); region.push(...ops); contours.push({ id, role, ops, circle: s.type === 'circle' ? { c: [s.cx, -s.cy], r: s.r } : null }); };
+    add(o, 'outline', 'outline'); m.holes.forEach((h) => add(h, h.id, 'hole'));
     m.lines.forEach((l) => lines.push(l.type === 'arc' ? { arc: [l.at[0], -l.at[1], l.r, -l.from * RAD, -l.to * RAD], style: l.style } : { pts: l.pts.map(V).flat(), style: l.style }));
     m.patterns.filter((q) => q.type === 'polar').forEach((q) => lines.push({ arc: [q.at[0], -q.at[1], q.pcd / 2, 0, Math.PI * 2], style: 'center' }));      // the pitch circle
     // dimension lines, in model units, set off from the outline's box by a gap that grows with the part
@@ -235,7 +237,7 @@
     let l = b[0], r = b[2], t = -b[3], bo = -b[1];
     dims.forEach((e) => { if (e.kind === 'linear') { if (e.dir === 'h') { t = Math.min(t, e.at); bo = Math.max(bo, e.at); } else { l = Math.min(l, e.at); r = Math.max(r, e.at); } } });
     const label = m.section ? 'SECTION' + (m.section.name ? ' ' + m.section.name : '') : 'PLAN';
-    return { points: Float32Array.from(segs), arcs, region, section: m.section, lines, dims, bounds: [l - gap * 0.6, t - gap * 0.6, r + gap * 0.6, bo + gap * 0.6], offset: [0, 0], anchor: V([b[2], b[3]]), label };
+    return { points: Float32Array.from(segs), arcs, region, contours, section: m.section, lines, dims, bounds: [l - gap * 0.6, t - gap * 0.6, r + gap * 0.6, bo + gap * 0.6], offset: [0, 0], anchor: V([b[2], b[3]]), label };
   }
   G.viewSet = (spec, S) => {
     const entries = [], parts = {};
