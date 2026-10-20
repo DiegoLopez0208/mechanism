@@ -16,7 +16,8 @@
       "lock",
       "demo-plate",
       "demo-flange",
-      "demo-section"
+      "demo-section",
+      "rpi4-board"
     ],
     "files": [
       "LICENSE",

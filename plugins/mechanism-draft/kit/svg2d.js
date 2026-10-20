@@ -138,19 +138,26 @@
       if (!p.leader) {
         // along the dimension line, on either side of it: the middle first
         let best = null, why = null;
-        for (const t of [0.5, 0.3, 0.7, 0.15, 0.85]) for (const side of [-1, 1]) {
+        // along the line first; then, as drafting does for a span too short for its text, just outside either end of it
+        const L0 = p.h ? p.line[0][0] : p.line[0][1], L1 = p.h ? p.line[1][0] : p.line[1][1], lo = Math.min(L0, L1), hi = Math.max(L0, L1), outside = tw / 2 + 1.5;
+        const along = [0.5, 0.3, 0.7, 0.15, 0.85].map((t) => L0 + (L1 - L0) * t).concat([lo - outside, hi + outside]);
+        for (const c of along) for (const side of [-1, 1]) {
           if (best) break;
           const off0 = side < 0 ? p.at - 0.8 - TEXT : p.at + 0.8, off1 = off0 + TEXT;
           let box, tx, ty, rot = 0;
-          if (p.h) { tx = p.line[0][0] + (p.line[1][0] - p.line[0][0]) * t; ty = off1; box = [tx - tw / 2, off0 - PAD, tx + tw / 2, off1 + PAD]; }
-          else { ty = p.line[0][1] + (p.line[1][1] - p.line[0][1]) * t; tx = off1; rot = -90; box = [off0 - PAD, ty - tw / 2, off1 + PAD, ty + tw / 2]; }
-          const w = hits(box, d.key); if (!w) best = { tx, ty, rot, box }; else if (!why) why = w;
+          if (p.h) { tx = c; ty = off1; box = [tx - tw / 2, off0 - PAD, tx + tw / 2, off1 + PAD]; }
+          else { ty = c; tx = off1; rot = -90; box = [off0 - PAD, ty - tw / 2, off1 + PAD, ty + tw / 2]; }
+          const w = hits(box, d.key); if (!w) best = { tx, ty, rot, box, c }; else if (!why) why = w;
         }
         el += p.ext.concat([p.line]).map((sg) => '<line x1="' + n(sg[0][0]) + '" y1="' + n(sg[0][1]) + '" x2="' + n(sg[1][0]) + '" y2="' + n(sg[1][1]) + '" stroke="' + p.col + '" stroke-width="' + n(THIN) + '"/>').join('');
         const span = Math.abs(p.h ? p.line[1][0] - p.line[0][0] : p.line[1][1] - p.line[0][1]);
         if (span > 3 * 0.3) { const dir = Math.sign(p.h ? p.line[1][0] - p.line[0][0] : p.line[1][1] - p.line[0][1]) || 1, ang = p.h ? 0 : Math.PI / 2; el += arrow(p.line[0][0], p.line[0][1], dir > 0 ? ang + Math.PI : ang, p.col) + arrow(p.line[1][0], p.line[1][1], dir > 0 ? ang : ang + Math.PI, p.col); }
         if (!best) { collisions.push({ key: d.key, text, with: why }); best = p.h ? { tx: (p.line[0][0] + p.line[1][0]) / 2, ty: p.at - 0.8, rot: 0 } : { tx: p.at - 0.8, ty: (p.line[0][1] + p.line[1][1]) / 2, rot: -90 }; }
         else placed.push({ key: d.key, box: best.box });
+        if (best.c != null && (best.c < lo || best.c > hi)) {      // text outside the span: the dimension line runs on to it
+          const end = best.c < lo ? lo : hi, to = best.c < lo ? best.c + tw / 2 : best.c - tw / 2, seg = p.h ? [[end, p.at], [to, p.at]] : [[p.at, end], [p.at, to]];
+          el += '<line x1="' + n(seg[0][0]) + '" y1="' + n(seg[0][1]) + '" x2="' + n(seg[1][0]) + '" y2="' + n(seg[1][1]) + '" stroke="' + p.col + '" stroke-width="' + n(THIN) + '"/>';
+        }
         el += '<text x="' + n(best.tx) + '" y="' + n(best.ty) + '"' + (best.rot ? ' transform="rotate(' + best.rot + ' ' + n(best.tx) + ' ' + n(best.ty) + ')"' : '') + ' font-size="' + n(TEXT) + '" text-anchor="middle" fill="' + p.col + '">' + esc(text) + '</text></g>';
       } else {
         // a leader from the contour: the direction the geometry chose first, then the other diagonals and the verticals

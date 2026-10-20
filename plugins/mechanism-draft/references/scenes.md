@@ -51,6 +51,10 @@ paperScene: { kind: 'geometry' }, presentation: { method: 'paper' }
 
 The mesh area check (`GEOMETRY_AREA`) does not run on this path and is reported `NOT RUN` (`vector_scene_without_mesh_projection`); the 2D checks above are part of the gate. Full description: `docs/draft-geometry.md` in the Mechanism repository.
 
+### A real part: `examples/rpi4-board` (Draft 0.4)
+
+The Raspberry Pi 4 Model B board outline (85 x 56 mm, R3 corners) and its four Ø2.7 mounting holes (3.5 mm from the edges, 58 x 49 mm apart), from Raspberry Pi's mechanical drawing (PDF RP-008343-DS-1) and DXF (RP-008342-DS-1), cited, not copied. Every drawn dimension is compared with the PDF through `params`; the hole pitch computed from the DXF coordinates is compared with the PDF's 58 and 49. The DXF is declared the same source as the PDF (`derives`): one maker, one design, so the gate says CONSISTENT, not VERIFIED. Reference only: the maker gives the size as approximate and publishes no tolerance; the copper pads, connectors, components, heights and thickness are omitted.
+
 ### SVG export (Draft 0.3)
 
 `node scripts/export-svg.mjs <spec.js> --mode geometry-1to1|sheet-fit --out <dir> [--json] [--allow-collisions]`, no browser. `kit/svg2d.js` writes the view set of each `drawing` part (all of it from `geom2d.build()`): one element per contour (`<circle>` for circles, exact `A` arcs for rounded corners), the material as one even-odd path (hatched with a `<pattern>` in a section), centre and hidden lines, and the dimensions with `data-key` / `data-value`.
