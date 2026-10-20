@@ -14,7 +14,7 @@
     {
       "name": "mechanism-draft",
       "source": "./plugins/mechanism-draft",
-      "description": "Mechanism Draft only: technical-drawing films (vector Paper sheets) checked by the evidence gate, without the 3D Studio film or the Workflow engine."
+      "description": "Mechanism Draft only: dimensioned engineering SVG drawings of flat parts (1:1 or A4) and technical-drawing films, every number tagged by its source and checked by the evidence gate; without the 3D Studio film or the Workflow engine."
     }
   ]
 }

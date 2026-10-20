@@ -1,6 +1,6 @@
 # Ecosystem plan: audit and ordered tasks (2026-10-18)
 
-Branch `ecosystem-foundation`, cut from `perf-quality` at `5f2bb35`. Nothing pushed or merged. This file records what the audit found in the code, not what a plan hoped to find, and orders the work by dependency. Measurements live in `docs/perf-quality.md` (addendum of 2026-10-18).
+Branch `ecosystem-foundation`, cut from `perf-quality` at `5f2bb35`; merged into `main` with PR #1 on 2026-10-20. This file records what the audit found in the code, not what a plan hoped to find, and orders the work by dependency. Measurements live in `docs/perf-quality.md` (addendum of 2026-10-18).
 
 ## 1. Audit
 

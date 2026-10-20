@@ -13,7 +13,10 @@
   X.MODES = ['geometry-1to1', 'sheet-fit'];
   X.GENERATOR = 'mechanism-draft svg2d';
   const TEXT = 3.5, SMALL = 2.5, VIS = 0.5, THIN = 0.25, ARROW = 2.5, GAP = 1, OVER = 1.5, CHARW = 0.62, PAD = 0.4;
-  const INK = '#1d2329', MUTE = '#55606a', COL = { compared: '#00737c', declared: INK, estimated: '#b45f06' };
+  // colour = the evidence of a dimension (geom2d G.STATUS): teal printed by a source, blue derived from printed figures, violet measured by a stated
+  // method (its uncertainty is not a tolerance), ink given by the person who asked or declared without a source, amber estimated
+  const INK = '#1d2329', MUTE = '#55606a', COL = { compared: '#00737c', derived: '#1f5a96', measured: '#7a3d9e', user: INK, declared: INK, estimated: '#b45f06' };
+  const CLS = { derived: 'compared derived' };      // a derived dimension was compared too (class "compared" kept for readers of Draft 0.3 files)
   const SHEET = { w: 297, h: 210, m: 10 };
   // XML text: the five entities, and no control characters (they are not allowed in XML 1.0)
   const esc = (s) => String(s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -134,7 +137,9 @@
     };
     for (const p of plans) {
       const d = p.d, text = d.text, tw = textW(text, TEXT) + 2 * PAD, th = TEXT + 2 * PAD;
-      let el = '<g class="dim ' + d.kind + ' ' + d.status + '" data-key="' + esc(d.key || '') + '" data-value="' + n(d.value) + '">';
+      // data-key / data-value: the first (or only) dimension of the label, as in Draft 0.3; a composite label ("20 x 12") also lists every key and value
+      let el = '<g class="dim ' + d.kind + ' ' + (CLS[d.status] || d.status) + '" data-key="' + esc(d.key || '') + '" data-value="' + n(d.value) + '"'
+        + (d.keys ? ' data-keys="' + d.keys.map(esc).join(' ') + '" data-values="' + d.values.map(n).join(' ') + '"' : '') + ' data-evidence="' + esc(d.status) + '">';
       if (!p.leader) {
         // along the dimension line, on either side of it: the middle first
         let best = null, why = null;
@@ -181,10 +186,18 @@
       }
       dimEls.push(el);
     }
-    if (!area) {      // 1:1 has no sheet: the document grows to hold every label and leader end (the geometry does not move)
+    // the 1:1 legend under the drawing: its parts in reading order, wrapped onto as many lines as the drawing's width needs (a narrow part gets
+    // several lines; one part longer than the drawing is wide widens the document to the right). The geometry never moves and is never scaled.
+    const verdictText = (V.verdict && V.verdict.state) || 'NOTHING CHECKED', LH = SMALL * 1.4;
+    let legend = null;
+    if (!area) {      // 1:1 has no sheet: the document grows to hold every label, leader end and legend line (the geometry does not move)
       let [x0, y0, x1, y1] = [vb[0], vb[1], vb[0] + vb[2], vb[1] + vb[3] - 8];
       for (const q of placed) { x0 = Math.min(x0, q.box[0] - 2); y0 = Math.min(y0, q.box[1] - 2); x1 = Math.max(x1, q.box[2] + 2); y1 = Math.max(y1, q.box[3] + 2); }
-      vb = [x0, y0, x1 - x0, y1 - y0 + 8]; W = vb[2]; H = vb[3];
+      const parts = [v.label, 'SCALE 1:1', 'mm', verdictText, 'NOT A MANUFACTURING DRAWING'], room = x1 - x0 - 2;
+      legend = [];
+      for (const s of parts) { const last = legend.length - 1, joined = last >= 0 ? legend[last] + ' • ' + s : s; if (last >= 0 && textW(joined, SMALL) <= room) legend[last] = joined; else legend.push(s); }
+      const need = Math.max(...legend.map((s) => textW(s, SMALL))) + 2; if (need > x1 - x0) x1 = x0 + need;
+      vb = [x0, y0, x1 - x0, y1 - y0 + 8 + (legend.length - 1) * LH]; W = vb[2]; H = vb[3];
     }
     if (collisions.length && !opts.allowCollisions) {
       const e = new Error('svg2d: ' + partId + ': ' + collisions.length + ' label(s) collide wherever they can go: the sheet is too dense for a legible layout\n' + collisions.map((c) => '  ' + c.key + ' "' + c.text + '" hits ' + c.with).join('\n'));
@@ -192,10 +205,10 @@
     }
 
     // ---- what is known, in words (no claim of fitness for manufacture)
-    const dc = info.dimCount, verdict = (V.verdict && V.verdict.state) || 'NOTHING CHECKED', f = info.facts;
+    const dc = info.dimCount, verdict = verdictText, f = info.facts;
     const notes = [
       'GEOMETRY VALID: closed contours, every hole inside the material, none overlapping (kit/geom2d.js).',
-      'DIMENSIONS FROM THE GEOMETRY: ' + dc.compared + ' compared with a source, ' + dc.declared + ' declared and not verified, ' + dc.estimated + ' estimated.',
+      'DIMENSIONS FROM THE GEOMETRY: ' + dc.compared + ' compared with a source (' + dc.published + ' printed by it, ' + dc.derived + ' derived from printed figures), ' + dc.measured + ' measured (uncertainty, not a tolerance), ' + dc.user + ' given by the person who asked, ' + dc.declared + ' declared and not verified, ' + dc.estimated + ' estimated.',
       'GATE VERDICT: ' + verdict + '. NOT RUN: the 3D mesh area check (no meshes on this path).',
       'NET AREA ' + n(f.netArea) + ' mm2. DIMENSIONS IN mm. SCALE ' + scaleText + (k === 1 ? ' (geometry at its declared size).' : ' (NOT 1:1: read the numbers, do not measure the paper).'),
       'NOT A MANUFACTURING DRAWING: no tolerances, fits, surface finish or material specification.',
@@ -209,13 +222,13 @@
         + notes.map((s, i) => '<text x="' + n(x0 + 4) + '" y="' + n(y0 + 13.5 + i * 5.4) + '" font-size="' + n(SMALL) + '" fill="' + (i === 4 ? COL.estimated : INK) + '">' + esc(s) + '</text>').join('')
         + '<text x="' + n(x0 + w - 4) + '" y="' + n(y0 + 7) + '" font-size="' + n(SMALL) + '" text-anchor="end" fill="' + MUTE + '">' + esc((spec.fig || spec.id) + ' • ' + part.id + ' • ' + v.label + ' • ' + (part.mat || 'material not given') + (info.thickness != null ? ' • t ' + n(info.thickness) + ' mm' : '')) + '</text></g>'
         + '<rect class="frame" x="' + n(SHEET.m) + '" y="' + n(SHEET.m) + '" width="' + n(SHEET.w - 2 * SHEET.m) + '" height="' + n(SHEET.h - 2 * SHEET.m) + '" fill="none" stroke="' + INK + '" stroke-width="' + n(VIS) + '"/>';
-    } else notesEl = '<text class="note" x="' + n(vb[0] + 1) + '" y="' + n(vb[1] + vb[3] - 2) + '" font-size="' + n(SMALL) + '" fill="' + MUTE + '">' + esc(v.label + ' • SCALE 1:1 • mm • ' + verdict + ' • NOT A MANUFACTURING DRAWING') + '</text>';
+    } else notesEl = legend.map((s, i) => '<text class="note" x="' + n(vb[0] + 1) + '" y="' + n(vb[1] + vb[3] - 2 - (legend.length - 1 - i) * LH) + '" font-size="' + n(SMALL) + '" fill="' + MUTE + '">' + esc(s) + '</text>').join('\n');
 
     const svg = '<?xml version="1.0" encoding="UTF-8"?>\n'
       + '<!-- ' + X.GENERATOR + ' (Mechanism Draft 0.3): ' + esc(spec.id) + ' / ' + esc(partId) + ', ' + mode + ' -->\n'
       + '<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="' + n(W) + 'mm" height="' + n(H) + 'mm" viewBox="' + vb.map(n).join(' ') + '"'
       + ' data-generator="' + X.GENERATOR + '" data-mode="' + mode + '" data-scale="' + n(k) + '" data-unit="mm" font-family="Arial, Helvetica, sans-serif">\n'
-      + '<title>' + esc(title) + '</title>\n<desc>' + esc(notes.join(' ')) + '</desc>\n'
+      + '<title>' + esc(title) + '</title>\n<desc>' + esc(notes.join(' ') + ' COLOURS: teal printed by the source, blue derived from printed figures, violet measured by a stated method, ink given by the person who asked or not verified, amber estimated.') + '</desc>\n'
       + (defs.length ? '<defs>' + defs.join('') + '</defs>\n' : '')
       + '<g id="' + pid + '" class="part">\n' + geo.join('\n') + '\n</g>\n'
       + '<g class="lines">\n' + lines.join('\n') + '\n</g>\n'

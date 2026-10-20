@@ -1,13 +1,15 @@
-# Mechanism Draft 0.1
+# Mechanism Draft
 
-Technical-drawing films of a mechanism, from a spec whose every number names its source. Draft is the Paper engine of [Mechanism](https://github.com/DiegoLopez0208/mechanism) packaged on its own: the evidence gate, the vector Paper sheet and the film pipeline, without the 3D Studio film or the Workflow engine. This folder is self-contained: it runs with nothing else from the repository.
+Dimensioned engineering drawings (SVG) of flat parts, at true scale 1:1 or on an A4 sheet, and technical-drawing films, from a spec whose every number says where it comes from. Draft is a part of [Mechanism](https://github.com/DiegoLopez0208/mechanism) packaged on its own: the evidence gate, the declared 2D geometry, the SVG exporter, the vector Paper sheet and the film pipeline, without the 3D Studio film or the Workflow engine. This folder is self-contained: it runs with nothing else from the repository.
+
+Stages: 0.1 Paper sheets and films; 0.2 declared parametric 2D geometry; 0.3 the SVG export; 0.4 the first real part (`examples/rpi4-board`); BH-1 evidence classes (a number the user gave is never verified; DERIVED and MEASURED told apart from printed figures), the 1:1 legend fix and these docs.
 
 ## Install
 
 Pick one. Each gives you this folder and nothing else.
 
-- **Claude Code plugin.** Draft is on the `ecosystem-foundation` branch until it is merged into `main`, so for now name the branch: `/plugin marketplace add DiegoLopez0208/mechanism#ecosystem-foundation`, then `/plugin install mechanism-draft@mechanism` (after the merge, `/plugin marketplace add DiegoLopez0208/mechanism`). Checked from GitHub on 2026-10-18 at commit `fdc416a`, in a scratch `CLAUDE_CONFIG_DIR` and outside any local copy: `claude plugin marketplace add 'DiegoLopez0208/mechanism#ecosystem-foundation' --sparse .claude-plugin plugins` then `claude plugin install mechanism-draft@mechanism`. Claude Code lists one skill and installs only this folder (36 files, 1.6 MB); the install passes `skill-doctor`, the gate gives the same verdict, and the lock film decodes to the same video and audio MD5 as the full repository renders. `--sparse .claude-plugin plugins` is fine for Draft alone; the full `mechanism` plugin needs the whole repository, so leave `--sparse` out if you want both.
-- **Plain skill folder.** Copy this folder to `~/.claude/skills/mechanism-draft` (or a project's `.claude/skills/`). This is what `tests/draft-skill.test.mjs` does on every run: a fresh copy outside the repository that renders the example with no path back into it.
+- **Claude Code plugin.** `/plugin marketplace add DiegoLopez0208/mechanism`, then `/plugin install mechanism-draft@mechanism`. To pin a commit or a branch, add it after `#`. The BH-1 install was checked from GitHub on 2026-10-20 in a scratch `CLAUDE_CONFIG_DIR` (branch `feature/draft-beta-hardening-05`, commit `a3ef9ae`, the content merged into `main`): one skill, 50 files, `skill-doctor --strict` OK, the installed folder identical to `plugins/mechanism-draft`. With `--sparse .claude-plugin plugins` only Draft is fetched; leave `--sparse` out for the full `mechanism` plugin too. A plugin skill is offered to Claude by its description; that does not guarantee Claude picks it for every drawing request. In the first stranger test (Draft 0.4) it did not until the request named it; with the BH-1 description it was picked, unnamed, in 3 of 3 fresh sessions (a plate, a flange, an Arduino Uno outline from Arduino's CAD files): three runs, not a rate. Naming it ("use Mechanism Draft") or typing `/mechanism-draft` does.
+- **Plain skill folder.** Copy this folder to `~/.claude/skills/mechanism-draft` (or a project's `.claude/skills/`). This is what `tests/draft-skill.test.mjs` does on every run: a fresh copy outside the repository that runs the examples with no path back into it.
 - **From a clone of the repository:** `node scripts/build-skill.mjs draft --out <dir>` writes the same folder anywhere (`--with mesh` adds the optional mesh pack).
 
 Other agents: the folder follows the Agent Skills layout (a `SKILL.md` with `name` and `description`, plus scripts and references), and nothing in it needs Claude or any paid API. It has been run only with Claude Code; no other agent has been tried.
@@ -16,7 +18,7 @@ Then run `node scripts/skill-doctor.mjs` from the folder: it checks every file a
 
 ## Requirements
 
-Node 22 or later, Edge or Chrome, and ffmpeg for films. No npm install, no network at run time.
+Node 22 or later for everything. The gate (`check-spec.mjs`) and the SVG export (`export-svg.mjs`) need nothing else. Paper stills, the preflight and films need Edge or Chrome; films also need ffmpeg. No npm install, no network at run time.
 
 ## Use
 
@@ -32,18 +34,22 @@ node scripts/check-spec.mjs examples/demo-flange/spec.js
 node scripts/render.mjs examples/demo-flange/index.html --length short --still 12 --out ../work/flange.mp4
 # the same parts as SVG drawings: at 1:1 (1 unit = 1 mm) or fitted to an A4 sheet (scale written on it)
 node scripts/export-svg.mjs examples/demo-plate/spec.js --mode geometry-1to1 --out ../work/svg
+node scripts/export-svg.mjs examples/rpi4-board/spec.js --mode sheet-fit --out ../work/svg      # a real part, from Raspberry Pi's drawing
 node scripts/new.mjs gizmo --dir ../work --title "Gizmo"
 ```
 
 ## What it makes
 
+SVG drawings of each flat part (`kind: 'drawing'`): `geometry-1to1` (1 user unit = 1 mm, the document's size in mm) or `sheet-fit` (A4 landscape with a title block and its scale written as not 1:1). Exact circles and arcs, dimensions taken from the geometry and coloured by their evidence (teal printed by the source, blue derived, violet measured, ink given by the user or not verified, amber estimated), a legend that always fits the document, and the words "NOT A MANUFACTURING DRAWING".
+
 MP4 films (H.264, 1080 wide, 30 fps by default, BT.709, stereo AAC) and PNG stills, in 9:16, 4:5 or 1:1, at 30, 60 or 90 s. The example film is the same, frame for frame and in its sound, as the full repository renders: the test compares the decoded MD5.
 
-Drawn natively, with no 3D model: specs with a vector scene (`paperScene.kind: 'pin-section'`, see `references/scenes.md`). Anything else needs the optional mesh pack.
+Drawn natively, with no 3D model: flat parts (`paperScene.kind: 'geometry'`) and vector scenes (`paperScene.kind: 'pin-section'`), see `references/scenes.md`. Anything else needs the optional mesh pack.
 
 ## What it checks, and what it does not
 
-- The **gate** (`check-spec.mjs`) compares every published figure the spec computes with its source and classifies each check as independent or same-source (VERIFIED, CONSISTENT, ...). It reads the spec, not the drawing.
+- The **gate** (`check-spec.mjs`) compares every published figure with the model and classifies each check: VERIFIED needs at least one check against a source independent of the inputs; a drawing whose numbers all come from one document, or from the person who asked, is at most CONSISTENT. Numbers the user gave are a source of `kind: 'user'` (no url) and claims of `conf: 'user'`; they are drawn and counted as "given by the person who asked", never as verified. Contract: `references/checks.md`. It reads the spec, not the drawing.
+- **Not a manufacturing drawing:** no tolerances, fits, surface finish or material specification; a measured value's uncertainty is not a tolerance. The 1:1 file is true size in a viewer; a printer may rescale it.
 - The **preflight** (`preflight.mjs`) checks text overlap and clipping frame by frame. The mesh area check (`GEOMETRY_AREA_MISMATCH`) needs compiled meshes: with a vector scene it is reported as `NOT RUN  GEOMETRY_AREA  vector_scene_without_mesh_projection`, never as a pass.
 - Not checked: whether a source is right, scale (Paper sheets are not to scale), whether the explanation is clear, the sound. Details in `references/checks.md`.
 

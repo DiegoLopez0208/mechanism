@@ -12,7 +12,7 @@
   const MX = (g.MX = g.MX || {}), S = (MX.spec = MX.spec || {}), TH = g.THREE, G = MX.gl, P = MX.parts, T = MX.THEME, E = MX.E, clamp = MX.clamp, lerp = MX.lerp, ramp = MX.ramp, SND = MX.sound, TAU = Math.PI * 2;
   const SIZES = { '4:5': [1080, 1350], '9:16': [1080, 1920], '1:1': [1080, 1080] };
   const v3 = (a) => new TH.Vector3(a[0], a[1], a[2]);
-  const CONFNAME = { spec: 'SPEC', measured: 'MEASURED', derived: 'DERIVED', estimated: 'ESTIMATED' };
+  const CONFNAME = { spec: 'SPEC', user: 'USER', measured: 'MEASURED', derived: 'DERIVED', estimated: 'ESTIMATED' };      // USER: given by the person who asked
 
   /* ------------------------------------------------------------ integrador: el angulo de cada cuerpo sale de integrar velocidades, no de sacar cuentas por tiempo */
   // asi un cambio de modo es continuo: lo unico que cambia es cual cuerpo recibe la velocidad del conductor
@@ -291,7 +291,7 @@
 
     /* ---------------------------------------------------------- HUD: modo de marcha, tablas, fuentes */
     const tagPill = (c, x, y, conf, text) => {
-      c.save(); c.font = '600 14px ' + MX.SANS; if ('letterSpacing' in c) c.letterSpacing = '1.6px'; const s2 = text || CONFNAME[conf], col = conf === 'estimated' ? T.ember : conf === 'derived' ? T.ink : T.teal, w = c.measureText(s2).width + 24, h = 28, r = 14;
+      c.save(); c.font = '600 14px ' + MX.SANS; if ('letterSpacing' in c) c.letterSpacing = '1.6px'; const s2 = text || CONFNAME[conf], col = conf === 'estimated' ? T.ember : conf === 'derived' || conf === 'user' ? T.ink : T.teal, w = c.measureText(s2).width + 24, h = 28, r = 14;
       c.beginPath(); c.moveTo(x + r, y - h + 6); c.lineTo(x + w - r, y - h + 6); c.arc(x + w - r, y - h + 6 + r, r, -Math.PI / 2, Math.PI / 2); c.lineTo(x + r, y + 6); c.arc(x + r, y - h + 6 + r, r, Math.PI / 2, 1.5 * Math.PI); c.closePath(); c.fillStyle = MX.rgba(col, 0.13); c.fill(); c.strokeStyle = MX.rgba(col, 0.55); c.lineWidth = 1; c.stroke();
       c.fillStyle = col; c.textAlign = 'left'; c.textBaseline = 'alphabetic'; c.fillText(s2, x + 12, y - 2); c.restore(); return w;
     };

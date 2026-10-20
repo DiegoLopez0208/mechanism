@@ -1,6 +1,6 @@
 # Draft 0.3: engineering SVG export
 
-Status: implemented on `feature/draft-svg-03` (not merged). Scope: an SVG drawing of each 2D `drawing` part, written from the
+Status: on `main` (Draft 0.3, PR #3). Scope: an SVG drawing of each 2D `drawing` part, written from the
 geometry `kit/geom2d.js` validated, with its dimensions, in two explicit scales. No PDF or DXF, no tolerances.
 
 ## Pipeline
@@ -40,8 +40,19 @@ the dimension line, the other side, and, for a span too short for its text, just
 the 3.5 mm datum dimensions of the Raspberry Pi 4 board need it at 1:1), the other leader directions); if every candidate collides with another label, a dimension
 line, the part's contours or the sheet border, the export stops and names the dimension. Nothing is overlapped silently.
 
-Colour carries the evidence status the gate gives: compared with a source (teal), declared in the spec but not verified (black),
-estimated (amber).
+Colour carries the evidence the gate gives (BH-1, `docs/draft-evidence.md`): printed by the source (teal, class `compared`), derived
+from printed figures (blue, class `compared derived`), measured by a stated method (violet, class `measured`: its uncertainty is not a
+tolerance), given by the person who asked (ink, class `user`), declared in the spec but not verified (ink, class `declared`), estimated
+(amber). Every dimension group also has `data-evidence`. A composite callout ("44 x 22") has `data-keys` and `data-values` with both
+dimensions; `data-key` and `data-value` keep the first, as in Draft 0.3, and the callout shows the weaker evidence of the two.
+
+## The 1:1 legend (BH-1)
+
+The line under a 1:1 drawing (view, `SCALE 1:1`, `mm`, the verdict, `NOT A MANUFACTURING DRAWING`) is wrapped at its ` • ` separators onto
+as many lines as the drawing's width needs; when one part alone is wider than the drawing, the document widens to the right. The geometry
+does not move and is not scaled, and `width` / `height` in mm still equal the viewBox. Up to Draft 0.4 it was one line from the left edge,
+and on a 21 mm wide part (the Raspberry Pi Pico of the first stranger test) it was cut after "NOT A MAN". Tested by the exporter's own
+estimate and by Chromium's measure of every text against the viewBox (`tests/svg2d.test.mjs`).
 
 ## Safety
 

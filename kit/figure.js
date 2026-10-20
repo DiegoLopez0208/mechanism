@@ -14,7 +14,7 @@
 (function (g) {
   'use strict';
   const MX = (g.MX = g.MX || {}), TH = g.THREE, G = MX.gl, T = MX.THEME, E = MX.E, clamp = MX.clamp, lerp = MX.lerp;
-  const CONF = { spec: 'SPEC', derived: 'DERIVED', estimated: 'ESTIMATED', measured: 'MEASURED', guess: 'GUESS' };
+  const CONF = { spec: 'SPEC', user: 'USER', derived: 'DERIVED', estimated: 'ESTIMATED', measured: 'MEASURED', guess: 'GUESS' };      // USER: given by the person who asked (ink, not a publication)
   const CCOL = { get spec() { return T.teal; }, get derived() { return T.ink; }, get estimated() { return T.ember; }, get measured() { return T.teal; }, get guess() { return '#8a5cf6'; } };
 
   MX.figure = (cfg) => {

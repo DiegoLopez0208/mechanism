@@ -142,6 +142,42 @@ test('a sheet too dense for a legible layout stops and names the labels, instead
   const r = c.MX.svg2d.part(dense, 'plate', { mode: 'geometry-1to1', allowCollisions: true }); assert.ok(r.report.collisions.length > 0, 'allowed, and still reported');
 });
 
+// BH-1 fixtures: a narrow part (the Raspberry Pi Pico of the beta test, 21 x 51 mm) and a part whose legend is longer than any drawing is wide
+const narrowSpec = () => { const { spec, c } = specOf('demo-plate'), s = JSON.parse(JSON.stringify(spec)); s.parts[0].p = { unit: 'mm', outline: { type: 'rect', w: 21, h: 51 }, holes: [[-5.7, -23.5], [5.7, -23.5], [-5.7, 23.5], [5.7, 23.5]].map(([x, y], i) => ({ id: 'm' + i, type: 'circle', d: 2.1, at: [x, y] })) }; return { spec: s, c }; };
+const longSpec = () => { const { spec, c } = specOf('demo-section'), s = JSON.parse(JSON.stringify(spec)); s.parts[0].p.section.name = 'A-A THROUGH THE MOUNTING BOSS, THE SLOT AND THE WEB, LOOKING FROM THE LEFT'; return { spec: s, c }; };
+const LEGEND_RE = /<text class="note" x="([-\d.]+)" y="([-\d.]+)" font-size="2.5"[^>]*>([^<]*)<\/text>/g;
+
+test('the 1:1 legend never leaves the document: a narrow part gets several lines, a long one widens the page; the part does not move', () => {
+  const plateW = exp('demo-plate', 'geometry-1to1').svg, one = [...plateW.matchAll(LEGEND_RE)];
+  assert.equal(one.length, 1, 'a part wide enough keeps its one-line legend'); assert.equal(one[0][3], 'PLAN • SCALE 1:1 • mm • NOTHING CHECKED • NOT A MANUFACTURING DRAWING');
+  for (const [name, make] of [['narrow', narrowSpec], ['long', longSpec]]) {
+    const { spec, c } = make(), id = spec.parts[0].id, { svg, report } = c.MX.svg2d.part(spec, id, { mode: 'geometry-1to1' }), vb = report.viewBox, lines = [...svg.matchAll(LEGEND_RE)];
+    const all = lines.map((m) => m[3]).join(' • ');
+    assert.ok(all.includes('NOT A MANUFACTURING DRAWING') && all.includes('SCALE 1:1'), name + ': the whole legend is written: ' + all);
+    for (const [, x, y, t] of lines) {      // estimated with the exporter's own (conservative) character width; the browser test measures the real one
+      assert.ok(+x >= vb[0] && +x + t.length * 2.5 * 0.62 <= vb[0] + vb[2] + 1e-6, name + ': "' + t + '" fits the width');
+      assert.ok(+y <= vb[1] + vb[3] && +y - 2.5 >= vb[1], name + ': "' + t + '" is inside the height');
+    }
+    const head = /<svg [^>]*>/.exec(svg)[0], fvb = attr(head, 'viewBox').split(' ').map(Number);
+    assert.equal(attr(head, 'width'), fvb[2] + 'mm', name + ': still 1 user unit = 1 mm'); assert.equal(attr(head, 'height'), fvb[3] + 'mm');
+    if (name === 'narrow') {
+      assert.ok(lines.length >= 2, 'the 21 mm part writes its legend on several lines');
+      const o = pathBox(attr(tagById(svg, 'plate-outline'), 'd')); assert.deepEqual(o, [-10.5, -25.5, 10.5, 25.5], 'the part is where its geometry says, at its size');
+      assert.ok(svg.includes('cx="5.7" cy="23.5" r="1.05"'), 'holes unmoved, unscaled');
+    } else assert.ok(vb[2] >= Math.max(...lines.map((m) => m[3].length * 2.5 * 0.62)) + 2 - 1e-6, 'a legend part longer than the drawing widens the page');
+  }
+});
+
+test('a composite label ("20 x 12") carries both dimensions: data-keys and data-values, and the weaker evidence of the two', () => {
+  const { svg } = exp('demo-plate', 'geometry-1to1'), g = /<g class="dim note [^"]*" data-key="window.w" data-value="([\d.]+)" data-keys="([^"]*)" data-values="([^"]*)" data-evidence="([a-z]+)">/.exec(svg);
+  assert.ok(g, 'the window callout lists every key and value'); assert.equal(g[1], '44', 'data-value keeps the first value (Draft 0.3 readers)');
+  assert.equal(g[2], 'window.w window.h'); assert.equal(g[3], '44 22'); assert.equal(g[4], 'declared');
+  const { spec, c } = specOf('demo-plate'); spec.research.sources.push({ id: 'sheet', title: 'Test drawing sheet', url: 'https://github.com/DiegoLopez0208/mechanism', fetched: '2026-10-19' });
+  spec.research.claims.push({ id: 'ww', conf: 'spec', text: 'The window is 44 mm wide.', src: ['sheet'] }); spec.parts[0].params = { 'window.w': { value: 44, unit: 'mm', conf: 'spec', claim: 'ww' } };
+  const half = c.MX.svg2d.part(spec, 'plate', { mode: 'geometry-1to1' }).svg;
+  assert.match(half, /data-key="window.w" data-value="44" data-keys="window.w window.h" data-values="44 22" data-evidence="declared"/, 'one of the two compared, the other not: the callout is not shown as compared');
+});
+
 test('export-svg.mjs: one file per drawing part inside --out, never over a file it did not write, nothing when the gate fails', () => {
   const out = fs.mkdtempSync(path.join(os.tmpdir(), 'mx-svg-')), run = (...a) => spawnSync(process.execPath, ['scripts/export-svg.mjs', ...a], { cwd: root, encoding: 'utf8' });
   try {
@@ -162,6 +198,8 @@ test('an independent viewer (Chromium) opens every file: no parse error, and its
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mx-svgview-'));
   try {
     const files = []; for (const name of Object.keys(DEMOS)) for (const mode of ['geometry-1to1', 'sheet-fit']) { const f = path.join(dir, name + '-' + mode + '.svg'); fs.writeFileSync(f, exp(name, mode).svg); files.push(f); }
+    // BH-1: the narrow part and the long legend, in both modes: the browser measures every text against the viewBox
+    for (const [name, make] of [['narrow', narrowSpec], ['long', longSpec]]) for (const mode of ['geometry-1to1', 'sheet-fit']) { const { spec, c } = make(), f = path.join(dir, 'bh1-' + name + '-' + mode + '.svg'); fs.writeFileSync(f, c.MX.svg2d.part(spec, spec.parts[0].id, { mode }).svg); files.push(f); }
     await withBrowser(async (b) => {
       await b.send('Page.enable');
       for (const f of files) {
@@ -172,12 +210,17 @@ test('an independent viewer (Chromium) opens every file: no parse error, and its
           const again=new DOMParser().parseFromString(new XMLSerializer().serializeToString(document),'image/svg+xml'),h2=again.getElementById('plate-fix1');
           return {tag:s.tagName,err:err?err.textContent.slice(0,120):null,outline:o?(({width,height})=>({width,height}))(o.getBBox()):null,r:h?h.r.baseVal.value:null,
             mmPerUnit:[(cr.width*25.4/96)/vb.width,(cr.height*25.4/96)/vb.height],holeIn,badPaths:[...document.querySelectorAll('path')].filter(p=>!(p.getTotalLength()>0)).length,
-            reparse:!again.querySelector('parsererror'),r2:h2?+h2.getAttribute('r'):null,plateMat:h?mat.isPointInFill(P(0,-45)):null};})()`);
+            reparse:!again.querySelector('parsererror'),r2:h2?+h2.getAttribute('r'):null,plateMat:h?mat.isPointInFill(P(0,-45)):null,
+            textsOut:[...document.querySelectorAll('text')].map(t=>{const b=t.getBBox(),m=t.getCTM(),q=[[b.x,b.y],[b.x+b.width,b.y],[b.x,b.y+b.height],[b.x+b.width,b.y+b.height]].map(([x,y])=>{const p=P(x,y).matrixTransform(m);return [p.x,p.y];});
+              const sm=s.getCTM().inverse(),u=q.map(([x,y])=>{const p=P(x,y).matrixTransform(sm);return [p.x,p.y];}),x0=Math.min(...u.map(p=>p[0])),x1=Math.max(...u.map(p=>p[0])),y0=Math.min(...u.map(p=>p[1])),y1=Math.max(...u.map(p=>p[1]));
+              return (x0<vb.x-0.01||y0<vb.y-0.01||x1>vb.x+vb.width+0.01||y1>vb.y+vb.height+0.01)?t.textContent.slice(0,50)+' ['+[x0,y0,x1,y1].map(v=>v.toFixed(2)).join(',')+']':null;}).filter(Boolean),
+            texts:document.querySelectorAll('text').length};})()`);
         assert.equal(r.err, null, path.basename(f) + ': parse error'); assert.equal(r.tag, 'svg');
         // the viewer lays the document out at its declared size: 1 user unit is 1 mm of the viewport (96 px per inch), no hidden scale
         r.mmPerUnit.forEach((v) => close(v, 1, path.basename(f) + ': mm per user unit in the viewer', 1e-3));
         assert.ok(r.holeIn.length > 0 && r.holeIn.every((v) => !v), path.basename(f) + ': every hole is empty in the even-odd material (no fill, no hatch)');
         assert.equal(r.badPaths, 0, 'every path has a finite, positive length'); assert.ok(r.reparse, 'a re-export through the viewer parses again');
+        assert.ok(r.texts > 0); assert.deepEqual(r.textsOut, [], path.basename(f) + ': every text, measured by the browser, is inside the viewBox');
         if (f.endsWith('demo-plate-geometry-1to1.svg')) { close(r.outline.width, 160, 'viewer: outline width', 1e-3); close(r.outline.height, 100, 'viewer: outline height', 1e-3); close(r.r * 2, 6.6, 'viewer: hole diameter', 1e-4); assert.equal(r.r2, 3.3, 'the re-export keeps the radius'); assert.equal(r.plateMat, true, 'material between the holes is filled'); }
       }
     }, { timeout: 60000, retries: 0 });
