@@ -1,6 +1,6 @@
 {
   "name": "mechanism-draft",
-  "version": "0.1.0",
+  "version": "0.4.0",
   "description": "Dimensioned engineering drawings (SVG, true scale 1:1 or A4) of flat mechanical parts from declared 2D geometry, every dimension tagged by where it comes from and checked by an evidence gate; also section sheets and technical-drawing films (MP4/PNG). Reference drawings, not manufacturing drawings. Standalone part of Mechanism, without the 3D Studio film or the Workflow engine.",
   "author": {
     "name": "DiegoLopez0208",

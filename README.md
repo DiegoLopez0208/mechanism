@@ -1,15 +1,17 @@
 <h1 align="center">mechanism</h1>
 
-<p align="center"><b>Build inspectable models from evidence. See what is known, estimated and tested.</b><br>
-A skill for coding agents that researches a real product or machine, writes a spec where every number says where it came from,<br>
-refuses to render when the numbers do not add up, and outputs a film, an interactive viewer and a 3D model.</p>
+<p align="center"><b>Models and drawings that say where every number comes from.</b><br>
+A skill for coding agents: it researches a real object, writes a spec where every number names its source,<br>
+runs a gate that refuses what does not add up and says plainly what was checked and what was not,<br>
+and outputs a film, an interactive viewer, a 3D model or a dimensioned SVG drawing.</p>
 
 <p align="center">
   <a href="https://diegolopez0208.github.io/mechanism/"><b>Live page</b></a> &middot;
   <a href="https://diegolopez0208.github.io/mechanism/#touch">Try the viewers</a> &middot;
   <a href="#install">Install</a> &middot;
-  <a href="#examples">Examples</a> &middot;
-  <a href="#how-it-works">How it works</a>
+  <a href="#the-gate">The gate</a> &middot;
+  <a href="#draft-dimensioned-drawings">Draft</a> &middot;
+  <a href="#examples">Examples</a>
 </p>
 
 <p align="center">
@@ -20,7 +22,7 @@ refuses to render when the numbers do not add up, and outputs a film, an interac
   <a href="https://www.claudepluginhub.com/plugins/diegolopez0208-mechanism?ref=badge"><img alt="Listed on ClaudePluginHub" src="https://www.claudepluginhub.com/badge/diegolopez0208-mechanism"></a>
 </p>
 
-<p align="center"><img src="docs/media/enigma.gif" width="540" alt="Enigma I: the signal travelling through the rotors, checked against the published test vector"></p>
+<p align="center"><img src="docs/media/enigma.gif" width="540" alt="Enigma I: the signal travelling through the rotors, checked against the published test vectors"></p>
 <p align="center">
   <img src="docs/media/rubik.gif" width="260" alt="Rubik's cube: the 20-move superflip">
   <img src="docs/media/k20a.gif" width="260" alt="Honda K20A, firing order 1-3-4-2">
@@ -29,108 +31,109 @@ refuses to render when the numbers do not add up, and outputs a film, an interac
 
 ## What it does
 
-### Presentation methods and backgrounds
+Ask your agent for an exploded view or a drawing of something real: a machine, a chip, a board, or **software** (a file format, a protocol, an algorithm's output).
 
-Choose a rendering engine independently of its background. **Studio** is the normal WebGL product film (assembly, lighting, materials and operation). **Workflow** is an independent Canvas2D factory/process engine with stations, conveyors and moving data carriers; it does not build or show the Studio object. **Paper** is an independent Canvas2D drafting engine with orthographic front/top/side drawings, progressive strokes, exploded construction and numbered details. It reuses model geometry as data, never a shaded Studio image.
-
-```sh
-node scripts/render.mjs examples/lock/index.html --method studio --background porcelain --length short --aspect 9:16 --encoder browser --out work/studio.mp4
-node scripts/render.mjs examples/react/index.html --method workflow --background graphite --length short --aspect 9:16 --encoder browser --out work/workflow.mp4
-node scripts/render.mjs examples/lock/index.html --method paper --background ivory --length short --aspect 9:16 --encoder browser --out work/paper.mp4
-```
-
-Methods: `studio`, `workflow`, `paper`. Backgrounds: `graphite`, `blueprint`, `porcelain`, `ivory` (all twelve combinations). Use the same names in `?method=paper&background=blueprint` or `presentation: { method: 'paper', background: 'ivory' }` in the spec. Query options override the spec. Old `style`/`theme` films retain their appearance when no presentation option is supplied. Studio has the existing orbit/explore viewer; Workflow/Paper use their own playback canvas even with `?explore`.
-
-Studio renders 3D at 1.5x and downsamples to delivery resolution, retaining MSAA 4x (`stage.renderScale`: 1–2). Workflow/Paper do not create WebGL contexts: their graphics and typography are rasterized directly from vector paths using a deterministic CPU Canvas2D surface, with no 3D shading or temporal blur. Their short/normal/extended cuts are 30/60/90 seconds; Studio retains the object's original timing. Workflow's progress is illustrative, not measured latency. Paper's drawings are orthographic construction views, not to scale; estimates remain marked/dashed. Numeric evidence/verdict rules are unchanged. STL/GLB exports use Studio.
-
-`boot.js` loads `kit/presentation.js`, `kit/workflow-engine.js` and `kit/paper-engine.js` after `core.js`. Hand-written script lists should include these explicitly. Configuration, planning, factory layout and orthographic projection helpers also run in Node/vm without a DOM. No dependency or build step is added. See [presentation validation](docs/presentations.md).
-
-Ask your agent for an exploded view of something real: a machine, a chip, or **software** (a file format, a protocol, an algorithm's output). It does not draw what it can look up wrong:
-
-1. **Researches.** Searches, opens datasheets and teardowns, downloads the pictures and looks at them, measures them.
+1. **Researches.** Opens datasheets, drawings, CAD files and teardowns, looks at the pictures, measures them.
 2. **Writes a spec.** Parts with real dimensions, how they move, and the evidence behind every number.
-3. **Runs the gate.** The model is run against what is published. A spec that does not add up is not rendered.
-4. **Renders.** A 4:5 / 9:16 / 1:1 film with real recorded sound, a live viewer, and an STL / GLB.
+3. **Runs the gate.** The model is compared with what is published. A spec that does not add up is not rendered, and one that does is told how far it was really checked.
+4. **Renders.** A film (4:5, 9:16 or 1:1, with real recorded sound), a live viewer, an STL / GLB, or, for flat parts, an SVG drawing at true scale.
 
-| Label | Meaning |
+Every number carries its class:
+
+| Class | Meaning |
 |---|---|
-| `SPEC` | Published by the maker or a datasheet. |
-| `MEASURED` | Measured on an official photo, scale from a published size, error stated. |
-| `DERIVED` | A formula plus a cross-check against another published number. |
+| `SPEC` | Printed by a source someone else can open: a datasheet, a drawing, a CAD file. |
+| `USER` | Given by the person who asked. Drawn and counted, never verified. |
+| `MEASURED` | Measured, or read off a figure or photo: method and uncertainty stated (an uncertainty, never a tolerance). |
+| `DERIVED` | Computed from other numbers, with a cross-check against a second one. |
 | `ESTIMATED` | Nobody publishes it. Drawn dashed and said out loud. |
 
 ## The gate
 
 ```
-$ node scripts/check-spec.mjs examples/rubik/spec.js
-Rubik's Cube  (rubik)
-parts: 26   claims: 9   sources: 2
-cube: 26 cubies
-  phase R U R' U' x 6: 6 (24 turns)
-  phase Longest period: 1260 (10 turns)  published 1,260  ok
-  phase Superflip: 20 moves (20 turns)  published 20 moves  ok
-  phase Positions: 43,252,003,274,489,856,000 (0 turns)  published 43,252,003,274,489,856,000  ok
-
-PASSES
+$ node scripts/check-spec.mjs examples/hub/spec.js
+...
+  centres sun-p1: 16.000 mm (required 16.000)  ok
+  mode Gear 2: 1.0000  published 1  ok
+  mode Gear 3: 1.3333  published 1.3333333333333333  ok
+  mode Gear 1: 0.7500  published 0.75  ok
+provenance: 3 independent, 0 same source as the inputs, 0 with no sourced inputs, ...
+verdict: VERIFIED   3 reproduced, 4 estimated, 0 unchecked published comparisons
 ```
 
-The cube is 26 pieces that really turn, with no permutation tables. The numbers above are read off the pieces.
 Break something and it says exactly what:
 
 ```
 $ node scripts/check-spec.mjs examples/k20a/spec.js      # firing order changed to 1-2-3-4
 ERROR  firing order 1-2-3-4: cylinder 3 would have to fire at 360 degrees and its crank throw is at 180 (not possible with that crankshaft)
+ERROR  firing order 1-2-3-4: cylinder 4 would have to fire at 540 degrees and its crank throw is at 0 (not possible with that crankshaft)
 ERROR  phase Firing order: the model gives 1-2-3-4 and the published one is 1-3-4-2
 
 DOES NOT PASS: 3 error(s)
 ```
 
-It fails (exit 1) when a number has no source, a DERIVED claim has no cross-check, a MEASURED one no error, an ESTIMATED one no reason; when two meshing gears are not at the centre distance their module and teeth demand; when a mode of operation does not give the ratio the maker publishes; when a cipher disagrees with a published test; when a firing order is impossible with the crank; when the superflip does not flip 12 edges.
+It fails (exit 1) when a number has no source, a DERIVED claim has no cross-check, a MEASURED one no error, an ESTIMATED one no reason; when two meshing gears are not at the centre distance their module and teeth demand; when a mode does not give the ratio the maker publishes; when a cipher disagrees with a published test; when a firing order is impossible with the crank; when a drawn dimension differs from the figure it cites. It also refuses what a template leaves behind: placeholder addresses (`example.com/.org/.net` and their subdomains, any `.invalid`, `.test` or `.example` host, `localhost`), `TODO`, non-finite or non-positive sizes, a variable with no claim.
+
+**The verdict says how far it was really checked:**
+
+- `VERIFIED`: every published figure matched, none is pending, and **at least one check is independent**: the published figure's sources share nothing with the sources of the inputs the model computed it from.
+- `CONSISTENT`: everything matched, but no check is independent. The checks share their source with the inputs, or compare a drawn dimension with the very figure it was drawn from, or have inputs the gate cannot trace. The gate says which.
+- `NOTHING CHECKED`: nothing was compared; a description, not a verification. `INCOMPLETE`: a comparison is pending. `DOES NOT PASS`: any mismatch.
+
+The full contract, and why four examples went from VERIFIED to CONSISTENT when it was tightened: [`docs/draft-evidence.md`](docs/draft-evidence.md). `--json verdict.json` writes the report (verdict, errors, spec and kit SHA-256, Node version, date); `node scripts/registry.mjs` writes [`docs/registry.html`](docs/registry.html) and a badge per object straight from the gate.
+
+## Draft: dimensioned drawings
+
+<p align="center"><img src="docs/media/rpi4-board.svg" width="640" alt="Raspberry Pi 4 Model B board outline and mounting holes, dimensioned, from Raspberry Pi's mechanical drawing"></p>
+
+For flat parts (plates, brackets, flanges, PCB outlines, panels with holes and slots) the spec declares the geometry in mm and Draft exports an engineering SVG: at **1:1** (1 unit = 1 mm, the document's size in mm) or on an **A4 sheet** with its scale written on it. Circles and arcs stay exact, every dimension is a value of the geometry, and its colour says its evidence: teal printed by the source, blue derived, violet measured, ink given by the user or not verified, amber estimated. Every file says **NOT A MANUFACTURING DRAWING**: there are no tolerances, fits or finish.
+
+```sh
+node scripts/check-spec.mjs examples/rpi4-board/spec.js                          # CONSISTENT: one maker's PDF and DXF
+node scripts/export-svg.mjs examples/rpi4-board/spec.js --mode geometry-1to1 --out work/svg
+```
+
+The Raspberry Pi 4 above comes from Raspberry Pi's own drawing (cited, not copied): 85 x 56 mm, R3 corners, four Ø2.7 holes on 58 x 49 mm. Draft is also a plugin on its own (1.6 MB, no 3D): [`plugins/mechanism-draft`](plugins/mechanism-draft/README.md).
+
+**Tested by strangers.** Fresh agent sessions with only the plugin installed were given one sentence each. In the first test (Draft 0.4) the drawings were exact, but a plate whose only source was the request passed as VERIFIED, a narrow part's SVG cut its manufacturing warning, and the skill was not picked unless named; all three were fixed. Afterwards, unprompted, it picked the skill in 3 of 3 sessions (a plate, a flange, an Arduino Uno outline from Arduino's CAD files), declared the user's numbers as USER, and reported CONSISTENT. Three runs, not a rate. When asked for a "final drawing with industrial tolerances" from a photo with no dimensions, the agent asked for measurements instead of inventing a drawing.
 
 ## Examples
 
-Every example is a film, a live viewer (`examples/<name>/index.html?explore`, add `&theme=night`) and a model.
+Every example is a film, a live viewer (`examples/<name>/index.html?explore`) and a model. The verdict is the gate's, today.
 
-| | What its model had to reproduce |
-|---|---|
-| [`enigma`](examples/enigma) | The Enigma I rotor stack. Wiring, notches and stepping are simulated and must match the published tests: `AAAAA` becomes `BDZGO`, with rings BBB `EWTYX`, and the middle rotor double-steps `ADU > ADV > AEW > BFX`. In the viewer you type on your keyboard. |
-| [`rubik`](examples/rubik) | 26 cubies that really turn. The 20-move superflip flips all 12 edges, the longest period is 1,260 and the positions count 43,252,003,274,489,856,000. |
-| [`k20a`](examples/k20a) | Honda K20A, inline four with 16 valves. A crank-slider with exact kinematics: displacement computed from bore and stroke (1,998 cc published) and the published firing order 1-3-4-2 must be possible with the crank. The connecting rod and valve timing are not published and are drawn dashed. |
-| [`react`](examples/react) | **Software**, in motion: what a click does to a React page. The Counter component (JSX on a card), its output before and after the click, and the real DOM. A model written from the published reconciliation rules has to predict what the real React 18.3.1 touches: **1** of 8 DOM nodes (the text of the `<p>`), nothing created or removed. Measured with a MutationObserver in jsdom; the stranger test named React (90 and 92). |
-| [`lock`](examples/lock) | A **pin tumbler lock**, cut open, with a Kwikset KW1 key (a real polygon with V cuts). The published keying table says key pin plus cut depth is .501 in for all six heights and the plug is about .498 in; the model must agree, the right key must put all five splits on the shear line, a key with one cut three steps off must leave a pin across it (the plug is blocked), and the code must obey the maximum adjacent cut rule. |
-| [`winrar`](examples/winrar) | **Software**, doing its job: the three-book icon unpacking a file. WinRAR 7.23 packed a 119-character text into 49 bytes of DEFLATE; a decoder written only from RFC 1951 reads them one token at a time (literals and copies) and writes the text back. The CRC-32 must be the one WinRAR stored in the ZIP, and Node zlib and WinRAR itself must agree. |
-| [`rar5`](examples/rar5) | **Software**, taken apart: the 87 bytes WinRAR 7.23 writes for a one-file archive, every one explained. A model written from the published RAR5 format must reproduce them byte for byte (the four CRC-32 values included), and the real `UnRAR.exe` must accept and extract the archive the model built. Change one byte and the gate fails. |
-| [`mos6502`](examples/mos6502) | The 6502 in its 40-pin DIP. The gate counts the address and data pins on the pinout and compares them with the published 16-bit and 8-bit buses, computes the 64 KB address space and the 105 undefined opcodes, and measures the drawn leads against the DIP standard (2.54 mm pitch, 15.24 mm rows). Two sources have to agree; the body is estimated. |
-| [`rtx4090`](examples/rtx4090) | GeForce RTX 4090 Founders Edition. TFLOPS (82.58 at boost, 73.07 at base), fillrates, the 1,008 GB/s of bandwidth and the 24 GB are each computed from the published cores, clocks, bus and data rate and must match. Every variable carries its claim; the memory packages are an estimated assumption and are drawn as one. The inside of the card is not published and is dashed. |
-| [`hub`](examples/hub) | Three-speed planetary hub (Sturmey-Archer AW type). The running model gives 0.75, 1.00 and 1.333 against the published 75, 100 and 133 %. |
-| [`switch`](examples/switch) | Cherry MX2A Red key switch: a press, not gears. The datasheet's three force points (30, 45, 100 cN) cannot come from one linear spring, and the film plots that instead of hiding it. |
-| [`s25-vs-s26`](examples/s25-vs-s26) | Galaxy S25 Ultra against S26 Ultra at the same scale, measured on the official renders. Interiors are not drawn: no readable photo, and the film says so. |
-| [`phones`](examples/phones) | POCO X8 Pro Max against Galaxy S26 Ultra, measured on official photos with OpenCV, interior from the maker's spare-parts photos. |
-| [`rpi4`](examples/rpi4) | Raspberry Pi 4B from the official datasheet drawing. |
-| [`backpressure`](examples/backpressure) | An idea from a repo built as a working machine. |
+| | What its model had to reproduce | Verdict |
+|---|---|---|
+| [`enigma`](examples/enigma) | The Enigma I rotor stack. Wiring, notches and stepping are simulated and must match the published tests: `AAAAA` becomes `BDZGO`, with rings BBB `EWTYX`, and the middle rotor double-steps `ADU > ADV > AEW > BFX`. In the viewer you type on your keyboard. | CONSISTENT: wiring and vectors are on one page |
+| [`rubik`](examples/rubik) | 26 cubies that really turn, with no permutation tables. The 20-move superflip flips all 12 edges, the longest period is 1,260 and the positions count 43,252,003,274,489,856,000. | CONSISTENT: inputs and figures on one page |
+| [`k20a`](examples/k20a) | Honda K20A, inline four with 16 valves. Exact crank-slider kinematics: displacement from bore and stroke (1,998 cc published), and the firing order 1-3-4-2 must be possible with the crank. Rod and valve timing are not published and are dashed. | CONSISTENT: bore, stroke and displacement from one page |
+| [`react`](examples/react) | **Software** in motion: what a click does to a React page. A model written from the published reconciliation rules must predict what the real React 18.3.1 touches: **1** of 8 DOM nodes, nothing created or removed (measured with a MutationObserver in jsdom). | VERIFIED |
+| [`lock`](examples/lock) | A pin tumbler lock, cut open, with a Kwikset KW1 key. Key pin plus cut depth is .501 in for all six heights; the right key puts all five splits on the shear line, a wrong one leaves a pin across it. | CONSISTENT: every figure from one keying table |
+| [`winrar`](examples/winrar) | **Software** doing its job: WinRAR 7.23 packed 119 characters into 49 bytes of DEFLATE; a decoder written only from RFC 1951 writes the text back, and the CRC-32, Node zlib and WinRAR must agree. | VERIFIED |
+| [`rar5`](examples/rar5) | **Software** taken apart: the 87 bytes WinRAR writes for a one-file archive, every one explained. A model from the RAR5 format rebuilds them byte for byte, and the real `UnRAR.exe` accepts what the model built. | VERIFIED |
+| [`mos6502`](examples/mos6502) | The 6502 in its 40-pin DIP: address and data pins counted against the published buses, the 64 KB space, 105 undefined opcodes, leads against the DIP standard. | VERIFIED |
+| [`rtx4090`](examples/rtx4090) | GeForce RTX 4090 Founders Edition: TFLOPS, fillrates, 1,008 GB/s and 24 GB, each computed from the published cores, clocks, bus and data rate. The inside is not published and is dashed. | VERIFIED |
+| [`hub`](examples/hub) | Three-speed planetary hub (Sturmey-Archer AW type): the running gears give 0.75, 1.00 and 1.333 against the published 75, 100 and 133 %. | VERIFIED |
+| [`switch`](examples/switch) | Cherry MX2A Red: a press, not gears. The datasheet's three force points cannot come from one linear spring, and the film plots that instead of hiding it. | CONSISTENT: travel compared with the claim it was drawn from |
+| [`rpi4-board`](examples/rpi4-board) | Raspberry Pi 4 Model B outline and mounting holes, from the maker's PDF and DXF (Draft). | CONSISTENT: one maker, one design |
+| [`s25-vs-s26`](examples/s25-vs-s26), [`phones`](examples/phones) | Phones at the same scale, measured on official renders and photos. | figures (no spec) |
+| [`rpi4`](examples/rpi4), [`backpressure`](examples/backpressure) | A board in 3D from its datasheet drawing; an idea from a repository built as a working machine. | figures (no spec) |
+
+CONSISTENT is not a failure: the model agrees with its source in every figure compared. It means a wrong source would agree too. Synthetic demonstrations (`demo-plate`, `demo-flange`, `demo-section`) are NOTHING CHECKED on purpose.
 
 ## Install
 
-The one-line way, as a Claude Code plugin (Claude Code 2.1.275 or later):
+As a Claude Code plugin (Claude Code 2.1.275 or later):
 
 ```
-/plugin install mechanism --marketplace DiegoLopez0208/mechanism
+/plugin marketplace add DiegoLopez0208/mechanism
+/plugin install mechanism@mechanism            # everything: Studio, Workflow, Paper, Draft
+/plugin install mechanism-draft@mechanism      # only the drawings (SVG, Paper sheets), 1.6 MB, no 3D
 ```
-
-The skill then runs from the plugin folder, and your objects go in your own project.
-
-Only the technical-drawing part (Mechanism Draft: dimensioned SVG drawings of flat parts at 1:1 or on an A4 sheet, vector Paper sheets and films, the evidence gate; without the 3D Studio film or Workflow; 1.6 MB):
-
-```
-/plugin install mechanism-draft@mechanism
-```
-
-Add the marketplace first if you have not: `/plugin marketplace add DiegoLopez0208/mechanism`. Draft is on `main` (0.1 Paper sheets and films, 0.2 parametric 2D geometry, 0.3 SVG export, 0.4 the Raspberry Pi 4 example, BH-1 evidence classes and the fixes from the first stranger tests). See [`plugins/mechanism-draft/README.md`](plugins/mechanism-draft/README.md).
 
 Or by hand, as a plain skill:
 
 ```bash
-# macOS / Linux: a sparse clone (omit site/media and most history; tests include compact golden frames)
+# macOS / Linux: a sparse clone (no site media, little history; tests include compact golden frames)
 git clone --depth 1 --filter=blob:none --sparse https://github.com/DiegoLopez0208/mechanism ~/.claude/skills/mechanism
 git -C ~/.claude/skills/mechanism sparse-checkout set kit scripts examples data tools tests
 # Windows (PowerShell)
@@ -138,47 +141,39 @@ git clone --depth 1 --filter=blob:none --sparse https://github.com/DiegoLopez020
 git -C $env:USERPROFILE\.claude\skills\mechanism sparse-checkout set kit scripts examples data tools tests
 ```
 
-The skill can also be found with `npx skills add DiegoLopez0208/mechanism --list` (checked: it lists it). The kit, the scripts and the examples are plain files in this repo, so a clone is the safe way to get all of them.
-
-Then ask: *"Use mechanism to model a mechanical keyboard switch from its published sources."* The agent researches, writes the spec, runs the gate and renders.
-
-Needs Node 22+, Edge or Chrome (on Linux, Google Chrome stable), and `ffmpeg`; for rendering films, a GPU. `uv` is only used to measure photos. Nothing else to install.
+Then ask: *"Use mechanism to model a mechanical keyboard switch from its published sources"* or *"a dimensioned SVG of a 120 x 80 mm plate with four 6 mm holes"*. Needs Node 22+; films and stills also need Edge or Chrome (on Linux, Google Chrome stable) and `ffmpeg`, and Studio films want a GPU. The gate and the SVG export need only Node.
 
 ## Use the toolkit directly
 
 ```bash
-node scripts/new.mjs my-object --title "My object"          # a spec that already passes the gate
+node scripts/new.mjs my-object --title "My object"          # a draft spec that fails the gate until it is filled in
 node scripts/check-spec.mjs examples/my-object/spec.js      # the gate
-node scripts/probe.mjs "examples/my-object/index.html?explore" out/probe   # mouse-driven check of the viewer
-node scripts/render.mjs examples/my-object/index.html --blur 3 --out out/my-object.mp4
-node scripts/render.mjs examples/my-object/index.html --style studio --aspect 9:16 --out out/my-object-916.mp4    # dossier (default) | paper | night | studio
-node scripts/render.mjs examples/my-object/index.html --from 13 --to 21 --out out/clip.mp4      # a clip
+node scripts/export-svg.mjs examples/rpi4-board/spec.js --mode sheet-fit --out out/svg   # SVG of the flat parts
+node scripts/render.mjs examples/my-object/index.html --out out/my-object.mp4            # the film
+node scripts/render.mjs examples/my-object/index.html --length short --aspect 9:16 --out out/short.mp4
+node scripts/render.mjs examples/my-object/index.html --method paper --background ivory --still 12 --out out/sheet.mp4
 node scripts/render.mjs examples/my-object/index.html --export glb --e 1 --out out/my-object.mp4   # also: --export stl
-node scripts/render.mjs examples/my-object/index.html --remux out/my-object.mp4                  # redo only the sound, in seconds
+node scripts/probe.mjs "examples/my-object/index.html?explore" out/probe                  # mouse-driven check of the viewer
 ```
+
+Engines (Studio, Workflow, Paper), backgrounds, styles, lengths, encoders and the visual regression tests: [`docs/rendering.md`](docs/rendering.md).
 
 ## How it works
 
-Rendering supports `--encoder jpeg` (the compatibility default) and `--encoder browser` (software H.264 through WebCodecs, copied into MP4). The browser path automatically falls back to JPEG when VideoEncoder or H.264 is unavailable. Its bitrate scales with frame size, fps and part count; `--bitrate <bits/s>` overrides it. Both paths preserve stereo sound, two-pass loudness normalization and clip timing. The JPEG path now converts full-range BT.601 samples to limited-range BT.709 with accurate rounding; both paths carry colour metadata in the H.264 stream as well as the container.
-
-Every browser script uses an isolated profile and an OS-selected CDP port. Render operations have a 30-second watchdog (`--timeout <seconds>`); the browser tree is stopped by its own PID and a stalled attempt is retried once from frame zero. `BROWSER_TIMEOUT_MS` configures the shared helper in the other tools. `CDP_PORT` is no longer used. For GPU-less CI, `BROWSER_SOFTWARE=1` explicitly selects SwiftShader.
-
-Reproduce encoder quality outside published media with `node scripts/validate-render.mjs lock winrar --out <work>/quality --encoder browser`. It saves lossless references and decoded frames from modes, tours and every claims/sources/receipt panel, reports RGB error/bias and local-window SSIM, and leaves visual review marked pending. Add `--video-dir <work>/films` to compare already rendered full films at the same times. A metric is not a visual approval.
-
-One spec in, everything out:
-
 ```
-spec.js  ->  film (4:5, 9:16, 1:1; paper or night; stereo)
-         ->  clips cut from the film
+spec.js  ->  the gate (kit/spec-core.js): sources, classes, kinematics, published figures, provenance
+         ->  film (Studio 3D, Workflow or Paper; 4:5, 9:16, 1:1; three lengths; stereo)
          ->  interactive viewer (orbit, explode, measure, run the mechanism)
          ->  STL and GLB of the model
+         ->  SVG drawings of its flat parts (kit/geom2d.js, kit/svg2d.js)
 ```
 
 A part, with the evidence it stands on:
 
 ```js
 { id: 'ring', kind: 'ring', p: { m: 0.8, z: 60, ro: 27.4, width: 8 }, mat: 'steel-dark',
-  at: [0, 0, 0], body: 'ring', explode: [0, 0, -12], conf: 'derived', claims: ['teeth', 'formula'] }
+  at: [0, 0, 0], body: 'ring', explode: [0, 0, -12], conf: 'derived', claims: ['teeth', 'formula'],
+  params: { ro: { value: 27.4, unit: 'mm', conf: 'derived', claim: 'formula' } } }
 ```
 
 | Mechanism | Declared as | The gate checks |
@@ -189,118 +184,53 @@ A part, with the evidence it stands on:
 | Crank-slider engines | `mechanism.engine` | displacement, firing order possible with the crank, piston reaches the deck |
 | Puzzles | `mechanism.cube` | period of a sequence, the superflip, the number of positions |
 | Calculated figures | `mechanism.calc` | every published figure that comes out of others, from variables that each name their source |
+| Flat parts | `kind: 'drawing'` + `p` | closed contours, holes inside the material, no overlap, net area, each dimension against its claim |
 
-The director builds the film by itself: staggered assembly, a cutaway while the mechanism runs, one mode at a time with its published number, the exploded view, a tour with a callout per part, re-assembly, and an evidence table with the sources.
+**Recognisable, not just correct.** A spec declares what a stranger should call the object and the features that make it that object, each tied to parts that exist; `node scripts/stranger.mjs <example>` saves a still with no labels, a model with no context is asked what it is, and the answer is recorded. Run on the shipped examples it found two that were not recognisable.
 
-### The look
+**Software** is verified against the real program: make the real tool produce a sample, write a pure model from the published description, and the gate demands that the model rebuilds the sample byte for byte and that the real tool accepts what the model built (`examples/rar5`, `examples/winrar`).
 
-Frames use a repeatable GTAO denoiser texture. The vendored GTAO pass does not rotate its noise every frame; its original simplex texture was randomized when a stage was created. The texture factory is now seeded without changing the AO settings or the application's randomness. Tiny GPU raster/compositing differences can still affect edge samples; the tests bound them rather than claiming every full-resolution PNG is byte-identical.
-
-`npm test` includes four visual golden frames per example (mode, exploded view, claims and receipt), plus controls that deliberately introduce text overflow and a floating decor part. The lossless references are zlib-compressed 360x450 RGB, with separate Windows/Linux sets to account for native fonts. Compare with `node scripts/visual-regression.mjs`; intentionally regenerate with `node scripts/visual-regression.mjs --update` (optional example names limit the set). Review the changed frames before accepting new goldens. CI only compares them and never regenerates them. The regression threshold combines mean SSIM, the worst 8x8 tile and the fraction of changed tiles so a small displaced part is not hidden by the background. These sampled frames do not certify every instant of a film.
-
-Every film is drawn as a **dossier**: a blue engineering drawing with a grid and ruler ticks, monospaced type, and a data block that counts how many numbers are SPEC, DERIVED and ESTIMATED. It is the look of evidence, not of a pretty explainer. The same engine can draw three other styles, chosen with `--style` (or `?style=` in the viewers) and defined as one table entry each in `MX.styles` (`kit/core.js`):
-
-| Style | Look |
-|---|---|
-| `dossier` | The default. Blueprint grid, ruler, mono type, evidence block. |
-| `paper` | Light paper, serif titles, corner-marked card. |
-| `night` | The paper card in the dark. |
-| `studio` | Black product-film set with a glow and rim light in the maker's colour (`brand: { accent }` in the spec). |
-
-### The verdict is three-state, never a bare "pass"
-
-The gate ends with `verdict: VERIFIED   8 reproduced, 1 estimated, 0 unchecked`. Only one thing earns VERIFIED: every published figure compared with the model matched, none is pending, and at least one of the checks is independent, meaning the sources of the published figure share nothing with the sources of the inputs the model computed it from. If everything matches but no check is independent, the state is `CONSISTENT`: the checks share their source with the inputs, or compare a drawn dimension with the very figure it was drawn from (a transcription check), or have inputs the gate cannot trace. A model that compares nothing says `NOTHING CHECKED` (a description, not a verification); a pending comparison says `INCOMPLETE`; any mismatch is `DOES NOT PASS`. Evidence classes (SPEC, USER, MEASURED, DERIVED, ESTIMATED) and the rule: [`docs/draft-evidence.md`](docs/draft-evidence.md). `node scripts/check-spec.mjs <spec> --json verdict.json` writes the report (verdict, errors, spec and kit SHA-256, Node version, date).
-
-It also refuses what a template leaves behind: placeholder addresses (`example.com`, `.org`, `.net` and their subdomains, the reserved `.invalid`, `.test` and `.example`, `localhost`) and `TODO` in sources, claims or part names, non-positive or non-finite dimensions, a spec with no parts, a calculated variable with no claim, an expression that gives `undefined`/`NaN`/`Infinity`, an invalid tolerance and an ESTIMATED part with no reason. `node scripts/new.mjs` starts a draft that fails until it is filled in. Every one of those cases is a test in `tests/gate.test.mjs` (`npm test`) and runs in CI.
-
-### Three lengths
-
-The same spec renders three films: `--length short` (about 30 s: the plain sentence, the unpacking or the first checks, the explode, two parts, the receipt), `normal` (the default: verdict-first opening, every check, the tour, the evidence pages) and `extended` (longer checks, up to 12 parts in the tour). `node scripts/render.mjs examples/hub/index.html --length short --out out/hub-short.mp4`. A spec can say what its short cut keeps: `director: { short: { modes: ['unpack', 'crc'], tour: ['out25', 'bookP'] } }` (a cube or a cipher keeps every phase, because their state runs through all of them) and its default with `director.length`.
-
-### Provenance per dimension, and a register
-
-Part confidence (`SPEC`, `MEASURED`, `DERIVED`) describes its evidence, not verification of every drawn size. Part cards now say `SIZE NOT COMPARED` or `SIZE n/m COMPARED`; the register exposes each part's compared and unchecked dimensions. The gate also warns about computed values displayed without a published comparator, teeth outside meshing links, and unknown top-level spec or part keys (for example `cutawya`). These disclosures do not change the VERIFIED/CONSISTENT rules or turn a warning into a failed comparison.
-
-A part can say where each of its sizes comes from, and the gate compares the drawn size with the source:
-
-```js
-params: { w: { value: 15.63, unit: 'mm', conf: 'spec', claim: 'size', tol: 0.005 },
-          wall: { unit: 'mm', conf: 'estimated', why: 'the datasheet has no drawing' } }
-```
-
-A drawn 15.0 against a sourced 15.63 is an error; the compared dimensions count as reproduced figures; and a part whose headline class is stronger than its weakest dimension is reported as mixed (the card lists both). `node scripts/registry.mjs` runs the gate on every example and writes [`docs/registry.html`](docs/registry.html), `docs/registry.json` and an SVG badge per object (`docs/badges/<id>.svg`), all straight from the gate's output.
-
-### Recognisable, not just correct
-
-A model whose numbers all match can still look like nothing. A spec declares what a stranger should call the object and the features that make it that object, each tied to parts that exist:
-
-```js
-recognize: { object: 'Honda K20A inline-four engine',
-  iconic: [{ text: 'red cam cover', parts: ['cover'] }, { text: 'four pistons', partsPrefix: 'piston' }] }
-```
-
-The gate refuses an iconic feature that is not built. Then the stranger test: `node scripts/stranger.mjs <example>` saves a still with no title, labels or panels (`?bare`), a model with no context is asked what it is, and the answer is recorded in `recognize.blind`. A wrong answer is a warning on the verdict, not a hidden one. Run on the shipped examples it found two that were not recognisable (the hub, and the first RAR5 film that was only hex cubes).
-
-### Software
-
-Software is verified the same way, against the real program: pick what it writes (a file format, a message, a result), make the real tool produce a sample, write a pure model from the published description, and let the gate demand that the model rebuilds the sample byte for byte and that the real tool accepts what the model built. `examples/rar5` does it for RAR5: `scripts/make-rar5-sample.mjs` runs `Rar.exe` and `UnRAR.exe`, the model is `kit/rar5.js`, and the evidence travels with the spec in `data.js`.
-
-### Films open with a verdict
-
-A film can open with the question and the published answers being checked one by one (`director.cold`), shows each part's sources as it is inspected, and closes with a receipt (VERIFIED or DOES NOT PASS) listing every figure compared.
-
-### Brand identity
-
-An object has to look like itself. The maker's wordmark, colours and finish are drawn with `decals` (type, rules and shapes on any face, with optional glow), never with logo files, and they are declared like any other number: a livery that no opened source shows is an `ESTIMATED` claim and says so. `director.hold` gives the finished, lettered object a beauty shot before the cutaway starts.
-
-### Sound
-
-Real recordings, not synthesis: keys, metal, glass, plastic and rubber impacts (CC0, see [THIRD_PARTY.md](THIRD_PARTY.md)), mapped per material and size. Tooth ticks are the real tooth passes of the running gears, and the engine fires in its real order.
-
-### Repository
+**Brand identity** is drawn with `decals` (type, rules and shapes), never logo files, and declared like any other number: a livery no opened source shows is ESTIMATED.
 
 | Path | Role |
 |---|---|
 | `SKILL.md` | The skill: when to use it, the method, the rules. |
-| `kit/parts.js` | Parametric parts with real dimensions: involute gears, rings, sprockets, bearings, springs, crankshafts, rods, pistons, valves, rotors, cubies. |
-| `kit/kin.js`, `kit/enigma.js`, `kit/cube.js` | Gear-train kinematics (Willis), the Enigma I logic and the Rubik cube as 26 cubies. Pure: run in Node and are checked against published vectors. |
-| `kit/spec-core.js`, `kit/spec.js` | Validate a spec; compile it to scene, director, panels and sound. |
-| `kit/gl.js`, `kit/figure.js` | three.js stage (physical materials, glass, depth of field, ambient occlusion, bloom) and the figure engine. |
-| `kit/sound.js`, `kit/samples.js` | Sound per material and size, from CC0 recordings. |
-| `scripts/` | `check-spec`, `render`, `probe`, `new`, and the build scripts. |
-| `examples/` | The objects above. |
-| `docs/`, `index.html` | The landing page (its hero is the same parts running live in three.js). |
+| `kit/spec-core.js`, `kit/spec.js` | The gate; compile a spec to scene, director, panels and sound. |
+| `kit/geom2d.js`, `kit/svg2d.js` | Declared 2D geometry and the engineering SVG exporter. |
+| `kit/parts.js`, `kit/kin.js`, `kit/enigma.js`, `kit/cube.js` | Parametric parts; gear kinematics, the Enigma logic and the cube, pure and run in Node. |
+| `kit/gl.js`, `kit/figure.js`, `kit/workflow-engine.js`, `kit/paper-engine.js` | Studio (three.js), Workflow and Paper. |
+| `plugins/mechanism-draft/` | The Draft plugin, generated by `scripts/build-skill.mjs` and checked against a fresh build. |
+| `scripts/` | `check-spec`, `export-svg`, `render`, `probe`, `new`, `registry`, the build scripts. |
+| `examples/`, `docs/` | The objects above; the contracts and the landing page. |
 
 ## Agent runs
 
-Does it work without someone holding its hand? Two objects were given to fresh agents with only the skill and one sentence, under criteria written before the results (`docs/benchmark/criteria.md`):
+Two 3D objects were given to fresh agents with only the skill and one sentence, under criteria written before the results (`docs/benchmark/criteria.md`):
 
 | Object | Autonomy | Gate | Stranger test |
 |--------|----------|------|---------------|
-| 3.5-inch floppy disk, 1.44 MB (chosen by me) | complete, 18 min 51 s | VERIFIED, 15 checks | named it (one judge, 95 %) |
-| Antikythera mechanism (asked for by a reader) | complete, 27 min | VERIFIED when it ran; CONSISTENT with today's gate (6 checks, none independent of its inputs, three of them through estimated gears) | did not name it ("a clock movement") |
+| 3.5-inch floppy disk, 1.44 MB | complete, 18 min 51 s | VERIFIED, 15 checks (2 independent) | named it (one judge, 95 %) |
+| Antikythera mechanism (asked for by a reader) | complete, 27 min | CONSISTENT (6 checks, none independent of its inputs) | did not name it ("a clock movement") |
 
-Two runs are two data points, not a success rate; the agents were subagents with a clean context, not independent sessions, and the plan is 20 objects. The logs keep every failure and the toolkit problems the agents hit were fixed afterwards (the version each run used is written in its notes). Notes: `docs/benchmark/run-01-antikythera.md`, `docs/benchmark/run-02-floppy.md`. There is also a hand-edited Antikythera (`docs/benchmark/antikythera-refined/`), labelled as such, that is not part of the result.
+The drawing runs are above, under Draft. Few runs are data points, not a success rate. Notes: `docs/benchmark/`.
 
 ## Limits, stated plainly
 
-- Mechanisms so far: gear trains (one degree of freedom), presses and slides, rotor ciphers, crank-slider engines, the Rubik cube and calculated figures. No general linkages yet.
-- The hub's power path per mode is simplified: pawls and clutch are not modelled, and the film says so.
-- Interiors need photos or drawings. Without them they are estimated and dashed.
-- A single photo gives no millimetres: it needs a published size, a ruler or a datasheet.
-- **A GPU makes rendering fast; without one it is very slow.** On a laptop with a discrete GPU a normal film takes about 2 to 3 seconds per second of video and the 30 s cut about a minute (`--draft` gives a quick preview). On a machine with no GPU (software WebGL) one frame takes about 7 seconds, so a 30 s film would take over an hour: use `--still`, `lint-film.mjs` and the viewer there, and render elsewhere.
-- **Platforms.** Developed on Windows. Tested on Ubuntu 24.04 (WSL2, Node 22, Chrome and ffmpeg installed from scratch, as a normal user): the partial-clone install, all the tests and gates, stills and the film lint work. Films were not rendered on Linux (no GPU there) and nothing was tried on macOS. The tests also run on Linux in CI.
-- **VERIFIED means compared and consistent, not true.** The agent writes both the model and the published figure it is compared with. The gate does not know if a source is right; it now says when a check uses the same source that fed the model (the state is CONSISTENT, not VERIFIED, if none is independent: the pin tumbler lock is one) and warns about quantities typed in captions that nothing in the spec backs. It cannot tell if two independent sources are both wrong, or if one copies the other without saying so (`derives`).
-- The sources can be wrong too. The spec keeps them next to each claim so you can check, and notes where a page refused to be read.
+- **VERIFIED means compared and independent, not true.** The gate does not know whether a source is right; it trusts `derives` when one source says it copies another, and it cannot tell that a model hard-codes the answer. Reading the spec is still the review.
+- **Not for manufacture.** No tolerances, fits, surface finish or material specification. A 1:1 SVG is true size in a viewer; a printer may rescale it, so check with a rule.
+- Mechanisms so far: gear trains (one degree of freedom), presses and slides, rotor ciphers, crank-slider engines, the Rubik cube and calculated figures. No general linkages. Flat-part outlines are rectangles, circles and straight-sided polygons (no arcs inside a polygon yet).
+- Interiors need photos or drawings; without them they are estimated and dashed. A single photo gives no millimetres: it needs a published size, a ruler or a datasheet.
+- **Rendering speed.** Studio films want a GPU (about 2-3 s per second of video on a laptop GPU; with software WebGL about 7 s per frame). Workflow, Paper, the gate and the SVG export do not.
+- **Platforms.** Developed on Windows; tests and gates run on Ubuntu 24.04 in CI and were checked on WSL2. Films were not rendered on Linux, nothing was tried on macOS.
 
 ## Roadmap
 
-bicycle drivetrain, and the next 18 objects of the agent test. The rule is the same for all: numbers that can be computed and checked against what is published.
+Arcs in polygon outlines; a bicycle drivetrain; more stranger runs of the drawing skill on real requests; the next objects of the agent test. The rule is the same for all: numbers that can be computed and checked against what is published, and an honest word about the ones that cannot.
 
 ## Inspiration
 
-[Anatomy](https://github.com/wheresryan22/anatomy) showed that an agent skill can explain something by building it as an interactive physical object, and its "Fig N" card is where ours started. `mechanism` goes the other way: not ideas explained with a metaphor but real objects, with every number traced to a source, a gate that refuses to render when the model contradicts what is published, and films with sound and 3D files as outputs.
+[Anatomy](https://github.com/wheresryan22/anatomy) showed that an agent skill can explain something by building it as an interactive physical object, and its "Fig N" card is where ours started. `mechanism` goes the other way: real objects, every number traced to a source, a gate that refuses what contradicts what is published, and films, 3D files and drawings as outputs.
 
 ## License
 
-MIT. three.js, Inter and Cormorant Garamond are bundled under their own licenses, and the sound samples are CC0: see [THIRD_PARTY.md](THIRD_PARTY.md). Product names identify the objects modelled and belong to their owners; their photos and datasheets are not redistributed.
+MIT. three.js, Inter and Cormorant Garamond are bundled under their own licenses, and the sound samples are CC0: see [THIRD_PARTY.md](THIRD_PARTY.md). Product names identify the objects modelled and belong to their owners; their photos, datasheets and drawings are not redistributed.

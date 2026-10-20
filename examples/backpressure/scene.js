@@ -104,7 +104,7 @@
     const zt = BB.h + dz, off = (t * 2.3) % 0.5;
     for (let x = BB.x0 + 0.15 + off - 0.5; x < BB.x1; x += 0.5) { const a = Math.max(x, BB.x0 + 0.15), b = Math.min(x + 0.1, BB.x1); if (b > a) MX.flat([[a, BB.y + 0.05, zt], [b, BB.y + 0.05, zt], [b, BB.y + BB.w - 0.05, zt], [a, BB.y + BB.w - 0.05, zt]], 'rgba(42,41,37,0.18)', { stroke: false }); }
     // portico IPC: el limite de 64 KiB por paquete
-    MX.box(11.0, BB.y - 0.2, dz, 0.12, 0.1, 1.15, T.dark, { hi: false }); MX.box(11.0, BB.y + BB.w + 0.1, dz, 0.12, 0.1, 1.15, T.dark, { hi: false }); MX.box(11.0, BB.y - 0.2, 1.05 + dz, 0.12, BB.w + 0.5, 0.1, T.dark, { hi: false });
+    MX.box(11.0, BB.y - 0.2, dz, 0.12, 0.1, 1.15, T.darkc, { hi: false }); MX.box(11.0, BB.y + BB.w + 0.1, dz, 0.12, 0.1, 1.15, T.darkc, { hi: false }); MX.box(11.0, BB.y - 0.2, 1.05 + dz, 0.12, BB.w + 0.5, 0.1, T.darkc, { hi: false });
   }
   const armAngle = (t) => {
     const ev = [...S.log.close.map((x) => [x, 0]), ...S.log.open.map((x) => [x, 1])].filter((e) => e[0] <= t).sort((a, b) => a[0] - b[0]);
@@ -116,7 +116,7 @@
     const th = armAngle(t), a = [GT.x, GT.y0, GT.hz + dz], b = [GT.x, GT.y0 + GT.L * Math.cos(th), GT.hz + dz + GT.L * Math.sin(th)], closed = S.gateClosed(t);
     MX.tube([a, b], 0.08, closed ? T.red : T.steel);
     for (let k = 1; k < 5; k++) { const u = k / 5; MX.sphere(lerp(a[0], b[0], u), lerp(a[1], b[1], u), lerp(a[2], b[2], u) + 0.02, 0.05, '#ffffff'); }
-    MX.sphere(a[0], a[1], a[2], 0.13, T.dark);
+    MX.sphere(a[0], a[1], a[2], 0.13, T.darkc);
     lamp(GT.x, GT.y1, 2.7 + dz + 0.3, true, closed ? T.red : T.green);
   }
   function drawGauge(t, dz) {
@@ -136,7 +136,7 @@
   }
   function drawRail(t, dz) {
     MX.tube(RAIL.map((p) => [p[0], p[1], p[2] + dz]), 0.075, T.steel);
-    for (const p of RAIL.slice(1, 4)) MX.sphere(p[0], p[1], p[2] + dz, 0.13, T.dark);
+    for (const p of RAIL.slice(1, 4)) MX.sphere(p[0], p[1], p[2] + dz, 0.13, T.darkc);
     // creditos viajando: una esfera por cada caja ya parseada que aun no llego al contador
     const len = []; let tot = 0; for (let i = 1; i < RAIL.length; i++) { const d = Math.hypot(RAIL[i][0] - RAIL[i - 1][0], RAIL[i][1] - RAIL[i - 1][1], RAIL[i][2] - RAIL[i - 1][2]); len.push(d); tot += d; }
     for (const p of S.pk) if (p.tParseEnd != null && t >= p.tParseEnd && t < p.tCredit) {
@@ -154,16 +154,16 @@
     let parsing = 0; for (const p of S.pk) if (p.tParseStart != null) parsing += clamp(t - p.tParseStart, 0, P.parse);
     const ang = parsing * 5.5;
     for (const [cx, cy, r, dir] of [[13.05, 3.15, 0.46, 1], [13.85, 3.75, 0.36, -1]]) {
-      MX.flat(gearPts(cx, cy, 1.5 + dz, r, 10, dir * ang), T.dark, { stroke: false });
+      MX.flat(gearPts(cx, cy, 1.5 + dz, r, 10, dir * ang), T.darkc, { stroke: false });
       MX.flat(gearPts(cx, cy, 1.62 + dz, r, 10, dir * ang), T.metal, { edge: MX.INK });
-      MX.disc(cx, cy, 1.63 + dz, r * 0.28, T.dark);
+      MX.disc(cx, cy, 1.63 + dz, r * 0.28, T.darkc);
     }
     for (const c of crates) drawCrate({ pos: [c.pos[0], c.pos[1], c.pos[2] + dz], sc: c.sc }, {});
     lamp(PR.x + PR.w - 0.25, PR.y + PR.d - 0.3, 0.9 + dz, S.pk.some((p) => p.tParseStart != null && t >= p.tParseStart && t < p.tParseEnd), T.green);   // luz de actividad
   }
   function drawScreen(t, dz) {
     MX.shadow(SC.x, SC.y, SC.w, SC.d, SC.h);
-    const bx = [SC.x, SC.y, 0.2 + dz, SC.w, SC.d, SC.h]; MX.box(...bx, T.dark);
+    const bx = [SC.x, SC.y, 0.2 + dz, SC.w, SC.d, SC.h]; MX.box(...bx, T.darkc);
     MX.faceQuad('rt', bx, 0.05, 0.06, 0.95, 0.94, '#1c1b18', { stroke: false });
     const nLines = Math.floor(S.parsed(t) * 3.2), rows = 15;
     for (let r = 0; r < rows; r++) {

@@ -1,6 +1,6 @@
 {
   "name": "mechanism",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "description": "Model a real object (hardware or software) from published evidence, check it against what is published, and film it with sound, an interactive viewer and an STL/GLB.",
   "author": {
     "name": "DiegoLopez0208",
