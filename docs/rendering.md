@@ -22,6 +22,14 @@ Studio renders 3D at 1.5x and downsamples to delivery resolution, keeping MSAA 4
 
 `boot.js` loads `kit/presentation.js`, `kit/workflow-engine.js` and `kit/paper-engine.js` after `core.js`; hand-written script lists must include them. `kit/manifest.js` is the single list of what each engine needs. Configuration, planning, factory layout and orthographic projection helpers also run in Node/vm without a DOM. Validation: [presentations.md](presentations.md).
 
+## The Studio look (0.10, 0.11)
+
+- **Studio environment** (`G.studioEnvironment`): what metal reflects is an HDR product studio (overhead key softbox, broad front fill, side strips, back rim panel). `stage({ environment: 'room' })` gives back three's RoomEnvironment.
+- **Surface detail** (`G.DETAIL`, named per material in `kit/parts.js`): procedural micro-detail in the shader, in object space, with no textures and no UVs. It gives fine grain (brushed streaks on machined metal, mottling on cast metal, grain on plastic, rubber and boards), large soft variation of the roughness (handling marks, about 10 mm), and edge wear (polished metal edges, rubbed paint), and it fades before it could shimmer. Metals are fully metallic; brushed metal has anisotropic highlights; paint has a clear coat.
+- **Screen-space reflections**: metal reflects the parts next to it. As in Eevee, a reflection layer over the multisampled frame (shadows and edges unchanged), from three's SSRPass, metals only. On by default in renders (`render.mjs` opens pages with `?render=1`), off in live viewers; `--ssr 0` / `--ssr 1` (or `?ssr=`) overrides. At half resolution with a capped ray march (240 steps); about +15 % render time.
+- **Tone map**: `agx-punchy` by default (AgX, which rolls bright highlights off like a photograph, with Blender's Punchy look restoring saturation and contrast); `--tonemap agx` or `--tonemap neutral` (the look up to 0.10, exact maker colours).
+- **Path-traced stills**: `render.mjs <page> --still <t> --pathtrace 256 --blur 1 --timeout 900` renders the frame with three-gpu-pathtracer (light bounces, soft shadows and reflections from the physics), over the page's background, with the studio as environment. One to three minutes per still on a laptop GPU, so stills and posters, not films (a 30 s film would take 15 to 45 hours). The shadow floor, the shader micro-detail and line overlays (dashed estimate boxes) are raster-only and do not appear.
+
 ## Styles
 
 Studio films are drawn as a **dossier** by default: a blue engineering drawing with a grid and ruler ticks, monospaced type and a data block counting how many numbers are SPEC, DERIVED and ESTIMATED. Three other styles are chosen with `--style` (or `?style=` in the viewers) and defined as one entry each in `MX.styles` (`kit/core.js`):

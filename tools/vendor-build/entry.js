@@ -14,3 +14,4 @@ export { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 export { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
 export { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 export { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+export { SSRPass } from 'three/examples/jsm/postprocessing/SSRPass.js';
