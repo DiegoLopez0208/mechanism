@@ -61,7 +61,7 @@
    "files": {
     "kit/vendor/three.bundle.js": "7e81fe283f9afeee0162e3a821321cf6bc498b980137ab7d4637835acfedd3bc",
     "kit/gl.js": "245197d038467fcf6240c9fc8070c0168c02622fb1713e016c9c32524df53ebb",
-    "kit/figure.js": "1ee705174f3aaf2f3aa150554e1f373f83014508ed646281c939b7ffd58d1e53",
+    "kit/figure.js": "c00d6f58e063bd85f315f21a8ac804f5c8a29f3a0355a23604bb57f9e85fede9",
     "kit/parts.js": "39eeec9a12cd8c0cf4f937c672a046ac183bfe921b0600680f5dadd014fef9b6",
     "kit/paper-mesh.js": "2f5c35351682308d63d1ce044d0966dff3df22f21a1580c227a7bfda2f95e3fc"
    }
