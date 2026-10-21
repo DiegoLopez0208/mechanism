@@ -7,46 +7,33 @@ on:
 permissions:
   contents: read
 
-# Two independent jobs (no `needs`): a slow or failing preflight does not stop the other groups, and the reverse.
-# Both are pinned to ubuntu-24.04, the system the Linux golden frames were captured on.
+# Independent jobs (no `needs`): a slow or failing group does not stop the others, and they run in parallel, so a pull request is
+# as slow as its slowest group (the visual preflight, about 35 min) and not the sum of all of them.
+# The Linux jobs are pinned to ubuntu-24.04, the system the Linux golden frames were captured on.
+# Actions are pinned by commit SHA (the comment is the tag); Dependabot moves both together.
 jobs:
-  gate:
+  lint:
     runs-on: ubuntu-24.04
-    timeout-minutes: 90      # about 35 min with SwiftShader on a 4-vCPU runner
-    env:
-      BROWSER_SOFTWARE: '1'
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
-      # the runner image has no ffmpeg; the encoding, ffprobe colour/audio checks and the Draft film tests spawn both
-      - name: ffmpeg and ffprobe
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends ffmpeg
-          command -v ffmpeg
-          command -v ffprobe
-          ffmpeg -version
-          ffprobe -version
-      - name: Tests (the evidence gate, the DEFLATE / RAR5 models against zlib, version consistency, 2D geometry)
-        run: node --test tests/gate.test.mjs tests/kit.test.mjs tests/encoding.test.mjs tests/browser.test.mjs tests/media-server.test.mjs tests/versions.test.mjs tests/geom2d.test.mjs
-      # The browser-heavy files run one at a time: each opens headless Chromium sessions (browser.test.mjs opens five at once on purpose)
-      - name: Render, colour tags, audio streams and encoder fallback
-        run: node --test --test-concurrency=1 tests/render.test.mjs tests/presentation.test.mjs
-      - name: Studio camera (exploded view hold, flight to the first stop, picture and sound in sync)
-        run: node --test --test-concurrency=1 tests/camera.test.mjs
-      - name: Engine manifest and Paper (vector scene, declared 2D geometry, SVG export, mesh adapter, visual contract)
-        run: node --test --test-concurrency=1 tests/manifest.test.mjs tests/paper.test.mjs tests/paper-contract.test.mjs tests/paper-geometry.test.mjs tests/svg2d.test.mjs tests/rpi4-board.test.mjs
-      - name: Mechanism Draft as a standalone install (built outside the repository)
-        run: node --test --test-concurrency=1 tests/draft-skill.test.mjs
-      - name: The committed Draft plugin matches its files.json, with nothing extra
-        working-directory: plugins/mechanism-draft
-        run: node scripts/skill-doctor.mjs --strict
-      - name: Visual regression (compact lossless golden frames)
-        run: |
-          node scripts/visual-regression.mjs
-          node --test --test-name-pattern="local SSIM|injected text" tests/visual.test.mjs
+      - name: Syntax, line endings, indentation, final newline, line length
+        run: node scripts/lint.mjs
+
+  # No browser, no ffmpeg: the evidence gate, the pure models, 2D geometry, versions and the sound engines.
+  fast:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - name: Tests (the evidence gate, the DEFLATE / RAR5 models against zlib, version consistency, 2D geometry, sound engines)
+        run: npm run test:fast
       - name: Every shipped example passes its own gate
         shell: bash      # pipefail: a failing gate must not be hidden by tail
         run: |
@@ -61,6 +48,72 @@ jobs:
       - name: The register builds from the gate output
         run: node scripts/registry.mjs
 
+  # The project is developed on Windows, where tests/goldens/win32 was captured: the browser-free tests must pass there too.
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - run: npm run test:fast
+
+  # The runner image has no ffmpeg; the encoding, ffprobe colour/audio checks and the Draft film tests spawn both.
+  # The browser-heavy files run one at a time: each opens headless Chromium sessions (browser.test.mjs opens five at once on purpose).
+  media:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90      # about 25 min with SwiftShader on a 4-vCPU runner
+    env:
+      BROWSER_SOFTWARE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - name: ffmpeg and ffprobe
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          command -v ffmpeg
+          command -v ffprobe
+          ffmpeg -version
+          ffprobe -version
+      - name: Encoding, browser harness and media server
+        run: node --test tests/encoding.test.mjs tests/browser.test.mjs tests/media-server.test.mjs
+      - name: Render, colour tags, audio streams and encoder fallback
+        run: node --test --test-concurrency=1 tests/render.test.mjs tests/presentation.test.mjs
+      - name: Studio camera (exploded view hold, flight to the first stop, picture and sound in sync)
+        run: node --test --test-concurrency=1 tests/camera.test.mjs
+
+  paper:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      BROWSER_SOFTWARE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - name: ffmpeg and ffprobe (the Draft film tests spawn both)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          command -v ffmpeg
+          command -v ffprobe
+      - name: Engine manifest and Paper (vector scene, declared 2D geometry, SVG export, mesh adapter, visual contract)
+        run: node --test --test-concurrency=1 tests/manifest.test.mjs tests/paper.test.mjs tests/paper-contract.test.mjs tests/paper-geometry.test.mjs tests/svg2d.test.mjs tests/rpi4-board.test.mjs
+      - name: Mechanism Draft as a standalone install (built outside the repository)
+        run: node --test --test-concurrency=1 tests/draft-skill.test.mjs
+      - name: The committed Draft plugin matches its files.json, with nothing extra
+        working-directory: plugins/mechanism-draft
+        run: node scripts/skill-doctor.mjs --strict
+      - name: Visual regression (compact lossless golden frames)
+        run: |
+          node scripts/visual-regression.mjs
+          node --test --test-name-pattern="local SSIM|injected text" tests/visual.test.mjs
+
   # The visual preflight samples whole Studio films through software WebGL: about 35 min here. It needs only Node and the
   # browser of the image (no ffmpeg: it encodes nothing).
   preflight:
@@ -69,8 +122,8 @@ jobs:
     env:
       BROWSER_SOFTWARE: '1'
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
       - name: Visual preflight (camera, labels, frame, geometry area, NOT RUN reporting)

@@ -1,0 +1,16 @@
+version: 2
+updates:
+  # the workflow actions are pinned by commit SHA; Dependabot moves the SHA and its version comment together
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  # the root has no dependencies; these two folders have a lockfile each
+  - package-ecosystem: npm
+    directory: /tools/vendor-build
+    schedule:
+      interval: monthly
+  - package-ecosystem: npm
+    directory: /tools/react-evidence
+    schedule:
+      interval: monthly
