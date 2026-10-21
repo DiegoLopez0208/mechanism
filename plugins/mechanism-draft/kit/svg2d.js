@@ -230,6 +230,7 @@
       + ' data-generator="' + X.GENERATOR + '" data-mode="' + mode + '" data-scale="' + n(k) + '" data-unit="mm" font-family="Arial, Helvetica, sans-serif">\n'
       + '<title>' + esc(title) + '</title>\n<desc>' + esc(notes.join(' ') + ' COLOURS: teal printed by the source, blue derived from printed figures, violet measured by a stated method, ink given by the person who asked or not verified, amber estimated.') + '</desc>\n'
       + (defs.length ? '<defs>' + defs.join('') + '</defs>\n' : '')
+      + '<rect class="paper" x="' + n(vb[0]) + '" y="' + n(vb[1]) + '" width="' + n(vb[2]) + '" height="' + n(vb[3]) + '" fill="#ffffff"/>\n'      // ink strokes vanish on a dark viewer (GitHub dark): the sheet brings its own paper
       + '<g id="' + pid + '" class="part">\n' + geo.join('\n') + '\n</g>\n'
       + '<g class="lines">\n' + lines.join('\n') + '\n</g>\n'
       + '<g class="dims">\n' + dimEls.join('\n') + '\n</g>\n'
