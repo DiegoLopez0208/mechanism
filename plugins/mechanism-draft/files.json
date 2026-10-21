@@ -46,11 +46,11 @@
   "references/scenes.md": "8066afe24aae7fe141675eb3379934b053db5c717f0c5c300381715c22432c21",
   "scripts/check-spec.mjs": "9ef785d9699b8c74164e04ec65a12faa6c66e3df5818451b9ca98c7192f4f2de",
   "scripts/export-svg.mjs": "8d51e9d6f93b5b2ddd5c29d15be18451f0a73fe81f2e3337a5d52aa936535ae7",
-  "scripts/lib/browser.mjs": "8441b581fe5ce2fc916071084a88bbdfb0a620f2d3f418ad744dc256b20ab537",
+  "scripts/lib/browser.mjs": "dbcb198db6c3bc58d2f71a17a17e206a61b6e8edbb241ce82face7b7b5b9c66a",
   "scripts/lib/encoding.mjs": "bf63ccc1f3a3e579fbe45613a52bdbe53fad9b685cada72360dce5769d38422b",
   "scripts/new.mjs": "7a16495ec85ad5e056d41255305e98ffa16421e905be102ef24b6bae4ce9d0dc",
   "scripts/preflight.mjs": "85d7b6c05144fdcba14dc8199eeb5fc0824b0f40d4cebf15b6b76a7db70e08a6",
-  "scripts/render.mjs": "6bbdd6ae4b22003a4df06bfa7c9ff851447b1a02ffc89184ca1e64190d46b092",
+  "scripts/render.mjs": "1ea7c6acf111c7eef4fc79c00329395c3216f5440b49f3e09c02d49f4e27f141",
   "scripts/skill-doctor.mjs": "c8a1d1cbf6402489feb1b45d0a3cf72068def0089af27f716cfca2b5fe175740",
   "skill.json": "d586e7194a4ebe7e00bee91eac56489a083a6c173b6a6a1a503147c4179a378f"
  },
