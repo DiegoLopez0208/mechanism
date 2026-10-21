@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.11.1 - 2026-10-20
+
+Path-traced posters, and path-traced stills that look like the films.
+
 - **The site posters are path-traced** (`--pathtrace 128`), from the same frames as before; the films stay raster.
 - **Path-traced stills look like the films:** a raster pass over the traced image draws the floor shadow, the dashed estimate boxes and leaders, and the x-ray parts (a ray through a transparent part to the page's background lost what was behind it); then the frame goes through the film's bloom, tone map and Punchy (it came out flat and dark). Parts dimmed by a tour stop are left out (they hid the lines, cast ghost shadows and showed up in reflections).
 - **Fix: instanced parts were missing from path-traced stills** (Enigma's contact pins): the WebGL path tracer has no instancing, so each instance is traced as its own mesh.
