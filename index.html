@@ -20,7 +20,7 @@
 @font-face { font-family:'Inter'; src:url('kit/fonts/inter.woff2') format('woff2'); font-weight:100 900; font-display:swap; }
 @font-face { font-family:'Cormorant Garamond'; src:url('kit/fonts/cormorant.woff2') format('woff2'); font-weight:300 700; font-display:swap; }
 :root { --bg:#f6f5f0; --bg2:#efeee7; --ink:#23221f; --mute:#85827a; --line:rgba(35,34,31,.14); --teal:#0b7285; --ember:#c8542a; --card:#fbfaf6; --shadow:0 30px 60px -30px rgba(40,36,24,.35); --grid:rgba(35,34,31,.06); --term:#16181d; --termink:#d7d9de; }
-:root { --head:var(--head), Georgia, serif; --headw:500; --headtt:none; --headls:-.005em; }
+:root { --head:'Cormorant Garamond', Georgia, serif; --headw:500; --headtt:none; --headls:-.005em; }
 :root[data-theme="dossier"] { --bg:#0a1828; --bg2:#0e2136; --ink:#d6e6f5; --mute:#7894ae; --line:rgba(110,180,230,.26); --teal:#4fd1ff; --ember:#ffb347; --card:#10253b; --shadow:0 30px 70px -30px rgba(0,0,0,.8); --grid:rgba(110,180,255,.09); --term:#06101c; --termink:#d7e6f4; --head:ui-monospace,'Cascadia Mono',Consolas,monospace; --headw:700; --headtt:uppercase; --headls:.01em; }
 :root[data-theme="studio"] { --bg:#08080b; --bg2:#0e0e13; --ink:#f4f2ee; --mute:#8a8892; --line:rgba(244,242,238,.14); --teal:#ff6a3d; --ember:#ffb347; --card:#15151b; --shadow:0 30px 70px -30px rgba(0,0,0,.9); --grid:rgba(244,242,238,.03); --term:#050507; --termink:#e7e5e0; --head:'Inter',system-ui,sans-serif; --headw:800; --headtt:none; --headls:-.035em; }
 :root[data-theme="night"] { --bg:#0b0d12; --bg2:#10131a; --ink:#ecebe6; --mute:#9094a0; --line:rgba(236,235,230,.14); --teal:#5ad1d8; --ember:#ff9a62; --card:#141720; --shadow:0 30px 70px -30px rgba(0,0,0,.85); --grid:rgba(236,235,230,.05); --term:#0a0b0f; --termink:#d7d9de; }
@@ -277,13 +277,13 @@ nav ul { gap:clamp(14px, 1.9vw, 26px); }
 #splash .big .h2 { animation:sp-in .55s ease .7s forwards; }
 #splash .mx-s { stroke:#4fd1ff; }
 #splash .mx-e { stroke:#ffb347; }
-#splash .word { font:700 clamp(26px, 5vw, 40px)/1 'JetBrains Mono', 'Courier New', monospace; letter-spacing:-.02em; opacity:0; animation:sp-up .6s ease 1s forwards; }
+#splash .word { font:700 clamp(26px, 5vw, 40px)/1 ui-monospace, 'Cascadia Mono', Consolas, 'Courier New', monospace; letter-spacing:-.02em; opacity:0; animation:sp-up .6s ease 1s forwards; }
 #splash .word i { color:#4fd1ff; font-style:normal; }
 #splash .line { max-width:420px; font:400 14px/1.5 'Inter', system-ui, sans-serif; color:#7894ae; opacity:0; animation:sp-up .6s ease 1.15s forwards; }
 #splash .sptags { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; opacity:0; animation:sp-up .6s ease 1.3s forwards; }
-#splash .sptags span { position:static; font:600 10.5px 'JetBrains Mono', 'Courier New', monospace; letter-spacing:.16em; padding:4px 10px; border:1px solid; }
+#splash .sptags span { position:static; font:600 10.5px ui-monospace, 'Cascadia Mono', Consolas, 'Courier New', monospace; letter-spacing:.16em; padding:4px 10px; border:1px solid; }
 #splash .sptags .sa { color:#4fd1ff; } #splash .sptags .sb { color:#d6e6f5; } #splash .sptags .sc { color:#ffb347; }
-#splash .skip { position:absolute; bottom:22px; left:0; right:0; text-align:center; font:500 11px 'JetBrains Mono', 'Courier New', monospace; letter-spacing:.2em; color:#7894ae; opacity:.7; }
+#splash .skip { position:absolute; bottom:22px; left:0; right:0; text-align:center; font:500 11px ui-monospace, 'Cascadia Mono', Consolas, 'Courier New', monospace; letter-spacing:.2em; color:#7894ae; opacity:.7; }
 @keyframes sp-in { to { opacity:1; } }
 @keyframes sp-turn { from { transform:rotate(-40deg) scale(.9); } to { transform:none; } }
 @keyframes sp-up { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
@@ -307,7 +307,7 @@ nav ul { gap:clamp(14px, 1.9vw, 26px); }
     <h1>Build it from <em>evidence.</em><br>Take it apart.<br>Film it.</h1>
     <p class="lead">Give it a real object. It looks the numbers up, writes a spec where every number says where it came from, and renders a film, a viewer and a 3D model. If the numbers do not add up, it does not render.</p>
     <div class="btns"><a class="btn fill" href="#examples">Watch the films</a><a class="btn" href="examples/enigma/index.html?explore" target="_blank">Type on the Enigma</a><a class="btn" href="#install">Install</a></div>
-    <div class="facts"><div><b>15</b><span>real objects</span></div><div><b>7</b><span>kinds of check</span></div><div><b>1</b><span>gate that says no</span></div><div><b>2</b><span><a href="#runs">unassisted agent runs</a></span></div></div>
+    <div class="facts"><div><b>12</b><span>real objects</span></div><div><b>7</b><span>kinds of check</span></div><div><b>1</b><span>gate that says no</span></div><div><b>2</b><span><a href="#runs">unassisted agent runs</a></span></div></div>
   </div>
   <div class="stage3d" id="stage3d">
     <div class="ring"></div><div class="ring b"></div>
@@ -317,7 +317,7 @@ nav ul { gap:clamp(14px, 1.9vw, 26px); }
     <div class="hint">Move to orbit &middot; scroll to take it apart &middot; click to turn</div>
   </div>
 </div>
-  <div class="wrap"><dl class="titleblock"><div><dt>Subject</dt><dd>mechanism</dd></div><div><dt>Revision</dt><dd>0.8.1</dd></div><div><dt>Gate</dt><dd>refuses unsourced numbers</dd></div><div><dt>Verified</dt><dd>10 objects, 1 consistent</dd></div><div><dt>Licence</dt><dd>MIT</dd></div></dl></div>
+  <div class="wrap"><dl class="titleblock"><div><dt>Subject</dt><dd>mechanism</dd></div><div><dt>Revision</dt><dd>0.11.1</dd></div><div><dt>Gate</dt><dd>refuses unsourced numbers</dd></div><div><dt>Verified</dt><dd>12 objects, 6 verified</dd></div><div><dt>Licence</dt><dd>MIT</dd></div></dl></div>
 </header>
 
 <div class="proof"><div class="wrap">
@@ -345,7 +345,7 @@ nav ul { gap:clamp(14px, 1.9vw, 26px); }
 
 <section id="examples" data-label="The films"><div class="wrap">
   <div class="head rv"><h2>The check is on the card.</h2><p>Each one carries what its model had to reproduce, and says plainly what it could not source.</p>
-    <div class="lensrow"><span>Film length</span><div class="looks" id="lens" role="group" aria-label="Film length"><button data-len="short">30 s</button><button data-len="full">Full</button></div></div></div>
+    <div class="lensrow"><span>Film length</span><div class="looks" id="lens" role="group" aria-label="Film length"><button data-len="short">Short</button><button data-len="full">Full</button></div></div></div>
   <div class="grid">
     <article class="card rv"><div class="stage"><video controls loop playsinline preload="none" poster="docs/media/poster-enigma.jpg" data-paper="out/enigma.mp4"></video><div class="shine"></div></div>
       <h3>Enigma I</h3><span class="chip ok">AAAAA to BDZGO, reproduced</span>
@@ -519,7 +519,7 @@ node scripts/render.mjs examples/my-object/index.html</div>
   const SHORTS = ['lock', 'winrar', 'hub', 'enigma', 'rar5', 'switch', 'k20a', 'rubik', 'rtx4090', 'mos6502', 'react'];      // objects with a 30 s cut (render.mjs --length short)
   let LEN = 'short'; try { LEN = localStorage.getItem('mx-len') || 'short'; } catch (e) {}
   const MEDIA = 'https://github.com/DiegoLopez0208/mechanism/releases/download/media/';
-  const REV = '0.8.0-2';      // changes with every release: the media assets keep their URL when they are replaced, and a browser may keep the old copy, so the version goes in the query
+  const REV = '0.11.1';      // changes with every release: the media assets keep their URL when they are replaced, and a browser may keep the old copy, so the version goes in the query
   const vurl = (p) => { const f = p.split('/').pop(), base = f.replace(/[.]mp4$/, ''), sh = LEN === 'short' && SHORTS.includes(base); return file ? (sh ? 'out/' + base + '-short.mp4' : p) : MEDIA + (sh ? base + '-short.mp4' : f) + '?v=' + REV; };      // from disk: the full renders in out/; on the web: the 720p copies, kept as assets of the media release so the repository stays light
   const setVideo = (v) => { const src = vurl(v.dataset.paper), was = v.currentTime, playing = !v.paused; if (!v.src.endsWith(src)) { v.src = src; v.addEventListener('loadedmetadata', function f() { v.currentTime = was || 0; if (playing) v.play().catch(() => {}); v.removeEventListener('loadedmetadata', f); }); } };
   const apply = (t) => { if (!LOOKS.includes(t)) t = 'paper'; root.dataset.theme = t; document.querySelectorAll('#looks button').forEach((b) => b.classList.toggle('on', b.dataset.look === t)); try { localStorage.setItem('mx-theme', t); } catch (e) {} document.querySelectorAll('video[data-paper]').forEach(setVideo); if (window.heroTheme) window.heroTheme(t); loadViewer(false); };
