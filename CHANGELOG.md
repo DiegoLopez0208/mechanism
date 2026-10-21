@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- **Fix: the site headings lost their serif** (`--head` referred to itself in `index.html`). The title block, object count and film-length label no longer show 0.8-era numbers.
+- **Fix: films carry 48 kHz audio.** `loudnorm` resamples to 192 kHz and the mux kept 96 kHz; both AAC muxes now set `-ar 48000`, and `render.test` asserts it for both encoders.
+- **Viewer: keyboard and screen-reader access.** `F.explore` lays real buttons and an `Explode` range input over the painted controls, announces BREAK IT through an `aria-live` status, and sizes the canvas by its ratio so a narrow window no longer squashes it.
+- **Draft: the SVG sheet brings its own white paper**, so the drawing is readable on dark viewers.
+- **Site: navigation links scroll horizontally on small screens instead of disappearing**, the gate-run tabs are a real tablist, labels are at least 12 px, and Paper's muted text meets 4.5:1.
+- **Tooling:** `npm run lint` (no dependencies), `npm run test:fast` (about 2 s, no browser) and `npm run test:coverage`; `tests/sound.test.mjs` covers `kit/audio.js` and `kit/sound.js` under Node; `engines` says Node >=22 as the docs do.
+- **CI:** split into parallel `lint`, `fast`, `windows`, `media`, `paper` and `preflight` jobs, actions pinned by commit SHA, Dependabot for actions and the two `tools/` lockfiles. Added `.editorconfig`, `CODEOWNERS`, a PR template, a bug-report template and a code of conduct.
+
 ## 0.11.1 - 2026-10-20
 
 Path-traced posters, and path-traced stills that look like the films.
