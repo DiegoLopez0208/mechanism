@@ -670,7 +670,12 @@
       F.explore({ views: [['FRONT', VW.front], ['ISO', HOME], ['SIDE', VW.side]], home: HOME, start: HOME, toggleW: 100, toggles: tg, minZoom: 3, maxZoom: 400,
         reset: () => { live.mode = modes[0] || null; live.spin = true; },
         extra: (Sx) => {
-          const now = performance.now(), dt = Math.min(0.05, (now - live.last) / 1000); live.last = now; if (an.K) it.step(dt, live.mode, live.spin ? 1 : 0); if (live.spin) live.t = (live.t || 0) + dt; const r = live.mode ? an.modes[modes.indexOf(live.mode)].ratio : null, px = PRESS ? (1 - Math.cos((live.t || 0) * 2.2)) / 2 * M.press.travel : 0;
+          const now = performance.now(), dt = Math.min(0.05, (now - live.last) / 1000); live.last = now;
+          if (mi0 >= 0 && live.on !== live.said) {      // the panel is painted on the canvas: say the same thing to a screen reader
+            if (!live.say) { live.say = document.createElement('div'); live.say.setAttribute('role', 'status'); live.say.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)'; document.body.appendChild(live.say); }
+            const b = live.on ? breakIt() : null; live.say.textContent = b ? 'Break it. We changed ' + b.label + ' from ' + b.was + ' to ' + b.now + '. The gate says: ' + b.msg + ' ' + b.state : (live.said === undefined ? '' : 'Break it off'); live.said = live.on;
+          }
+          if (an.K) it.step(dt, live.mode, live.spin ? 1 : 0); if (live.spin) live.t = (live.t || 0) + dt; const r = live.mode ? an.modes[modes.indexOf(live.mode)].ratio : null, px = PRESS ? (1 - Math.cos((live.t || 0) * 2.2)) / 2 * M.press.travel : 0;
           const eth = ENGN ? (live.t || 0) * (drive.rpm || 40) * 6 * RAD : 0;
           return { mech: { ang: (b) => (an.K ? it.ang(b) : 0), press: px, eng: ENGN ? { theta: eth } : undefined, cube: CUBE ? cubeFrame(tM0 + (live.t || 0) % (tMend - tM0)) : undefined, step: STEPS ? ((live.t || 0) * M.steps.rate) % (M.steps.count + 6) : undefined, phase: Math.max(0, modes.indexOf(live.mode)) }, light: { az: -38, el: 54 }, dimTo: live.est ? 0.16 : 0.1, ...(live.est ? { focusSet: estIds, focusA: 0.9 } : {}), ...(live.on ? { ui: (c) => {
             const b = breakIt(), x = 64, w = W - 128, ln = wrap(b.msg, '500 22px ' + MX.SANS, w - 48); c.save(); c.fillStyle = MX.rgba(T.paper, 0.92); c.fillRect(x - 14, 232, w + 28, 152 + ln.length * 30); c.strokeStyle = T.ember; c.lineWidth = 2; c.strokeRect(x - 14, 232, w + 28, 152 + ln.length * 30);
