@@ -198,25 +198,72 @@ float mxFbm(vec3 p) { return 0.55 * mxNoise(p) + 0.3 * mxNoise(p * 2.03 + 7.1) +
     st.ssr = ssr;
     // pathtrace: N samples of a real path tracer (three-gpu-pathtracer, loaded by kit/boot.js with ?pathtrace) instead of the raster pipeline, for
     // stills: light bounces between parts, soft shadows and reflections come out of the physics. The environment is the same studio (as a cube
-    // map); the shadow floor and the shader micro-detail are raster-only and are left out; the frame is composed over the page's background.
+    // map); the frame is composed over the page's background.
+    // PT_DIM: below this opacity a part is dimmed by a tour stop (about 0.01) and left out; an x-ray part (0.1 to 0.55) stays
+    const PT_METAL_ROUGH = 0.2, PT_DIM = 0.05;
+    const dimmedPart = (m) => { const mt = Array.isArray(m.material) ? m.material[0] : m.material; return mt.transparent && mt.opacity < PT_DIM; };
     let pt = null, ptEnv = null; const ptBg = new TH.Scene(); ptBg.background = scene.background;
+    const xrayPart = (m) => { const mt = Array.isArray(m.material) ? m.material[0] : m.material; return mt.transparent && !mt.depthWrite && !dimmedPart(m); };
+    // over the path-traced image, one raster pass draws what the path tracer cannot: the shadow on the floor (the shadow catcher it lacks), the
+    // line overlays (dashed estimate boxes, leaders) and the x-ray parts, with their own material as in a film. The traced parts are drawn as
+    // depth only (invisible, but they cast the shadow and hide what is behind)
+    const depthOnly = new TH.MeshBasicMaterial({ colorWrite: false });
+    let ptLayer = null;      // during a run: the x-ray parts the raster pass draws, and the raster environment they are lit by
+    // a part dimmed (nearly transparent: the rest of the object during a tour stop) is left out: it would hide the lines and cast a ghost shadow
+    const overlay = (r) => {
+      const swapped = [], hidden = [], xr = ptLayer ? ptLayer.xray : [], bg = scene.background, env = scene.environment, fl = floor.visible;
+      xr.forEach((m) => { m.visible = true; });
+      scene.traverse((m) => {
+        if (!m.isMesh || m === floor || !m.visible || !m.material || xr.includes(m)) return;
+        if (dimmedPart(m)) { m.visible = false; hidden.push(m); } else { swapped.push([m, m.material]); m.material = depthOnly; }
+      });
+      scene.background = null; scene.environment = ptLayer ? ptLayer.env : null; floor.visible = true;
+      try { r.clearDepth(); r.render(scene, camera); } finally { swapped.forEach(([m, mt]) => { m.material = mt; }); hidden.forEach((m) => { m.visible = true; }); xr.forEach((m) => { m.visible = false; }); scene.background = bg; scene.environment = env; floor.visible = fl; }
+    };
     st.pathTrace = (samples) => {
       if (!g.THREE_PT) throw new Error('pathtrace: kit/vendor/pathtracer.bundle.js is not loaded (open the page with ?pathtrace)');
       if (!pt) {
         pt = new g.THREE_PT.WebGLPathTracer(renderer); Object.assign(pt, { renderDelay: 0, minSamples: 0, fadeDuration: 0, rasterizeScene: false, bounces: 8, filterGlossyFactor: 0.5 }); pt.tiles.set(2, 2);
-        pt.renderToCanvasCallback = (target, r, quad) => { r.setRenderTarget(null); const ac = r.autoClear; r.autoClear = false; r.clear(); r.render(ptBg, camera); quad.material.transparent = true; quad.material.blending = TH.NormalBlending; quad.render(r); r.autoClear = ac; };
+        // the traced image goes through the same finish as a raster frame (depth of field, bloom, tone map, Punchy): it takes the place of the
+        // render, reflection and ambient-occlusion passes (the path tracer does all three), drawn linear into the composer's buffer
+        pt.renderToCanvasCallback = (target, r, quad) => {
+          const passes = composer.passes, off = passes.slice(0, passes.indexOf(bokeh)).filter((p) => p.enabled);
+          const traced = { enabled: true, needsSwap: true, clear: false, renderToScreen: false, setSize() {}, render: (rr, writeBuffer) => {
+            rr.setRenderTarget(writeBuffer); const ac = rr.autoClear; rr.autoClear = false; rr.clear(); rr.render(ptBg, camera);
+            quad.material.transparent = true; quad.material.blending = TH.NormalBlending; quad.render(rr); overlay(rr); rr.autoClear = ac;
+          } };
+          off.forEach((p) => { p.enabled = false; }); passes.unshift(traced);
+          try { composer.render(); } finally { passes.shift(); off.forEach((p) => { p.enabled = true; }); }
+        };
         const crt = new TH.WebGLCubeRenderTarget(512, { type: TH.HalfFloatType }); new TH.CubeCamera(0.1, 100, crt).update(renderer, G.studioEnvironment()); ptEnv = crt.texture;
       }
       // asynchronous, a few samples at a time with a pause between them: one long burst of GPU work loses the WebGL context (the driver's timeout).
       // MX.run's __frame waits for st.ptPending and draws the frame again with st.ptHold set, which keeps the accumulated image on the canvas.
+      // a new call (the page draws once on load, then the frame asked for) cancels the run before it and puts the scene back first: two runs at once
+      // would sample together, and the second would take the parts the first had hidden for invisible
+      if (st.ptRestore) st.ptRestore();
+      const run = st.ptRun = (st.ptRun || 0) + 1;
       const bg = scene.background, env = scene.environment, fl = floor.visible;
       scene.background = null; scene.environment = ptEnv; floor.visible = false;
+      // the dimmed parts are left out of the traced scene too: nearly invisible on screen, they still show in a mirror and cost BVH and samples
+      const dimmed = []; scene.traverse((m) => { if (m.isMesh && m.visible && m.material && dimmedPart(m)) { m.visible = false; dimmed.push(m); } });
+      // the WebGL path tracer has no instancing: an InstancedMesh (Enigma's contact pins) is traced as one plain mesh per instance, for the run
+      const inst = [], copies = []; scene.traverse((m) => { if (m.isInstancedMesh && m.visible && m.parent) inst.push(m); });
+      inst.forEach((im) => { for (let i = 0; i < im.count; i++) { const c = new TH.Mesh(im.geometry, im.material); c.matrixAutoUpdate = false; im.getMatrixAt(i, c.matrix); c.matrix.premultiply(im.matrix); c.castShadow = im.castShadow; im.parent.add(c); copies.push(c); } im.visible = false; });
+      // an x-ray part (transparent, no depth write) is left to the raster pass on top, with its own material: traced, it lost what was behind it
+      // (a ray through it to the page's background comes back with alpha 0) and it covered twice (once per face it crosses)
+      const xray = []; scene.traverse((m) => { if (m.isMesh && m.visible && m.material && xrayPart(m)) { m.visible = false; xray.push(m); } });
+      ptLayer = { xray, env };
+      // a metal gets a roughness floor: seen at a grazing angle, a near-mirror loses most of its reflection in the path tracer's sampler and its side
+      // walls come out black; the raster adds micro roughness in the shader (G.DETAIL), so the floor keeps the two looks alike
+      const rough = []; scene.traverse((m) => { const mt = m.isMesh && m.visible && m.material; if (mt && !Array.isArray(mt) && mt.metalness >= 0.5 && mt.roughness < PT_METAL_ROUGH) { rough.push([mt, mt.roughness]); mt.roughness = PT_METAL_ROUGH; } });
+      st.ptRestore = () => { st.ptRestore = null; scene.background = bg; scene.environment = env; floor.visible = fl; dimmed.forEach((m) => { m.visible = true; }); rough.forEach(([mt, r]) => { mt.roughness = r; }); xray.forEach((m) => { m.visible = true; }); ptLayer = null; copies.forEach((c) => c.removeFromParent()); inst.forEach((im) => { im.visible = true; }); };
       pt.setScene(scene, camera); pt.reset();
       st.ptPending = (async () => {
         try {
-          for (let i = 0; i < 2400 && pt.isCompiling; i++) await new Promise((r) => setTimeout(r, 25));
-          let guard = 0; while (pt.samples < samples && guard++ < samples * 8) { pt.renderSample(); renderer.getContext().finish(); await new Promise((r) => setTimeout(r, 0)); }
-        } finally { scene.background = bg; scene.environment = env; floor.visible = fl; }
+          for (let i = 0; i < 2400 && pt.isCompiling && run === st.ptRun; i++) await new Promise((r) => setTimeout(r, 25));
+          let guard = 0; while (run === st.ptRun && pt.samples < samples && guard++ < samples * 8) { pt.renderSample(); renderer.getContext().finish(); await new Promise((r) => setTimeout(r, 0)); }
+        } finally { if (run === st.ptRun && st.ptRestore) st.ptRestore(); }
       })();
     };
     if (o.pathtrace > 0) g.__ptStage = st;

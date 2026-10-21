@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **The site posters are path-traced** (`--pathtrace 128`), from the same frames as before; the films stay raster.
+- **Path-traced stills look like the films:** a raster pass over the traced image draws the floor shadow, the dashed estimate boxes and leaders, and the x-ray parts (a ray through a transparent part to the page's background lost what was behind it); then the frame goes through the film's bloom, tone map and Punchy (it came out flat and dark). Parts dimmed by a tour stop are left out (they hid the lines, cast ghost shadows and showed up in reflections).
+- **Fix: instanced parts were missing from path-traced stills** (Enigma's contact pins): the WebGL path tracer has no instancing, so each instance is traced as its own mesh.
+- **Fix: a path-traced still could come out empty or mixed.** The page draws once on load, which started a run that was still sampling when the asked-for frame started a second one; the two sampled together and the second took the parts the first had hidden for invisible. A new run now cancels the one before it.
+- **Fix: polished metal seen edge-on came out black** in path-traced stills (the RAR5 byte's side walls). Metals get a roughness floor of 0.2 while tracing, which stands in for the raster's shader micro-detail.
+- The skill tells the agent when to use `--pathtrace` (posters and cover images, never films).
+
 ## 0.11.0 - 2026-10-20
 
 Metal that reads as metal, reflections between parts, and a path tracer for stills.
