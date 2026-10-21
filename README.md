@@ -1,5 +1,7 @@
 <h1 align="center">mechanism</h1>
 
+<h3 align="center">Every number cites its source, or it does not render.</h3>
+
 <p align="center"><b>Models and drawings that say where every number comes from.</b><br>
 A skill for coding agents: it researches a real object, writes a spec where every number names its source,<br>
 runs a gate that refuses what does not add up and says plainly what was checked and what was not,<br>
