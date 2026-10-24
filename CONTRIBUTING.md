@@ -9,7 +9,7 @@ Node 22+ and a Chromium browser (Edge or Chrome) are enough to check and preview
 ```
 npm run test:fast                                 # about 2 s, no browser or ffmpeg: the gate, DEFLATE / RAR5 against zlib, 2D geometry, versions, sound engines
 npm run lint                                      # syntax, line endings, indentation, line length (no dependencies); a file may not gain lines over 200 characters
-npm run test:coverage                             # the fast tests with coverage of kit/ and scripts/; fails under 82 % branches or 85 % functions
+npm run test:coverage                             # the fast tests with coverage of kit/ and scripts/; fails under 82 % branches or 90 % functions
 npm run check:all                                 # the gate on every examples/*/spec.js, as CI runs it
 npm test                                          # everything, including the headless-browser, ffmpeg and golden-frame tests (needs both, takes a long time)
 BROWSER_TIMEOUT_SCALE=4 npm test                  # the same on a slow machine (software WebGL, 2 cores): every browser watchdog is 4x longer

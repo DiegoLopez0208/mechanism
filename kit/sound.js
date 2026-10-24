@@ -48,7 +48,10 @@
   }
   function noiseSweep(sr, o, R) {                       // whoosh: ruido por un filtro resonante cuya frecuencia barre de f0 a f1
     const dur = o.d || 0.8, n = Math.floor(dur * sr), out = new Float32Array(n), f0 = o.f0 || 300, f1 = o.f1 || 2400, Q = o.q || 1.4; let low = 0, band = 0;
-    for (let i = 0; i < n; i++) { const u = i / n, e = Math.sin(Math.PI * Math.pow(u, o.skew || 1)), f = f0 * Math.pow(f1 / f0, u), c = 2 * Math.sin(Math.PI * Math.min(0.45, f / sr)), x = R() * 2 - 1; low += c * band; const high = x - low - band / Q; band += c * high; out[i] = band * e * (o.gain || 0.9) * 0.5; }
+    // a Chamberlin state-variable filter is stable only while c^2 + 2c/Q < 4: past it (a sweep above about sr/4) it diverges to NaN
+    // and takes the whole mix with it, so c stops just short of that limit
+    const cMax = 0.95 * (Math.sqrt(1 / (Q * Q) + 4) - 1 / Q);
+    for (let i = 0; i < n; i++) { const u = i / n, e = Math.sin(Math.PI * Math.pow(u, o.skew || 1)), f = f0 * Math.pow(f1 / f0, u), c = Math.min(cMax, 2 * Math.sin(Math.PI * Math.min(0.45, f / sr))), x = R() * 2 - 1; low += c * band; const high = x - low - band / Q; band += c * high; out[i] = band * e * (o.gain || 0.9) * 0.5; }
     return out;
   }
   function servo(sr, o, R) {                            // motor de enfoque/OIS: tren de pasos con frecuencia que sube y baja
