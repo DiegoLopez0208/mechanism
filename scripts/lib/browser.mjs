@@ -26,6 +26,11 @@ export function killTree(pid) {
 
 export async function startBrowser({ executable = findBrowser(), timeout = Number(process.env.BROWSER_TIMEOUT_MS || 30000), flags = [], onEvent = () => {} } = {}) {
   if (!executable) throw new Error('no Chromium browser found (set BROWSER=<path>)');
+  // BROWSER_TIMEOUT_SCALE=3 stretches every watchdog, including the ones callers fix in code: a 2-core machine on software WebGL
+  // can take a minute for one Studio frame, which no fixed timeout here anticipates.
+  const scale = Number(process.env.BROWSER_TIMEOUT_SCALE || 1);
+  if (!(scale > 0 && Number.isFinite(scale))) throw new Error('BROWSER_TIMEOUT_SCALE must be a positive number');
+  timeout *= scale;
   if (!(timeout > 0 && Number.isFinite(timeout))) throw new Error('browser timeout must be positive and finite');
   const profile = mkdtempSync(path.join(os.tmpdir(), 'mx-cdp-'));
   // DevTools over a private pipe (fds 3 and 4) by default: no TCP port that another local process could reach while a film renders.

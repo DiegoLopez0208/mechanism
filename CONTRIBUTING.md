@@ -12,6 +12,7 @@ npm run lint                                      # syntax, line endings, indent
 npm run test:coverage                             # the fast tests with coverage of kit/ and scripts/; fails under 82 % branches or 85 % functions
 npm run check:all                                 # the gate on every examples/*/spec.js, as CI runs it
 npm test                                          # everything, including the headless-browser, ffmpeg and golden-frame tests (needs both, takes a long time)
+BROWSER_TIMEOUT_SCALE=4 npm test                  # the same on a slow machine (software WebGL, 2 cores): every browser watchdog is 4x longer
 node scripts/check-spec.mjs examples/hub/spec.js  # one example's gate
 node scripts/stranger.mjs rubik                   # label-free still for the stranger test
 ```
