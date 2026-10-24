@@ -1,4 +1,4 @@
-// generado desde data/rpi4/model.json (no editar a mano)
+// generated from data/rpi4/model.json (do not edit by hand)
 window.MODEL = {
  "name": "Raspberry Pi 4 Model B",
  "units": "mm",

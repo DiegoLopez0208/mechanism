@@ -1,24 +1,24 @@
 /*
- * kit/kin.js - cinematica de trenes de engranajes. Puro (sin three.js): corre en el navegador y en Node, asi scripts/check-spec.mjs
- * verifica las relaciones de transmision sin abrir nada.
+ * kit/kin.js - gear-train kinematics. Pure (no three.js): it runs in the browser and in Node, so scripts/check-spec.mjs
+ * checks the ratios without opening anything.
  *
  *   const K = MX.kin({ bodies: ['sun','carrier','ring','p1','p2'], teeth: { sun: 24, ring: 72, p1: 24, p2: 24 }, free: 'carrier',
  *                      links: [ { t: 'fixed', a: 'sun' },
- *                               { t: 'ext', a: 'sun',  b: 'p1', carrier: 'carrier' },      // engrane exterior: signos opuestos respecto del portasatelites
- *                               { t: 'int', a: 'ring', b: 'p1', carrier: 'carrier' },      // engrane interior: mismo signo
- *                               { t: 'same', a: 'x', b: 'y' } ] });                        // unidos por el mismo eje
- *   K.rates      -> { id: velocidad angular / velocidad del cuerpo libre }     (sistema lineal: un solo grado de libertad)
- *   K.at(theta)  -> { id: angulo }                                              (theta = angulo del cuerpo libre)
+ *                               { t: 'ext', a: 'sun',  b: 'p1', carrier: 'carrier' },      // external mesh: opposite signs relative to the carrier
+ *                               { t: 'int', a: 'ring', b: 'p1', carrier: 'carrier' },      // internal mesh: same sign
+ *                               { t: 'same', a: 'x', b: 'y' } ] });                        // joined on the same shaft
+ *   K.rates      -> { id: angular speed / speed of the free body }     (linear system: one degree of freedom)
+ *   K.at(theta)  -> { id: angle }                                       (theta = angle of the free body)
  *   K.ratio(a, b)-> rates[a] / rates[b]
- *   K.phases(meshes) -> { phi: { id: fase de los dientes }, checks: [...] }     (para que los dientes encajen de verdad en la imagen)
- * Relaciones (Willis): ext  za (wa - wc) = - zb (wb - wc);   int  za (wa - wc) = zb (wb - wc)   (a = corona).
+ *   K.phases(meshes) -> { phi: { id: tooth phase }, checks: [...] }     (so the teeth really mesh in the picture)
+ * Relations (Willis): ext  za (wa - wc) = - zb (wb - wc);   int  za (wa - wc) = zb (wb - wc)   (a = ring).
  */
 (function (g) {
   'use strict';
   const MX = (g.MX = g.MX || {}), TAU = Math.PI * 2;
   const wrap = (x) => ((x + Math.PI) % TAU + TAU) % TAU - Math.PI;
 
-  // resuelve min |A x - b| por ecuaciones normales con Gauss (los sistemas son chicos)
+  // solves min |A x - b| through the normal equations with Gauss (the systems are small)
   function solve(A, b, n) {
     const M = Array.from({ length: n }, () => new Array(n + 1).fill(0));
     for (let r = 0; r < A.length; r++) for (let i = 0; i < n; i++) { if (!A[r][i]) continue; for (let j = 0; j < n; j++) M[i][j] += A[r][i] * A[r][j]; M[i][n] += A[r][i] * b[r]; }
@@ -35,7 +35,7 @@
   MX.kin = (def) => {
     const ids = def.bodies, ix = Object.fromEntries(ids.map((id, i) => [id, i])), n = ids.length, z = def.teeth || {}, A = [], b = [];
     const row = (terms, rhs) => { const r = new Array(n).fill(0); terms.forEach(([id, c]) => { if (ix[id] == null) throw new Error('cuerpo desconocido en un vinculo: ' + id); r[ix[id]] += c; }); A.push(r); b.push(rhs || 0); };
-    const tz = (id) => { if (!z[id]) throw new Error('faltan los dientes de ' + id); return z[id]; };
+    const tz = (id) => { if (!z[id]) throw new Error('missing the teeth of ' + id); return z[id]; };
     def.links.forEach((l) => {
       if (l.t === 'fixed') row([[l.a, 1]], l.value || 0);
       else if (l.t === 'same') row([[l.a, 1], [l.b, -1]]);
@@ -46,13 +46,13 @@
     });
     row([[def.free, 1]], 1);
     const x = solve(A, b, n), rates = Object.fromEntries(ids.map((id, i) => [id, Math.abs(x[i]) < 1e-12 ? 0 : x[i]]));
-    // consistencia: todos los vinculos deben cumplirse a la vez (si no, hay un tren mal definido o un engrane trabado)
+    // consistency: every link must hold at once (otherwise a train is ill-defined or a mesh is locked)
     const resid = A.reduce((m, r, k) => Math.max(m, Math.abs(r.reduce((s, c, i) => s + c * x[i], 0) - b[k])), 0);
     const K = { ids, rates, teeth: z, residual: resid, free: def.free };
     K.at = (theta) => Object.fromEntries(ids.map((id) => [id, rates[id] * theta]));
     K.ratio = (a, c) => rates[a] / rates[c];
 
-    // fases de los dientes. meshes: [{ a, b, t: 'ext' | 'int', beta }]  beta = direccion (rad) del centro de a al centro de b con theta = 0.
+    // tooth phases. meshes: [{ a, b, t: 'ext' | 'int', beta }]  beta = direction (rad) from the centre of a to the centre of b at theta = 0.
     // ext: za (fa - beta) + zb (fb - beta - pi) = pi (mod 2pi);  int (a = corona): za (fa - beta) = zb (fb - beta) (mod 2pi)
     const phasesOne = (meshes, root) => {
       const phi = { [root || meshes[0].a]: 0 }, checks = [], pending = meshes.slice(), done = [];
@@ -68,8 +68,8 @@
         const i = pending.findIndex((m) => (phi[m.a] != null) !== (phi[m.b] != null)); if (i < 0) break;
         const m = pending.splice(i, 1)[0]; if (phi[m.a] != null) phi[m.b] = fwd(m); else phi[m.a] = back(m); done.push(m);
       }
-      pending.concat(done).forEach((m) => {                 // residuo de cada engrane: 0 = los dientes encajan
-        if (phi[m.a] == null || phi[m.b] == null) { checks.push({ a: m.a, b: m.b, ok: false, note: 'sin conexion con la raiz' }); return; }
+      pending.concat(done).forEach((m) => {                 // residual of each mesh: 0 = the teeth mesh
+        if (phi[m.a] == null || phi[m.b] == null) { checks.push({ a: m.a, b: m.b, ok: false, note: 'no connection to the root' }); return; }
         const za = tz(m.a), zb = tz(m.b), fa = phi[m.a], fb = phi[m.b];
         const r = m.t === 'ext' ? za * (fa - m.beta) + zb * (fb - m.beta - Math.PI) - Math.PI : za * (fa - m.beta) - zb * (fb - m.beta);
         checks.push({ a: m.a, b: m.b, t: m.t, residual: Math.abs(wrap(r)), ok: Math.abs(wrap(r)) < 1e-6 });
@@ -87,8 +87,8 @@
     return K;
   };
 
-  // distancia entre centros que exige la geometria: ext a + b, int a - b (modulo m)
+  // centre distance the geometry demands: ext a + b, int a - b (module m)
   MX.kin.center = (t, m, za, zb) => m * (t === 'ext' ? za + zb : Math.abs(za - zb)) / 2;
-  // condicion de ensamblaje de un planetario con n satelites equiespaciados: (zs + zr) / n debe ser entero y zr = zs + 2 zp
+  // assembly condition of a planetary set with n equally spaced planets: (zs + zr) / n must be an integer and zr = zs + 2 zp
   MX.kin.planetary = (zs, zp, zr, n) => ({ geometry: zr === zs + 2 * zp, assembly: Number.isInteger((zs + zr) / n), ringPerCarrier: (zr + zs) / zr });
 })(typeof window !== 'undefined' ? window : globalThis);

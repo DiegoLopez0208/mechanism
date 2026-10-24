@@ -1,18 +1,18 @@
 /*
- * kit/spec-core.js - la parte pura del spec declarativo (sin three.js): analiza el mecanismo (cinematica, fases de dientes, distancias entre centros,
- * relacion de cada modo) y VALIDA la evidencia. Corre en el navegador (kit/spec.js) y en Node (scripts/check-spec.mjs), asi un objeto que no cumple
- * sus propias reglas no llega a renderizarse.
+ * kit/spec-core.js - the pure part of the declarative spec (no three.js): it analyses the mechanism (kinematics, tooth phases, centre distances,
+ * the ratio of each mode) and VALIDATES the evidence. It runs in the browser (kit/spec.js) and in Node (scripts/check-spec.mjs), so an object
+ * that breaks its own rules never gets rendered.
  *
- * Forma del spec (ver examples/hub/spec.js):
+ * Shape of a spec (see examples/hub/spec.js):
  *   { id, fig, kicker, title, sub, aspect,
  *     research: { sources: [{ id, title, url, fetched, note, derives: [ids] } | { id, kind: 'user', title, received, note }],
  *                 claims:  [{ id, text, conf: 'spec'|'user'|'measured'|'derived'|'estimated', value, unit, src: [ids], cross, error, method, uncertainty, why }] },
- *     parts: [{ id, name, kind, p: { ...medidas en mm... }, mat, at: [x, y, z], explode: [x, y, z], body, orbit: { center, r, a0, around },
+ *     parts: [{ id, name, kind, p: { ...sizes in mm... }, mat, at: [x, y, z], explode: [x, y, z], body, orbit: { center, r, a0, around },
  *               conf, claims: [ids], info: { title, lines, conf } }],
  *     mechanism: { free, links: [{ t: 'fixed'|'same'|'ext'|'int', a, b, carrier }],
  *                  drive: { rpm, modes: [{ id, label, driver, shell, publish: { value, text, claim, tol }, formula }] } },
  *     director: { modeDur, tourDur, explodedHold, tour: [ids], views: {...} } }
- * Reglas: todo numero SPEC/MEASURED/DERIVED nombra su fuente; DERIVED trae su cruce; MEASURED trae su error; ESTIMATED trae su porque.
+ * Rules: every SPEC/MEASURED/DERIVED number names its source; DERIVED brings its cross-check; MEASURED its error; ESTIMATED its reason.
  * Evidence classes (docs/draft-evidence.md):
  *   SPEC       printed by a source (a document someone can open: url).      USER       given by the person who asked (a source of kind 'user', no url).
  *   MEASURED   obtained by measuring (error; on a 2D drawing also method and uncertainty: an extraction uncertainty is not a tolerance).
@@ -32,8 +32,8 @@
   const startPos = (d) => (d.orbit ? [d.orbit.center[0] + d.orbit.r * Math.cos(d.orbit.a0 * Math.PI / 180), d.orbit.center[1] + d.orbit.r * Math.sin(d.orbit.a0 * Math.PI / 180), d.at ? d.at[2] : 0] : d.at);
   S.startPos = startPos; S.teethOf = teethOf;
 
-  // mecanismo de presion (switch, pulsador, palanca): un solo recorrido x entre 0 y travel; la fuerza sale de los puntos publicados
-  // y se cruza con lo que daria un resorte lineal por los dos primeros: si no cierra, el spec tiene que decirlo (press.note)
+  // press mechanism (switch, push button, lever): a single travel x between 0 and travel; the force comes from the published points
+  // and is cross-checked against what a linear spring through the first two would give: if it does not close, the spec has to say so (press.note)
   function analyzePress(M, out) {
     const pr = M.press, pts = pr.force || [], pk = { travel: pr.travel, actuation: pr.actuation };
     if (pts.length >= 3) { const k = (pts[1][1] - pts[0][1]) / (pts[1][0] - pts[0][0]), last = pts[pts.length - 1], pred = pts[0][1] + k * (last[0] - pts[0][0]); pk.slope = k; pk.predictedFinal = pred; pk.publishedFinal = last[1]; pk.off = (last[1] - pred) / pred; pk.consistent = Math.abs(pk.off) <= 0.05; if (!pk.consistent && !pr.note) out.problems.push('the published force points do not add up with a linear spring (' + pred.toFixed(1) + ' expected, ' + last[1] + ' published) and the spec does not explain it (press.note)'); }
@@ -41,8 +41,8 @@
     ((M.drive && M.drive.modes) || []).forEach((m) => { const pub = m.publish, ok = pub ? Math.abs(m.to - pub.value) <= (pub.tol == null ? 0.01 : pub.tol) : null; out.modes.push({ id: m.id, label: m.label, ratio: m.to, publish: pub || null, ok }); if (ok === false) out.problems.push('phase ' + m.label + ': the model reaches ' + m.to + ' and the published one is ' + pub.value); });
   }
 
-  // Enigma: cada prueba publicada (rotores, anillos, posicion inicial, texto -> cifrado, o la secuencia de ventanas) se SIMULA con kit/enigma.js;
-  // si no da lo publicado, el cableado o las reglas estan mal y el spec no pasa. Las fases del video se simulan igual y dejan sus eventos listos.
+  // Enigma: every published test (rotors, rings, start position, text -> ciphertext, or the window sequence) is SIMULATED with kit/enigma.js;
+  // if it does not give what is published, the wiring or the rules are wrong and the spec does not pass. The film's phases are simulated the same way and leave their events ready.
   function analyzeEnigma(M, out) {
     const en = M.enigma, E = MX.enigma; if (!E) { out.problems.push('kit/enigma.js is missing'); return; }
     out.enigmaTests = [];
@@ -62,8 +62,8 @@
     });
   }
 
-  // Motor de piston (biela-manivela). Con radio de manivela r = carrera / 2, biela l y angulo a (0 = punto muerto superior) el perno del piston esta en
-  // y = r cos a + sqrt(l^2 - r^2 sin^2 a) y la biela se inclina atan2(r sin a, sqrt(l^2 - r^2 sin^2 a)). Es la cinematica exacta, no un seno aproximado.
+  // Piston engine (crank-slider). With crank radius r = stroke / 2, rod l and angle a (0 = top dead centre) the piston pin is at
+  // y = r cos a + sqrt(l^2 - r^2 sin^2 a) and the rod leans by atan2(r sin a, sqrt(l^2 - r^2 sin^2 a)). Exact kinematics, not an approximate sine.
   S.eng = {
     pinY: (r, l, a) => r * Math.cos(a) + Math.sqrt(l * l - r * r * Math.sin(a) * Math.sin(a)),
     rodAng: (r, l, a) => Math.atan2(r * Math.sin(a), Math.sqrt(l * l - r * r * Math.sin(a) * Math.sin(a))),
@@ -72,8 +72,8 @@
     stroke: (phi) => (phi < 180 ? 'POWER' : phi < 360 ? 'EXHAUST' : phi < 540 ? 'INTAKE' : 'COMPRESSION'),
     lift: (phi, open, close, max) => { const L = (((close - open) % 720) + 720) % 720, u = (((phi - open) % 720) + 720) % 720; return u >= L ? 0 : max * Math.pow(Math.sin(Math.PI * u / L), 2); },
   };
-  // El orden de encendido publicado tiene que ser posible con el cigueñal: el cilindro que enciende en el lugar i del orden lo hace a i * 720 / n grados
-  // y esa posicion solo existe si coincide (modulo 360) con el angulo de su munequilla; la leva se encarga de la vuelta que sobra (cam = 0 o 1).
+  // The published firing order has to be possible with the crankshaft: the cylinder that fires at place i of the order does so at i * 720 / n degrees
+  // and that position exists only if it matches (modulo 360) the angle of its crankpin; the cam takes care of the extra turn (cam = 0 or 1).
   function analyzeEngine(M, out) {
     const en = M.engine, n = en.cylinders, r = en.stroke / 2, ign = [], cam = [];
     if ((en.throws || []).length !== n) out.problems.push('the crankshaft declares ' + (en.throws || []).length + ' crank throws and the engine has ' + n + ' cylinders');
@@ -91,8 +91,8 @@
     });
   }
 
-  // Cubo de Rubik: cada fase corre su secuencia sobre kit/cube.js (la geometria de 26 cubitos, sin tablas) y se compara con lo publicado:
-  // el periodo de una secuencia, el superflip (20 giros que dejan las 12 aristas dadas vuelta y las 8 esquinas en su sitio) y el numero de posiciones.
+  // Rubik's cube: each phase runs its sequence on kit/cube.js (the geometry of 26 cubies, no tables) and is compared with what is published:
+  // the period of a sequence, the superflip (20 turns that leave all 12 edges flipped and the 8 corners in place) and the number of positions.
   function analyzeCube(M, out) {
     const cb = M.cube, C = MX.cube; if (!C) { out.problems.push('kit/cube.js is missing'); return; }
     const st = C.create(); out.cubeRuns = []; out.cube = { pieces: st.length };
@@ -109,8 +109,8 @@
     });
   }
 
-  // Cuentas: cada fase evalua una expresion sobre variables declaradas (cada una con su afirmacion) y la compara con el numero publicado.
-  // Sirve para cualquier producto cuya ficha publique una cifra que sale de otras (TFLOPS = nucleos x 2 x reloj, ancho de banda = bus x velocidad / 8).
+  // Calculations: each phase evaluates an expression over declared variables (each with its own claim) and compares it with the published number.
+  // It fits any product whose sheet publishes a figure that comes from others (TFLOPS = cores x 2 x clock, bandwidth = bus x speed / 8).
   // the Math functions an expression may use without the Math. prefix, and the unit factors that mark a check as a mere conversion
   const MATHFN = ['sqrt', 'abs', 'min', 'max', 'pow', 'round', 'floor', 'ceil', 'log', 'log10', 'exp', 'sin', 'cos', 'tan', 'atan', 'atan2', 'hypot', 'PI'], UNIT_RE = /(^|[^0-9.])(25[.]4|2[.]54|0[.]0254|0[.]3048|0[.]4535|2[.]2046|1[.]6093|0[.]6213|3[.]2808|39[.]37)([^0-9]|$)/;
   const isConversion = (m) => m.kind === 'convert' || (m.kind == null && UNIT_RE.test(String(m.expr || '')));
@@ -143,7 +143,7 @@
     });
   }
 
-  // analisis del mecanismo: cinematica, fases de dientes, distancias entre centros, relaciones por modo
+  // mechanism analysis: kinematics, tooth phases, centre distances, ratios per mode
   S.analyze = (spec) => {
     const out = { problems: [], K: null, modes: [], phi: {}, meshes: [], centers: [] }, M = spec.mechanism;
     if (!M || !MX.kin) return out;
@@ -186,7 +186,7 @@
   };
 
   // validacion de evidencia + mecanismo; devuelve { errors, warnings, lines }
-  // texto de relleno: lo que deja una plantilla sin completar
+  // placeholder text: what an unfinished template leaves behind
   // a placeholder URL: the example domains (and any subdomain of them), the reserved test TLDs .invalid, .test and .example (RFC 2606 / 6761),
   // and the loopback addresses the contract has always refused (a source is a page someone else can open)
   const PH = /\b(todo|tbd|fixme|lorem ipsum|placeholder|changeme|xxx+)\b/i;
@@ -308,7 +308,7 @@
       }
       bad(d.p, 'p'); [d.at, d.explode].forEach((a, i) => (a || []).forEach((v) => { if (typeof v !== 'number' || !isFinite(v)) errors.push('part ' + d.id + ': ' + (i ? 'explode' : 'at') + ' has a value that is not a finite number'); }));
     });
-    // reconocible: que deberia decir alguien que ve el objeto sin leyenda, y los rasgos que lo hacen ese objeto (cada uno atado a piezas que existen)
+    // recognisable: what someone who sees the object with no caption should call it, and the features that make it that object (each tied to parts that exist)
     const RC = spec.recognize, recog = { declared: !!RC, features: 0, blind: RC && RC.blind ? (RC.blind.ok === true ? 'recognised' : RC.blind.ok === false ? 'not recognised' : 'pending') : 'untested' };
     if (!RC) warnings.push('no recognize block: say what the object is called and which features make it recognisable (recognize: { object, iconic: [{ text, parts }] })');
     else {

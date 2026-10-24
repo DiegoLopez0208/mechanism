@@ -1,11 +1,11 @@
 /*
- * kit/spec.js - compila un SPEC declarativo (ver kit/spec-core.js) a una figura completa: piezas parametricas, cinematica en vivo, camara,
- * luz, paneles de evidencia, sonido y video. Agregar un objeto nuevo es escribir datos, no escena.
+ * kit/spec.js - compiles a declarative SPEC (see kit/spec-core.js) into a complete figure: parametric parts, live kinematics, camera,
+ * light, evidence panels, sound and film. Adding a new object is writing data, not a scene.
  *
- *   MX.spec.run(SPEC)    -> en el navegador: video guionado (?render=1 desde scripts/render.mjs) o visor interactivo (?explore)
- * Parametros de URL: ?explore  ?theme=night|paper  ?aspect=4:5|9:16|1:1
- * El director arma solo: armado escalonado, modos de marcha con su relacion medida en el modelo contra la publicada, explosionado, recorrido por
- * pieza con su ficha, plegado, tabla de relaciones, tabla de evidencia (con fuente) y cierre con las fuentes.
+ *   MX.spec.run(SPEC)    -> in the browser: scripted film (?render=1 from scripts/render.mjs) or interactive viewer (?explore)
+ * URL parameters: ?explore  ?theme=night|paper  ?aspect=4:5|9:16|1:1
+ * The director builds on its own: staggered assembly, drive modes with the ratio measured on the model against the published one, explosion, a tour
+ * of the parts with their cards, folding back, the ratio table, the evidence table (with sources) and a closing card with the sources.
  */
 (function (g) {
   'use strict';
@@ -14,8 +14,8 @@
   const v3 = (a) => new TH.Vector3(a[0], a[1], a[2]);
   const CONFNAME = { spec: 'SPEC', user: 'USER', measured: 'MEASURED', derived: 'DERIVED', estimated: 'ESTIMATED' };      // USER: given by the person who asked
 
-  /* ------------------------------------------------------------ integrador: el angulo de cada cuerpo sale de integrar velocidades, no de sacar cuentas por tiempo */
-  // asi un cambio de modo es continuo: lo unico que cambia es cual cuerpo recibe la velocidad del conductor
+  /* ------------------------------------------------------------ integrator: each body's angle comes from integrating speeds, not from per-time formulas */
+  // so a mode change is continuous: the only thing that changes is which body receives the driver's speed
   function Integrator(an, rpm) { this.K = an.K; this.rpm = rpm || 30; this.th = { free: 0, driver: 0, shell: 0 }; }
   Integrator.prototype.step = function (dt, mode, speed) {
     const w = TAU * this.rpm / 60 * speed, X = mode ? this.K.rates[mode.driver] : 1, wf = Math.abs(X) > 1e-9 ? w / X : 0;
@@ -23,7 +23,7 @@
   };
   Integrator.prototype.ang = function (body) { if (body === 'driver') return this.th.driver; if (body === 'shell') return this.th.shell; const r = this.K.rates[body]; return r == null ? 0 : r * this.th.free; };
 
-  // tabla precalculada para el video (cualquier t, cuadro por cuadro, sin acumular error)
+  // precomputed table for the film (any t, frame by frame, with no accumulated error)
   function Timeline(an, rpm, dur, modeAt, speedAt) {
     const dt = 1 / 120, n = Math.ceil(dur / dt) + 2, it = new Integrator(an, rpm), free = new Float64Array(n), drv = new Float64Array(n), shl = new Float64Array(n);
     for (let i = 0; i < n; i++) { free[i] = it.th.free; drv[i] = it.th.driver; shl[i] = it.th.shell; const t = i * dt; it.step(dt, modeAt(t), speedAt(t)); }
@@ -53,7 +53,7 @@
   S.run = (spec) => {
     const q = new URLSearchParams(location.search), asp = q.get('aspect') || spec.aspect || '4:5', [W, H] = SIZES[asp] || SIZES['4:5'], FPS = 30;
     const V = S.validate(spec), an = V.analysis, explore = q.has('explore');
-    { const want = q.get('style') || q.get('theme') || spec.style || MX.THEME.name; MX.setStyle(want, spec.brand && spec.brand.accent); }      // el estilo por URL manda; si no, el del spec; la marca da el acento de los estilos que lo usan
+    { const want = q.get('style') || q.get('theme') || spec.style || MX.THEME.name; MX.setStyle(want, spec.brand && spec.brand.accent); }      // the URL's style wins; otherwise the spec's; the brand gives the accent of the styles that use one
     const presentation = MX.presentation && MX.presentation.resolve(q, spec);
     if (presentation && presentation.enabled) MX.presentation.apply(presentation);
     V.errors.forEach((e) => console.error('SPEC: ' + e)); V.warnings.forEach((w) => console.warn('SPEC: ' + w));
@@ -74,13 +74,13 @@
     // a flat piece has no 3D model: Studio, the mesh sheet and Workflow cannot show it, and nothing is invented for them
     if (spec.parts.some((d) => d.kind === 'drawing')) { document.title = 'SPEC ERROR'; throw new Error('this spec has 2D drawing parts (kind: drawing), which have no 3D model: render it with --method paper and paperScene: { kind: \'geometry\' }'); }
 
-    /* ---------------------------------------------------------- figura y piezas */
+    /* ---------------------------------------------------------- figure and parts */
     let beforeHook = null;
     const vectorOnly = presentation?.enabled && presentation.method === 'paper';
     const F = MX.figure({ beforeRender: (s) => { if (beforeHook) beforeHook(s); }, w: W, h: H, axes: 'three', fps: FPS, stage: Object.assign({ shadow: 0.14, floorY: spec.up === 'z' ? -0.3 : -70 }, presentation?.enabled ? { renderScale: 1.5 } : {}, spec.stage || {}, (() => { const qs = new URLSearchParams(location.search), ss = Number(qs.get('ss') || 1), o = ss > 1 ? { renderScale: Math.min(2, ss) } : {}; if (qs.has('ssr')) o.ssr = qs.get('ssr') !== '0'; if (qs.get('tonemap')) o.toneMap = qs.get('tonemap'); if (Number(qs.get('pathtrace')) > 0) o.pathtrace = Number(qs.get('pathtrace')); return o; })(), { vectorOnly }),
       card: (s) => ({ fig: spec.fig || 'Fig 1', kicker: spec.kicker, title: spec.title, sub: s.sub || spec.sub, hint: s.hint || '', readout: s.readout || (F.parts.length + ' parts'), blocks: [['parts', F.parts.length], ['spec', claimsOf('spec'), T.teal], ['derived', claimsOf('derived')], ['estimated', claimsOf('estimated'), T.ember]] }) });
     const st = F.st, H2 = F.hud, byBodyPhi = an.phi || {};
-    // Enigma: el cableado que se dibuja en cada rotor sale de la MISMA tabla que usa la simulacion
+    // Enigma: the wiring drawn on each rotor comes from the SAME table the simulation uses
     const ENC = ENIG ? M.enigma : null, EN = ENIG ? MX.enigma : null;
     function roleCfg(role) {
       if (!ENIG || !role) return {};
@@ -88,7 +88,7 @@
       if (role === 'UKW') return { kind: 'reflector', wiring: EN.REFLECTOR[ENC.reflector] };
       return { kind: 'etw' };
     }
-    // Motor: cinematica exacta de biela-manivela (kit/spec-core.js) y levas cuyas puntas quedan calculadas desde la ventana de cada valvula
+    // Engine: exact crank-slider kinematics (kit/spec-core.js) and cams whose lobes are computed from each valve's window
     const EGN = ENGN ? M.engine : null, AE = ENGN ? an.engine : null, EGE = S.eng;
     function camCfg(d) {
       if (!ENGN || !d.engine || d.engine.role !== 'cam') return {};
@@ -103,16 +103,16 @@
       else if (g.role === 'rod') { const y1 = EGE.pinY(r, l, a), y0 = EGE.pinY(r, l, a0); p.group.position.x += r * (Math.sin(a) - Math.sin(a0)) / 2; p.group.position.y += (r * Math.cos(a) + y1 - r * Math.cos(a0) - y0) / 2; p.group.rotation.z += EGE.rodAng(r, l, a) - EGE.rodAng(r, l, a0); }
       else if (g.role === 'valve') { const v = EGN.valves[g.valve]; p.group.position.y -= EGE.lift(EGE.phase(e.theta / RAD, AE.ign[k]), v.open, v.close, v.lift); }
     }
-    // Cubo de Rubik: cada cubito toma su posicion y su giro de kit/cube.js; durante un giro, la capa gira de verdad un angulo parcial
+    // Rubik's cube: each cubie takes its position and rotation from kit/cube.js; during a turn the layer really turns by a partial angle
     const CB = CUBE ? MX.cube : null, CPITCH = CUBE ? (M.cube.pitch || 18.67) : 0, CIDX = {}, cubeQ = new TH.Quaternion(), cubeM = new TH.Matrix4();
     if (CUBE) CB.create().forEach((c, i) => { CIDX[c.home.join()] = i; });
     function cubePose(d, p, frame) {
       const c = frame[CIDX[d.cubie.join()]], h = d.cubie, R = c.R; p.group.position.x += (c.pos[0] - h[0]) * CPITCH; p.group.position.y += (c.pos[1] - h[1]) * CPITCH; p.group.position.z += (c.pos[2] - h[2]) * CPITCH;
       cubeM.set(R[0], R[1], R[2], 0, R[3], R[4], R[5], 0, R[6], R[7], R[8], 0, 0, 0, 0, 1); cubeQ.setFromRotationMatrix(cubeM); p.group.quaternion.premultiply(cubeQ);
     }
-    // Marca: letras, filetes y formas impresas sobre una cara de la pieza. decal = { face: '+z' | '-z' | '+x' | '-x' | '+y' | '-y', at: [x, y, z] locales, w, h (mm),
-    //   rot (grados sobre la normal), px (pixeles por mm), glow (color emisivo), items: [{ t: 'text' | 'rect' | 'circle' | 'line', ... en mm, y hacia arriba }] }.
-    // Solo tipografia y color de marca: nada de logos copiados; lo que el objeto lleva impreso se declara como cualquier otro dato (y si no esta en la fuente, ESTIMATED).
+    // Brand: letters, rules and shapes printed on a face of the part. decal = { face: '+z' | '-z' | '+x' | '-x' | '+y' | '-y', at: [x, y, z] local, w, h (mm),
+    //   rot (degrees about the normal), px (pixels per mm), glow (emissive colour), items: [{ t: 'text' | 'rect' | 'circle' | 'line', ... in mm, y up }] }.
+    // Only type and brand colour: no copied logos; what the object has printed on it is declared like any other datum (if the source lacks it, ESTIMATED).
     const DFACE = { '+z': [0, 0, 0], '-z': [0, Math.PI, 0], '+x': [0, Math.PI / 2, 0], '-x': [0, -Math.PI / 2, 0], '+y': [-Math.PI / 2, 0, 0], '-y': [Math.PI / 2, 0, 0] };
     const FONTS = { sans: MX.SANS, serif: MX.SERIF, mono: MX.MONO };
     function makeDecal(dc) {
@@ -130,10 +130,10 @@
       if (dc.glow) { mat.emissive = new TH.Color(dc.glow); mat.emissiveMap = tex; mat.emissiveIntensity = dc.glowK || 1.4; }
       m.rotation.z = (dc.rot || 0) * Math.PI / 180; m.renderOrder = 2; grpD.add(m); const f = DFACE[dc.face || '+z']; grpD.rotation.set(f[0], f[1], f[2]); grpD.position.set(dc.at[0], dc.at[1], dc.at[2]); return grpD;
     }
-    const root = new TH.Group(); if (ORI) root.rotation.set(ORI[0] * Math.PI / 180, ORI[1] * Math.PI / 180, ORI[2] * Math.PI / 180); st.scene.add(root);          // up: 'z' -> el eje z del spec queda vertical
+    const root = new TH.Group(); if (ORI) root.rotation.set(ORI[0] * Math.PI / 180, ORI[1] * Math.PI / 180, ORI[2] * Math.PI / 180); st.scene.add(root);          // up: 'z' -> the spec's z axis stands vertical
     spec.parts.forEach((d, i) => {
       const grp = P[d.kind](Object.assign({}, d.p, { mat: d.mat }, roleCfg(d.role), camCfg(d))), base = v3(S.startPos(d)); grp.userData.spec = d;
-      grp.traverse((m) => { if (m.isMesh || m.isLine) m.material = Array.isArray(m.material) ? m.material.map((q) => q.clone()) : m.material.clone(); });      // material propio por pieza: la atenuacion de una no puede tocar a las demas
+      grp.traverse((m) => { if (m.isMesh || m.isLine) m.material = Array.isArray(m.material) ? m.material.map((q) => q.clone()) : m.material.clone(); });      // each part gets its own material: dimming one cannot touch the others
       (d.decals || []).forEach((dc) => grp.add(makeDecal(dc)));
       const srcLine = () => { const ids = []; (d.claims || []).forEach((cid) => ((claimBy[cid] || {}).src || []).forEach((sid) => { if (!ids.includes(sid)) ids.push(sid); })); const hosts = ids.slice(0, 2).map((sid) => { const sr = sources.find((q) => q.id === sid); if (!sr) return sid; let h = sr.url; try { h = new URL(sr.url).hostname; } catch (e) { /* url rara */ } return h.replace('www.', '') + ' ' + (sr.fetched || ''); }); return hosts.length ? 'SOURCE  ' + hosts.join('  +  ') : (d.conf === 'estimated' ? 'NO SOURCE: ESTIMATED' : ''); };
       const part = F.add({ id: d.id, group: grp, base, explode: v3(d.explode || [0, 0, 0]), from: new TH.Vector3(0, 0, 90), conf: d.conf, est: d.conf === 'estimated' && d.kind !== 'pin', info: ((base0) => Object.assign({}, base0, { src: srcLine(), sizeEvidence: S.sizeEvidence(d) }, d.params ? { lines: (base0.lines || []).concat(Object.keys(d.params).slice(0, 5).map((k) => k + ' ' + (d.params[k].value != null ? d.params[k].value : d.p[k]) + (d.params[k].unit ? ' ' + d.params[k].unit : '') + '   ' + String(d.params[k].conf || '').toUpperCase())) } : {}))(d.info || autoInfo(d, grp.userData)), spec: d, body: d.body || null });
@@ -143,7 +143,7 @@
         const m = s.mech, pr = m && m.press ? m.press : 0;
         if (d.rot) { p.group.rotation.x += d.rot[0] * RAD; p.group.rotation.y += d.rot[1] * RAD; p.group.rotation.z += d.rot[2] * RAD; }
         if (d.spin) p.group.rotation.z += d.spin * (s.t == null ? performance.now() / 1000 : Math.max(0, s.t));
-        if (d.motion && m) {      // movimiento declarado por la pieza como funcion del paso actual: { pos: [dx, dy, dz], scale: k | [kx, ky, kz], rot: [rx, ry, rz] }
+        if (d.motion && m) {      // motion declared by the part as a function of the current step: { pos: [dx, dy, dz], scale: k | [kx, ky, kz], rot: [rx, ry, rz] }
           const mo = d.motion(m.step || 0, s.t == null ? 0 : s.t, m.phase || 0);
           p.group.scale.set(1, 1, 1);      // a part that was hidden (scale ~0) or pulsed must come back when its motion stops asking for a scale
           if (mo) { if (mo.pos) { p.group.position.x += mo.pos[0]; p.group.position.y += mo.pos[1]; p.group.position.z += mo.pos[2]; } if (mo.scale != null) { const sc = Array.isArray(mo.scale) ? mo.scale : [mo.scale, mo.scale, mo.scale]; p.group.scale.set(sc[0], sc[1], sc[2]); } if (mo.rot) { p.group.rotation.x += mo.rot[0]; p.group.rotation.y += mo.rot[1]; p.group.rotation.z += mo.rot[2]; } }
@@ -161,18 +161,18 @@
     F.finish();
     if (vectorOnly) return MX.paperEngine.run({ spec, validation: V, config: presentation, views: MX.paperMesh.viewSet(F), shapeCheck: MX.paperMesh.shapeCheck(F), W, H, length: LEN });      // the mesh adapter turns the compiled parts into the plain view set the vector engine draws
     const parts = F.parts, key = st.key;
-    st.scene.updateMatrixWorld(true); const wbox = new TH.Box3(); parts.forEach((p) => wbox.expandByObject(p.group)); const ctr = wbox.getCenter(new TH.Vector3());      // centro del objeto armado, en ejes del mundo
+    st.scene.updateMatrixWorld(true); const wbox = new TH.Box3(); parts.forEach((p) => wbox.expandByObject(p.group)); const ctr = wbox.getCenter(new TH.Vector3());      // centre of the assembled object, in world axes
 
     /* ---------------------------------------------------------- vistas */
     let rxy = 10, zMin = 1e9, zMax = -1e9, zMinA = 1e9, zMaxA = -1e9, yMin = 1e9, yMax = -1e9;
     parts.forEach((p) => { yMin = Math.min(yMin, p.base.y - p.size.y / 2 + Math.min(0, p.explode.y)); yMax = Math.max(yMax, p.base.y + p.size.y / 2 + Math.max(0, p.explode.y)); rxy = Math.max(rxy, Math.hypot(p.base.x, p.base.y) + Math.max(p.size.x, p.size.y) / 2); zMin = Math.min(zMin, p.base.z - p.size.z / 2 + Math.min(0, p.explode.z)); zMax = Math.max(zMax, p.base.z + p.size.z / 2 + Math.max(0, p.explode.z)); zMinA = Math.min(zMinA, p.base.z - p.size.z / 2); zMaxA = Math.max(zMaxA, p.base.z + p.size.z / 2); });
     const D = rxy * 2, zExt = Math.max(1, zMax - zMin), zf = W * 0.7 / (ORI ? Math.max(D, (zMaxA - zMinA) * 0.9) : D) * (asp === '9:16' ? 1.22 : 1) * (dir.zoom || 1), cy = H * (asp === '9:16' ? 0.5 : 0.48), zc = (zMin + zMax) / 2, shExt = Math.max(rxy * 2.5, zExt * 0.9);
     ['left', 'bottom'].forEach((k) => { key.shadow.camera[k] = -shExt; }); ['right', 'top'].forEach((k) => { key.shadow.camera[k] = shExt; }); key.shadow.camera.updateProjectionMatrix();
-    st.floor.scale.setScalar(Math.max(0.1, Math.max(D, zExt) * 5 / 1200));      // el plano de sombra sigue el tamano del objeto (si no, su borde lejano sale de la luz y se ve una franja gris)
-    st.ao.updateGtaoMaterial({ radius: D * 0.088, thickness: D * 0.05 }); parts.forEach((p) => { p.from.set(0, 0, D * 1.1); p.arc.set(0, D * 0.18, 0); });      // todo escala con el objeto: un switch de 16 mm y un buje de 80 mm
+    st.floor.scale.setScalar(Math.max(0.1, Math.max(D, zExt) * 5 / 1200));      // the shadow plane follows the object's size (otherwise its far edge leaves the light and a grey band shows)
+    st.ao.updateGtaoMaterial({ radius: D * 0.088, thickness: D * 0.05 }); parts.forEach((p) => { p.from.set(0, 0, D * 1.1); p.arc.set(0, D * 0.18, 0); });      // everything scales with the object: a 16 mm switch and an 80 mm hub
     const mk = (yaw, pitch, zoom, o) => Object.assign({ yaw, pitch, zoom, tx: ctr.x, ty: ctr.y, tz: ctr.z, cx: W / 2, cy, dof: 0 }, o || {});
     const VW = { front: mk(0, 0, zf * 0.92), iso: mk(-34, 22, zf * (ORI ? 0.85 : 0.7)), side: mk(-72, 14, zf * (ORI ? 0.95 : 0.6)), expl: mk(-50, 18, W * 0.8 / (ORI ? Math.max(D, zExt, yMax - yMin) * 1.2 : D * 0.62 + zExt * 0.8)), three: mk(-18, 40, zf * (ORI ? 0.85 : 0.72)) };
-    Object.keys(dir.views || {}).forEach((k) => { VW[k] = Object.assign({}, VW[k] || VW.iso, dir.views[k]); });      // las vistas del spec se mezclan sobre las de fabrica
+    Object.keys(dir.views || {}).forEach((k) => { VW[k] = Object.assign({}, VW[k] || VW.iso, dir.views[k]); });      // the spec's views are merged over the factory ones
     // Autofit: project the box of the assembled object with the real camera and set each view's zoom so it fills the stage (about 78 % of the width or 46 % of the height).
     // The old fit used a circle around the origin, which leaves tall, flat or off-centre objects small. A spec that sets director.zoom keeps its own zoom.
     if ((!dir.zoom || q.has('fit')) && dir.fit !== false && !q.has('nofit')) {
@@ -197,12 +197,12 @@
     }
     const shot = (id, o) => { const p = parts.find((x) => x.id === id), dim = Math.max(p.size.x, p.size.y, p.size.z * 0.6) * (p.spec.tourDim || 1); /* part.tourDim widens the shot of a part whose motion carries it away from where the camera aims */ const ta = p.spec.tourAt || [0, 0, 0]; return Object.assign(F.shot(id, { dx: ta[0], dy: ta[1], dz: ta[2], yaw: o.yaw, pitch: o.pitch, zoom: clamp(W * 0.5 / dim, 1.2, 140), e: 1, cy: cy - 40 }), { dof: o.dof == null ? 0.5 : o.dof }); };
 
-    /* ---------------------------------------------------------- plan del video */
+    /* ---------------------------------------------------------- film plan */
     const order = parts.slice().sort((a, b) => (a.spec.late ? 1 : 0) - (b.spec.late ? 1 : 0) || a.base.z - b.base.z || parts.indexOf(a) - parts.indexOf(b)), N = order.length, step = Math.min(SHORT ? 0.12 : 0.3, (SHORT ? 2.4 : 6.2) / N), arrive = {};
-    const COLD = dir.cold && !SHORT ? (dir.cold.dur || 8) : 0;      // apertura: la pregunta y las respuestas publicadas, antes de armar nada
+    const COLD = dir.cold && !SHORT ? (dir.cold.dur || 8) : 0;      // opening: the question and the published answers, before anything is assembled
     order.forEach((p, i) => { arrive[p.id] = 0.9 + COLD + i * step; });
     const ASM_END = 0.9 + COLD + (N - 1) * step + 1.1, MD = SHORT ? Math.min(dir.modeDur || 4.6, 2.6) : (dir.modeDur || 4.6) * (LONG ? 1.3 : 1), TD = SHORT ? 2.2 : (dir.tourDur || 3.3) * (LONG ? 1.2 : 1), HOLD = SHORT ? 0 : dir.hold || 0, tM0 = ASM_END + 0.3 + HOLD, KD = (dir.keyDur || 1.35) * (SHORT ? 0.6 : 1), runs = an.enigmaRuns || [];
-    // lo que el gate comparo: valor publicado y valor del modelo, una fila por comprobacion (sirve a la apertura y al recibo)
+    // what the gate compared: published value and model value, one row per check (used by the opening and by the receipt)
     const VROWS = (() => {
       const r = [];
       (an.enigmaTests || []).forEach((t, i) => { const T0 = (M && M.enigma && M.enigma.tests[i]) || {}; r.push({ label: t.id, pub: t.expect || (T0.windows || []).join(' '), got: t.expect ? t.got : (T0.windows || []).join(' '), ok: t.ok }); });
@@ -217,9 +217,9 @@
       return set;
     })(), keepMode = (k) => !keepSet || keepSet.has(k);      // a mode that is not kept lasts 0 s: the clock skips it
     const mD = modes.map((m, k) => (!keepMode(k) ? 0 : STEPS && m.steps ? Math.max(SHORT ? 3 : 4.5, 1.2 + M.steps.count / SR + 1.6) : CUBE ? Math.max(4.5, 1.0 + cubeDur(an.cubeRuns[k]) + 1.5) : ENIG ? 1.1 + (runs[k] ? runs[k].events.length : 1) * KD + 0.6 : MD)), mS = []; { let acc = tM0; mD.forEach((d) => { mS.push(acc); acc += d; }); }
-    // pasos: el reloj de un proceso que ocurre ficha por ficha; vale 0 antes de la fase y count despues
+    // steps: the clock of a process that happens chip by chip; it is 0 before the phase and count after it
     const sMode = STEPS ? modes.findIndex((m) => m.steps) : -1, stepIdx = (t) => (sMode < 0 ? 0 : clamp((t - mS[sMode] - 1.0) * SR, 0, M.steps.count));
-    // cubo: la lista de giros con su tiempo, y el estado entero del cubo antes de cada uno
+    // cube: the list of turns with their times, and the whole cube state before each one
     const CEV = [], CST = [];
     if (CUBE) { const cur = CB.create(); an.cubeRuns.forEach((run, k) => { let t = mS[k] + 1.0; run.moves.forEach((mv) => { const d = mv.q === 2 ? MH : MQ; CST.push(CB.clone(cur)); CEV.push({ t0: t, t1: t + d, mv, k }); CB.turn(cur, mv); t += d + MG; }); }); CST.push(CB.clone(cur)); }
     const cubeDone = (t) => { let i = 0; while (i < CEV.length && CEV[i].t1 <= t) i++; return i; };
@@ -239,7 +239,7 @@
     const tourAll = parts.filter((p) => p.spec.tour !== false && p.info && !p.spec.decor).sort((a, b) => (a.base.z + a.explode.z) - (b.base.z + b.explode.z)).map((p) => p.id);
     const tourIds = SHORT ? (((dir.short && dir.short.tour) || dir.tour || tourAll).slice(0, 2)) : LONG ? tourAll.slice(0, 12) : (dir.tour || tourAll);
     const tR0 = tT0 + tourIds.length * TD, RD = SHORT ? 1.4 : 2.6, tP0 = tR0 + RD + 0.3, PD = 5.4;
-    // paginado de la tabla de evidencia (se mide con la misma tipografia con que se dibuja)
+    // paging of the evidence table (measured with the same typeface it is drawn with)
     const CW = W - 86 * 2 - 188, FONT = '400 23px ' + MX.SANS, pages = [];
     { let cur = [], used = 0; const room = H - 216 - 34 - 290;
       claims.forEach((c) => { const lines = wrap(c.text + (c.cross ? '  Cross-check: ' + c.cross : c.why ? '  ' + c.why : ''), FONT, CW), h = lines.length * 29 + 54; if (used + h > room && cur.length) { pages.push(cur); cur = []; used = 0; } cur.push({ c, lines, h }); used += h; });
@@ -253,7 +253,7 @@
     if (dir.outro !== false) { const od = SHORT ? 2.8 : 3.4; panels.push({ kind: 'outro', t0: tp, t1: tp + od }); tp += od; }      /* the cut is shared out of context: say what it is and where it lives */
     const DUR = Math.ceil(tp * 2) / 2;
 
-    // velocidad del conductor: parado mientras se arma, vivo en los modos (con un bache en cada cambio), lento en el recorrido
+    // driver speed: stopped while assembling, live in the modes (with a dip at each change), slow during the tour
     const sk = [[0, 0], [tM0, 0], [tM0 + 0.9, 1]];
     modes.forEach((m, k) => { if (k && mD[k]) { const tb = mS[k]; sk.push([tb - 0.45, 1], [tb, 0.08], [tb + 0.55, 1]); } });
     sk.push([tE0 - 0.3, 1], [tE0 + 0.8, 0.4], [tR0, 0.4], [tR0 + 1.2, 0.7], [DUR, 0.3]);
@@ -261,18 +261,18 @@
     const modeIdx = (t) => { if (!modes.length) return -1; let k = 0; while (k < modes.length - 1 && t >= mS[k + 1] - 1e-6) k++; return k; };
     const modeAt = (t) => (modes.length ? modes[modeIdx(t)] : null);
     const TL = an.K ? new Timeline(an, drive.rpm, DUR, modeAt, speedAt) : null;
-    // mecanismo de presion: el recorrido x (mm) de cada fase va de from a to con arranque y frenado suaves
+    // press mechanism: the travel x (mm) of each phase goes from `from` to `to` with a gentle start and stop
     const pressAt = (t) => { if (!PRESS || !modes.length) return 0; if (t < tM0) return modes[0].from; const k = modeIdx(t), m = modes[k]; return lerp(m.from, m.to, E.sm(ramp(t - mS[k], 0.15, mD[k] - 0.35))); };
-    // motor: el angulo del ciguenal es la integral de la velocidad del conductor (parado mientras se arma, vivo en las fases, lento en el despiece)
+    // engine: the crankshaft angle is the integral of the driver's speed (stopped while assembling, live in the phases, slow in the teardown)
     const EGT = ENGN ? (() => { const m2 = Math.ceil(DUR * 60) + 2, arr = new Float32Array(m2), rate = (drive.rpm || 40) * 6 * RAD; let th = 0; for (let i = 1; i < m2; i++) { th += rate * speedAt(i / 60) / 60; arr[i] = th; } return arr; })() : null;
     const thetaAt = (t) => { const x = clamp(t * 60, 0, EGT.length - 2), i = Math.floor(x); return lerp(EGT[i], EGT[i + 1], x - i); };
     const crankDeg = (th) => ((th / RAD) % 720 + 720) % 720;
     const enig = ENIG ? makeEnigma() : null;
     const mechAt = (t) => (ENIG ? enig.mech(t) : CUBE ? { ang: () => 0, press: 0, cube: cubeFrame(t) } : ENGN ? { ang: () => 0, press: 0, eng: { theta: thetaAt(t) } } : TL ? Object.assign(TL.view(t), { press: pressAt(t) }) : { ang: () => 0, press: pressAt(t), step: stepIdx(t), phase: Math.max(0, modeIdx(t)) });
 
-    // camara por claves
+    // keyed camera
     const keys = [[0, Object.assign({}, VW.iso, { zoom: VW.iso.zoom * 0.5, yaw: -62, pitch: 30 })], [ASM_END, VW.iso, [0.3, 0, 0.2, 1]]];
-    if (HOLD) keys.push([ASM_END + HOLD * 0.5, Object.assign({}, VW.iso, { yaw: VW.iso.yaw + 22, pitch: VW.iso.pitch + 4, zoom: VW.iso.zoom * 1.06 })], [ASM_END + HOLD, Object.assign({}, VW.iso, { yaw: VW.iso.yaw - 6, pitch: VW.iso.pitch + 8 })]);      // toma de presentacion: el objeto entero, con su marca, antes de abrirlo
+    if (HOLD) keys.push([ASM_END + HOLD * 0.5, Object.assign({}, VW.iso, { yaw: VW.iso.yaw + 22, pitch: VW.iso.pitch + 4, zoom: VW.iso.zoom * 1.06 })], [ASM_END + HOLD, Object.assign({}, VW.iso, { yaw: VW.iso.yaw - 6, pitch: VW.iso.pitch + 8 })]);      // establishing shot: the whole object, with its brand, before it is opened
     const cyc = [VW.front, VW.iso, VW.side, VW.three];
     modes.forEach((m, k) => { if (!mD[k]) return; const t = mS[k]; keys.push([t + 0.5, Object.assign({}, k % 2 ? cyc[k % 4] : cyc[(k + 1) % 4]), [0.45, 0, 0.2, 1]]); keys.push([t + mD[k] - 0.2, Object.assign({}, cyc[(k + 2) % 4], { yaw: cyc[(k + 2) % 4].yaw + 8 })]); });
     keys.push([tXS, VW.expl, [0.4, 0, 0.15, 1]]);
@@ -288,7 +288,7 @@
     // can pass through it, and quickly: a stack of thin parts glows while it is half transparent) and the card fades in as the camera lands
     // (a: card, d: the rest)
     const tourAt = (t) => { const n = tourIds.length, jj = Math.floor((t - tT0) / TD); if (t < tXS + XHOLD || !n || t >= tR0 + RD) return null; if (jj >= n) return { id: tourIds[n - 1], a: 1 - ramp(t, tR0 + RD * 0.55, tR0 + RD), j: n - 1 }; if (jj <= 0) return { id: tourIds[0], a: E.sm(ramp(t, tT0, tT0 + 0.45)), d: E.sm(ramp(t, tXS + XHOLD, tXS + XHOLD + XMOVE * 0.35)), j: 0 }; return { id: tourIds[jj], a: 1, j: jj }; };      // the rest stays dimmed between two stops and until the camera has flown back out: through the shell the frame would go white
-    const cutSet = Object.fromEntries(parts.filter((p) => p.spec.cutaway).map((p) => [p.id, typeof p.spec.cutaway === 'number' ? p.spec.cutaway : 0.9])), decorSet = Object.fromEntries(parts.filter((p) => p.spec.decor).map((p) => [p.id, 1]));   // piezas que se vuelven casi transparentes mientras corre el mecanismo (vista de corte)
+    const cutSet = Object.fromEntries(parts.filter((p) => p.spec.cutaway).map((p) => [p.id, typeof p.spec.cutaway === 'number' ? p.spec.cutaway : 0.9])), decorSet = Object.fromEntries(parts.filter((p) => p.spec.decor).map((p) => [p.id, 1]));   // parts that become nearly transparent while the mechanism runs (cutaway view)
     const script = (t) => {
       const cut = ramp(t, tM0 - 0.3, tM0 + 0.5) * (1 - ramp(t, tE0 - 0.6, tE0 - 0.1)), ex = ramp(t, tE0, tE0 + ED), re = ramp(t, tR0, tR0 + RD), eg = ex * (1 - re), tr = tourAt(t), md = modeAt(t);
       const s = { t, e: eg, explodeK: (id) => { const dl = stag[id] * 0.35, a = E.sm(ramp(ex, dl, dl + 0.65)), b = E.sm(ramp(re, (1 - stag[id]) * 0.35, (1 - stag[id]) * 0.35 + 0.65)); return a * (1 - b); },
@@ -301,7 +301,7 @@
       return s;
     };
 
-    /* ---------------------------------------------------------- HUD: modo de marcha, tablas, fuentes */
+    /* ---------------------------------------------------------- HUD: drive mode, tables, sources */
     const tagPill = (c, x, y, conf, text) => {
       c.save(); c.font = '600 14px ' + MX.SANS; if ('letterSpacing' in c) c.letterSpacing = '1.6px'; const s2 = text || CONFNAME[conf], col = conf === 'estimated' ? T.ember : conf === 'derived' || conf === 'user' ? T.ink : T.teal, w = c.measureText(s2).width + 24, h = 28, r = 14;
       c.beginPath(); c.moveTo(x + r, y - h + 6); c.lineTo(x + w - r, y - h + 6); c.arc(x + w - r, y - h + 6 + r, r, -Math.PI / 2, Math.PI / 2); c.lineTo(x + r, y + 6); c.arc(x + r, y - h + 6 + r, r, Math.PI / 2, 1.5 * Math.PI); c.closePath(); c.fillStyle = MX.rgba(col, 0.13); c.fill(); c.strokeStyle = MX.rgba(col, 0.55); c.lineWidth = 1; c.stroke();
@@ -319,7 +319,7 @@
       bar(y + 92, 'TRAVEL', x, pr.travel, T.teal, x.toFixed(2) + ' ' + u); bar(y + 124, 'FORCE', Fv, fmax, T.ember, Math.round(Fv) + ' ' + fu);
       c.restore();
     };
-    // motor: la cifra de la fase a la derecha y, abajo, el ciclo de 720 grados de cada cilindro con la posicion actual del ciguenal
+    // engine: the phase's figure on the right and, below, each cylinder's 720-degree cycle with the current crankshaft position
     const STK = ['POWER', 'EXHAUST', 'INTAKE', 'COMPRESSION'];
     const drawEngine = (c, s) => {
       const a = s.modeA; if (!(a > 0.01)) return; const mi = s.modeI, m = modes[mi], r = an.modes[mi], x = 78, y = H - 318, th = crankDeg(s.mech.eng.theta), bw = 430, col = [T.ember, T.mute, T.teal, T.ink];
@@ -334,7 +334,7 @@
       }
       c.restore();
     };
-    // cubo: la secuencia de la fase con el giro actual resaltado, y el estado real del cubo (aristas dadas vuelta, esquinas en su sitio)
+    // cube: the phase's sequence with the current turn highlighted, and the cube's real state (edges flipped, corners in place)
     const drawCube = (c, s) => {
       const a = s.modeA; if (!(a > 0.01)) return; const mi = s.modeI, m = modes[mi], r = an.modes[mi], run = an.cubeRuns[mi], x = 78, y = H - 318, t = s.t, nDone = cubeDone(t);
       c.save(); c.globalAlpha = a; c.fillStyle = MX.rgba(T.paper, T.dark ? 0.86 : 0.9); c.fillRect(x - 24, y - 70, W - 2 * x + 48, 262); c.fillStyle = T.teal; c.fillRect(x - 24, y - 70, 4, 262);
@@ -348,7 +348,7 @@
       MX.text('EDGES IN PLACE ' + cl2.edgesInPlace + '/12   FLIPPED ' + cl2.edgesFlipped + '      CORNERS IN PLACE ' + cl2.cornersInPlace + '/8   TWISTED ' + cl2.cornersTwisted, x, y + 170, { size: 17, font: MX.SANS, w: 600, color: cl2.solved ? T.teal : T.ink, spacing: 1.4 });
       c.restore();
     };
-    // cuentas: la cifra de la fase, su formula, y las variables que usa con la confianza de cada una
+    // calculations: the phase's figure, its formula, and the variables it uses with each one's confidence
     const drawCalc = (c, s) => {
       const a = s.modeA; if (!(a > 0.01)) return; const mi = s.modeI, m0 = modes[mi], SL = m0.steps ? M.steps.label(Math.min(M.steps.count - 1, Math.floor(s.step || 0))) : null, m = SL ? Object.assign({}, m0, { label: SL.title, formula: SL.formula, publish: null, unit: '' }) : m0, r = SL ? Object.assign({}, an.modes[mi], { text: SL.value }) : an.modes[mi], x = 78, y = H - 318, V = M.calc.vars, big = (r.text + (m.unit ? ' ' + m.unit : '')).length > 11;
       c.save(); c.globalAlpha = a; c.fillStyle = MX.rgba(T.paper, T.dark ? 0.86 : 0.9); c.fillRect(x - 24, y - 70, W - 2 * x + 48, 262); c.fillStyle = T.teal; c.fillRect(x - 24, y - 70, 4, 262);
@@ -356,7 +356,7 @@
       MX.text(m.label, x, y, { size: Math.max(26, ls), font: MX.SERIF, w: 500, color: T.ink }); MX.text(m.formula || '', x, y + 42, { size: fmlFit(m.formula, m.publish, x), font: MX.SANS, color: T.mute });
       MX.text(valTxt, W - x, y - 2, { size: vs, font: MX.SERIF, w: 500, color: T.ink, align: 'right' });
       if (m.publish) { const cl = claimBy[m.publish.claim], w = 190, pt = String(m.publish.text || m.publish.value); tagPill(c, W - x - w - 4, y + 44, cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + (pt.length > 14 ? '' : ' ' + pt)); MX.text(r.ok ? 'matches the model' : 'MISMATCH', W - x - w - 18, y + 44, { size: 19, font: MX.SANS, color: r.ok ? T.teal : T.ember, align: 'right', w: 500 }); }
-      if (SL) {      // fase por pasos: las fichas del paso actual y una barra de avance
+      if (SL) {      // stepped phase: the current step's chips and a progress bar
         let cx = x, cy = y + 112; c.font = '600 17px ' + MX.MONO;
         (SL.chips || []).forEach((q) => { const txt = typeof q === 'string' ? q : q.text, col = (q && q.color) || T.teal, w = c.measureText(txt).width + 28; if (cx + w > W - x) { cx = x; cy += 42; } c.fillStyle = MX.rgba(col, 0.1); c.fillRect(cx, cy - 22, w, 32); c.strokeStyle = MX.rgba(col, 0.5); c.lineWidth = 1; c.strokeRect(cx + 0.5, cy - 21.5, w - 1, 31); MX.text(txt, cx + 14, cy, { size: 17, font: MX.MONO, w: 600, color: col }); cx += w + 12; });
         const pw = W - 2 * x; c.fillStyle = MX.rgba(T.ink, 0.12); c.fillRect(x, y + 168, pw, 5); c.fillStyle = T.teal; c.fillRect(x, y + 168, pw * clamp((s.step || 0) / M.steps.count, 0, 1), 5); c.restore(); return;
@@ -468,7 +468,7 @@
       });
       H2.endPanel();
     };
-    // apertura: la pregunta, las respuestas publicadas y el modelo que las alcanza fila por fila
+    // opening: the question, the published answers and the model reaching them row by row
     const drawCold = (c, s) => {
       if (!COLD || s.t >= COLD + 0.5) return; const t = s.t, fade = 1 - ramp(t, COLD - 0.5, COLD + 0.4); if (fade < 0.01) return;
       c.save(); c.globalAlpha = fade; c.fillStyle = T.paper; c.fillRect(34, 216, W - 68, H - 250); MX.A = fade;
@@ -494,7 +494,7 @@
     };
     F.overlay((ctx, s) => { if (s.t == null) return; drawWhat(ctx, s); drawMode(ctx, s); drawCold(ctx, s); panels.forEach((pn) => { if (s.t >= pn.t0 - 0.01 && s.t <= pn.t1 + 0.01) drawPanel(ctx, pn, s.t); }); });
 
-    /* ---------------------------------------------------------- sonido */
+    /* ---------------------------------------------------------- sound */
     function soundEvents() {      // every timed sound of the film (read by audio() and by the timing tests through __soundEvents)
       const ev = [], note = (id, idx) => SND.note(60, 'dorian', idx), pan = (p) => clamp(p.base.x / 45, -0.6, 0.6);
       order.forEach((p) => {
@@ -503,7 +503,7 @@
       });
       if (modes.length) {
         modes.forEach((m, k) => { if (!mD[k]) return; const tb = mS[k]; ev.push({ t: tb + 0.02, v: 'click', f: 1500, gain: 0.55, sharp: 0.8 }, { t: tb + 0.1, v: 'tone', f: note(0, Math.round((an.modes[k].ratio || 3) * 6)), timbre: 'bell', d: 1.6, gain: 0.5, pan: 0.1 }, { t: tb + 0.1, v: 'whoosh', d: 0.7, f0: 300, f1: 1800, gain: 0.3 }); });
-        // los dientes que realmente pasan: una marca por cada diente del engrane de referencia que cruza el contacto
+        // the teeth that really pass: one mark per tooth of the reference gear crossing the contact
         const mesh = (M.links || []).find((l) => l.t === 'ext'), zref = mesh ? an.K.teeth[mesh.a] : 20, rel = mesh ? Math.abs(an.K.rates[mesh.a] - (mesh.carrier ? an.K.rates[mesh.carrier] : 0)) : 1; let cnt = 0, kept = 0;
         for (let i = 1; !PRESS && TL && i < TL.n; i++) {
           const t = i * TL.dt; if (t < tM0 || t > tR0 + 4) continue; const n1 = Math.floor(zref * rel * Math.abs(TL.free[i]) / TAU), n0 = Math.floor(zref * rel * Math.abs(TL.free[i - 1]) / TAU);
@@ -563,8 +563,8 @@
       return b64(buf);
     };
     g.__exportGLB = async (e) => {
-      if (!TH.GLTFExporter) throw new Error('el bundle de three no trae GLTFExporter (reconstruir con scripts/build-vendor.mjs)'); framePose(e || 0);
-      const sc = new TH.Scene(); parts.forEach((p) => { const cl = p.group.clone(true); cl.name = p.id; cl.position.copy(p.group.position); cl.rotation.copy(p.group.rotation); cl.traverse((m) => { if (m.isLine || m.isLineSegments) m.visible = false; if (m.isMesh && !m.geometry.index) { const g2 = m.geometry.clone(); g2.deleteAttribute('uv'); m.geometry = TH.mergeVertices(g2, 1e-3); } }); sc.add(cl); });      // geometria indexada: el GLB pesa una fraccion
+      if (!TH.GLTFExporter) throw new Error('the three bundle has no GLTFExporter (rebuild it with scripts/build-vendor.mjs)'); framePose(e || 0);
+      const sc = new TH.Scene(); parts.forEach((p) => { const cl = p.group.clone(true); cl.name = p.id; cl.position.copy(p.group.position); cl.rotation.copy(p.group.rotation); cl.traverse((m) => { if (m.isLine || m.isLineSegments) m.visible = false; if (m.isMesh && !m.geometry.index) { const g2 = m.geometry.clone(); g2.deleteAttribute('uv'); m.geometry = TH.mergeVertices(g2, 1e-3); } }); sc.add(cl); });      // indexed geometry: the GLB weighs a fraction
       return b64(await new TH.GLTFExporter().parseAsync(sc, { binary: true }));
     };
     g.__geom = (t) => {      // camera and parts as they are in the scene right now (call after __frame(t)); read by scripts/preflight.mjs
@@ -583,8 +583,8 @@
     g.__shapeCheck = () => parts.map((p) => { let r = 1; p.group.traverse((m) => { const u = m.isMesh && m.geometry && m.geometry.userData; if (u && u.areaRatio != null && Math.abs(u.areaRatio - 1) > Math.abs(r - 1)) r = u.areaRatio; }); return { id: p.id, ratio: r }; }).filter((q) => Math.abs(q.ratio - 1) > 0.01);      // flat shapes whose triangulated area is not their outline minus the holes (read by scripts/preflight.mjs)
     g.__specInfo = () => ({ duration: DUR, parts: parts.length, validation: V.lines, warnings: V.warnings, errors: V.errors, panels: panels.map((p) => ({ kind: p.kind, page: p.page, from: p.t0, to: p.t1 })), phases: { assembled: ASM_END, modes: tM0, explode: tE0, separated: tXS, approach: tXS + XHOLD, arrive: tT0 + 0.3, tour: tT0, reassemble: tR0, panels: tP0 }, shots: [{ label: 'assembled', t: ASM_END + 0.4 }].concat(modes.map((m, k) => (mD[k] ? { label: 'mode ' + (m.id || k), t: mS[k] + mD[k] * 0.62 } : null)).filter(Boolean), [{ label: 'exploded', t: tE0 + ED + 0.2 }], tourIds.map((id, j) => ({ label: 'tour ' + id, t: tT0 + j * TD + TD * 0.62 })), [{ label: 'reassembled', t: tR0 + RD - 0.2 }]) });
 
-    /* ---------------------------------------------------------- Enigma: estado animado, camino de la senal y HUD */
-    // Los eventos (tecla, salida, camino, rotores que avanzan) vienen de kit/enigma.js, ya validados contra los casos publicados.
+    /* ---------------------------------------------------------- Enigma: animated state, signal path and HUD */
+    // The events (key, output, path, rotors that step) come from kit/enigma.js, already validated against the published cases.
     const phiOf = (j) => Math.PI / 2 - j * TAU / 26, TAUN = TAU / 26;
     function enigmaFrame(run, t, unwFrom, unw0, tStart) {
       let posF = unw0.slice(); if (unwFrom && t < tStart + 0.8) { const u = E.sm(ramp(t, tStart, tStart + 0.8)); posF = unwFrom.map((v, rr) => lerp(v, unw0[rr], u)); }
@@ -606,7 +606,7 @@
       });
       return { mech: (t) => { const k = clamp(modeIdx(t), 0, runs.length - 1), tt = t < tM0 ? -1e9 : t; return enigmaMech(enigmaFrame(runs[k], tt, k ? unwEnd[k - 1] : null, unw0[k], mS[k])); } };
     }
-    // camino de la senal: 15 tramos entre los contactos de la rueda de entrada, los tres rotores y el reflector (ida teal, vuelta ember)
+    // signal path: 15 segments between the contacts of the entry wheel, the three rotors and the reflector (out teal, back ember)
     const roles = {}; spec.parts.forEach((d) => { if (d.role) roles[d.role] = { z: d.at[2], w: d.p.w, rc: d.p.rc || 30 }; });
     let pathSegs = null;
     if (ENIG) {
@@ -622,7 +622,7 @@
         });
       };
     }
-    // HUD: ventanas de los rotores, entrada / salida y el tablero de lamparas (QWERTZ)
+    // HUD: rotor windows, input / output and the lampboard (QWERTZ)
     function drawEnigma(c, s) {
       const a = s.modeA; if (!(a > 0.01)) return; const st2 = s.mech.enigma, m = modes[s.modeI], r2 = an.modes[s.modeI], X0 = 78, y = H - 318, rows = ['QWERTZUIO', 'ASDFGHJK', 'PYXCVBNML'], pitch = 54, bx = W - X0 - 9 * pitch;
       c.save(); c.globalAlpha = a; c.fillStyle = MX.rgba(T.paper, T.dark ? 0.86 : 0.9); c.fillRect(X0 - 24, y - 70, W - 2 * X0 + 48, 232); c.fillStyle = T.teal; c.fillRect(X0 - 24, y - 70, 4, 232);
@@ -640,7 +640,7 @@
       if (m.publish) { const cl = claimBy[m.publish.claim], done = st2.n >= st2.run.events.length && st2.tau > 1.1; tagPill(c, bx, y + 138, cl ? cl.conf : 'spec', (cl ? CONFNAME[cl.conf] : 'SPEC') + ' ' + m.publish.text); if (done) MX.text(r2 && r2.ok ? 'matches the model' : 'MISMATCH', bx + 230, y + 138, { size: 19, font: MX.SANS, color: r2 && r2.ok ? T.teal : T.ember, w: 500 }); }
       c.restore();
     }
-    // visor interactivo: escribis con el teclado y la maquina cifra con las mismas reglas
+    // interactive viewer: you type on the keyboard and the machine enciphers with the same rules
     function startEnigmaExplore() {
       const cfg = Object.assign({}, ENC), live = { m: EN.create(cfg), run: null, unw0: null, t0: 0 };
       const reset = () => { live.m = EN.create(cfg); live.run = { start: live.m.pos.slice(), events: [] }; live.unw0 = live.m.pos.slice(); live.t0 = performance.now() / 1000; };
@@ -682,7 +682,7 @@
             MX.text('WHAT IF A PUBLISHED NUMBER WERE WRONG?', x, 262, { size: 14, font: MX.MONO, color: T.ember, spacing: 2.4, w: 700 }); MX.text('we changed "' + b.label + '" from ' + b.was + ' to ' + b.now, x, 300, { size: 24, font: MX.MONO, color: T.ink, w: 600 });
             ln.forEach((l, i) => MX.text(l, x, 336 + i * 30, { size: 22, font: MX.SANS, color: T.mute })); MX.text(b.state, x, 360 + ln.length * 30, { size: 30, font: MX.MONO, w: 800, color: T.ember, spacing: 3 }); c.restore(); } } : {}), readout: (CUBE ? 'FACE TURNS  -  ' : ENGN ? Math.round(crankDeg(eth)) + ' / 720 deg  -  ' : PRESS ? px.toFixed(2) + ' mm  ' + Math.round(forceAt(px)) + ' ' + (M.press.forceUnit || 'cN') + '  -  ' : live.mode && !ENGN && !CUBE && !CALC ? live.mode.label + '  ' + r.toFixed(3) + ' : 1  -  ' : '') + 'EXPLODE ' + Math.round(Sx.e * 100) + '%' };
         } });
-    } else F.run({ duration: DUR, keys, script, audio, poster: tM0 + MD * 0.5, blurAt: (t) => (t >= tP0 - 0.2 ? 1 : 99) });      // las paginas de evidencia no se mueven: un solo render por frame
+    } else F.run({ duration: DUR, keys, script, audio, poster: tM0 + MD * 0.5, blurAt: (t) => (t >= tP0 - 0.2 ? 1 : 99) });      // the evidence pages do not move: a single render per frame
     return { F, an, DUR };
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -103,7 +103,7 @@ test('kin: a compound train (two meshes joined by a shaft, so two mesh component
   const meshes = [{ a: 'A', b: 'B', t: 'ext', beta: 0 }, { a: 'C', b: 'D', t: 'ext', beta: 0.7 }], ph = K.phases(meshes, 'A');
   assert.deepEqual(Object.keys(ph.phi).sort(), ['A', 'B', 'C', 'D']);
   assert.ok(ph.checks.length === 2 && ph.checks.every((c) => c.ok), JSON.stringify(ph.checks));
-  assert.ok(!ph.checks.some((c) => /sin conexion/.test(c.note || '')), 'no "no connection to the root" for the second stage');
+  assert.ok(!ph.checks.some((c) => /no connection/.test(c.note || '')), 'no "no connection to the root" for the second stage');
 });
 
 test('react-reconcile: the model predicts what the real React DOM did in every recorded scenario', () => {

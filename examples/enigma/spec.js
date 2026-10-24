@@ -1,11 +1,11 @@
 /*
- * spec.js - Fig 7: la maquina Enigma I (Wehrmacht), su bloque de rotores, como SPEC declarativo con un mecanismo de CIFRADO.
+ * spec.js - Fig 7: the Enigma I (Wehrmacht) and its rotor stack, as a declarative SPEC with a CIPHER mechanism.
  *
- * SPEC       cableado de los rotores I, II, III y del reflector B, letras de salto, casos de prueba publicados (AAAAA -> BDZGO, anillos BBB -> EWTYX,
- *            doble paso ADU -> ADV -> AEW -> BFX).
- * DERIVED    la maquina simulada con esas tablas REPRODUCE los casos publicados letra por letra: si una letra del cableado estuviera mal, no pasaria.
- * ESTIMATED  tamanos (diametro del rotor ~ 100 mm segun una fuente secundaria), trinquetes, unas, ejes y bastidor; no se modelan el tablero de
- *            conexiones, la palanca del teclado ni la caja.
+ * SPEC       wiring of rotors I, II, III and reflector B, turnover letters, published test cases (AAAAA -> BDZGO, rings BBB -> EWTYX,
+ *            double step ADU -> ADV -> AEW -> BFX).
+ * DERIVED    the machine simulated with those tables REPRODUCES the published cases letter by letter: one wrong letter of wiring and it fails.
+ * ESTIMATED  sizes (rotor diameter ~ 100 mm from a secondary source), ratchets, pawls, shafts and frame; the plugboard,
+ *            the keyboard lever and the case are not modelled.
  */
 window.SPEC = (() => {
   const EN = { rotors: ['I', 'II', 'III'], reflector: 'B', rings: 'AAA', start: 'AAA' };

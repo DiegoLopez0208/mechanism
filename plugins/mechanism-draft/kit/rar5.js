@@ -69,7 +69,7 @@
         let p = eStart; while (p < bodyEnd) { const rs = R.readVint(b, p), rt = R.readVint(b, p + rs.len); F('extra record', p, rs.len + rs.v, 'type ' + rt.v, ({ 1: 'locator (quick open)', 2: 'metadata' }[rt.v] || (blk.type === 2 ? { 1: 'encryption', 2: 'file hash', 3: 'file time', 4: 'file version' }[rt.v] : '') || 'record')); p += rs.len + rs.v; }
         pos = bodyEnd;
       }
-      if (pos !== bodyEnd) out.problems.push('el bloque en ' + blk.start + ' declara ' + hs.v + ' bytes de cabecera y los campos leen ' + (pos - bodyStart));
+      if (pos !== bodyEnd) out.problems.push('the block at ' + blk.start + ' declares ' + hs.v + ' header bytes and the fields read ' + (pos - bodyStart));
       pos = bodyEnd; const calc = R.crc32(Array.from(b.slice(hsStart, bodyEnd)));
       blk.crc = { stored, calc, ok: stored === calc }; if (!blk.crc.ok) out.problems.push('CRC de cabecera mal en ' + blk.start);
       blk.headerEnd = bodyEnd; blk.headerSize = hs.v; blk.dataStart = bodyEnd; blk.dataSize = dataSize;

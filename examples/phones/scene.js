@@ -1,8 +1,9 @@
 /*
- * scene.js - Fig 3: POCO X8 Pro Max y Galaxy S26 Ultra a la misma escala, sobre kit/figure.js y kit/sound.js.
- * La geometria sale de MEDICIONES sobre fotos oficiales (phones.json -> layout): isla / pildora de camaras, diametro de cada lente, luces, botones,
- * radio de esquina y, en el POCO, el interior real (bahia de bateria, placa, almohadilla del SoC, motor) medido en las fotos de repuestos de Xiaomi.
- * Todo numero lleva su procedencia: SPEC (publicado), MEASURED (medido en una foto oficial, +/-1.5 mm), DERIVED (formula + cruce) o ESTIMATED (punteado).
+ * scene.js - Fig 3: POCO X8 Pro Max and Galaxy S26 Ultra at the same scale, on kit/figure.js and kit/sound.js.
+ * The geometry comes from MEASUREMENTS on official photos (phones.json -> layout): camera island / pill, each lens's diameter, lights, buttons,
+ * corner radius and, on the POCO, the real interior (battery bay, board, SoC pad, motor) measured on Xiaomi's spare-part photos.
+ * Every number carries its provenance: SPEC (published), MEASURED (measured on an official photo, +/-1.5 mm), DERIVED (formula + cross-check) or
+ * ESTIMATED (dashed).
  */
 (function () {
   'use strict';
@@ -14,7 +15,7 @@
     card: (s) => ({ fig: 'Fig 3', kicker: 'SPEC SHEETS + OFFICIAL PHOTOS', title: 'POCO X8 Pro Max vs Galaxy S26 Ultra', sub: s.sub || 'Every number is SPEC, MEASURED, DERIVED or ESTIMATED (dashed).', hint: s.hint || '', readout: s.readout || '2 phones - ' + F.parts.length + ' parts' }) });
   const st = F.st; ['left', 'bottom'].forEach((k) => { st.key.shadow.camera[k] = -170; }); ['right', 'top'].forEach((k) => { st.key.shadow.camera[k] = 170; }); st.key.shadow.camera.updateProjectionMatrix();
   const H2 = F.hud, f1 = (v) => (+v).toFixed(1), f2 = (v) => (+v).toFixed(2);
-  const LX = (d, cxBack) => d.body.w / 2 - cxBack, LY = (d, cyTop) => d.body.h / 2 - cyTop;          // vista desde atras (x desde la izquierda, y desde arriba) -> local centrado del modelo
+  const LX = (d, cxBack) => d.body.w / 2 - cxBack, LY = (d, cyTop) => d.body.h / 2 - cyTop;          // view from the back (x from the left, y from the top) -> the model's centred local frame
 
   /* ------------------------------------------------------------ geometria y texturas */
   function rr(w, h, r) { const s = new TH.Shape(), x = -w / 2, y = -h / 2; r = Math.min(r, w / 2 - 0.01, h / 2 - 0.01); s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r); s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h); s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r); s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y); return s; }
@@ -47,13 +48,13 @@
   const SIZE = {};
   const lensOf = (d) => d.layout.lenses.map((l) => Object.assign({ c: d.cameras[l.cam] }, l));
 
-  /* ------------------------------------------------------------ construccion de un telefono (coordenadas locales centradas: x ancho, y alto, z espesor, frente = +z) */
+  /* ------------------------------------------------------------ building a phone (centred local coordinates: x width, y height, z thickness, front = +z) */
   function buildDevice(d) {
     const A = (assemblies[d.id] = new TH.Group()); A.position.x = X0[d.id]; F.st.scene.add(A);
     const L = d.layout, IN = L.interior, DS = d.design, DT = d.displayTech, w = d.body.w, h = d.body.h, t = d.body.t, r = d.body.corner, zc = (z) => z - t / 2, C = d.colors, act = d.display.active, isP = d.id === 'poco';
     const sunk = DS.frame.sunken, sink = sunk ? 0.35 : 0, inset = sunk ? 0.9 : 0.1, backT = 0.7, glassT = 0.7, wall = 1.5, zTop = t - sink, mat = (c, o) => G.mat(c, o);
     const isl = L.island, lenses = lensOf(d);
-    // ---- tapa trasera: material propio, hueco para la isla / pildora, textos y degradado
+    // ---- back cover: its own material, a cut-out for the island / pill, texts and gradient
     const sb = rr(w - 2 * inset, h - 2 * inset, Math.max(r - inset, 2)), ih = isl.shape === 'pill' ? rr(isl.w + 0.5, isl.h + 0.5, (isl.w + 0.5) / 2) : rr(isl.w + 0.5, isl.h + 0.5, (isl.w + 0.5) / 2);
     const ihp = new TH.Path(ih.getPoints(16).reverse().map((q) => new TH.Vector2(q.x + LX(d, isl.cx), q.y + LY(d, isl.top + isl.h / 2)))); sb.holes.push(ihp);
     L.extras.forEach((e) => { if (e.k === 'laser' || e.k === 'flash' || e.k === 'led') { const p = new TH.Path(); p.absarc(LX(d, e.cx), LY(d, e.cyTop), e.d / 2 + 0.25, 0, Math.PI * 2, true); sb.holes.push(p); } });
@@ -64,7 +65,7 @@
     if (!isP) { const gd = new TH.Mesh(new TH.PlaneGeometry(w - 2 * inset, h - 2 * inset), gradDecal('rgba(150,148,210,0.55)', 'rgba(20,20,60,0.5)', w, h)); gd.rotation.y = Math.PI; gd.position.z = -0.012; gd.renderOrder = 2; back.add(gd); }
     SIZE[d.id + '.back'] = h;
     part(d, 'back', 'Back cover', zc(sink), -26, false, back, { title: d.name + ' back', lines: [DS.back.material + ' (spec)', 'outline ' + w + ' x ' + h + ' mm (spec), corner radius ' + r + ' mm (measured)', 'thickness 0.7 mm: estimated'], conf: ['spec', 'measured', 'estimated'] });
-    // ---- isla / pildora de camaras: medidas de las fotos oficiales
+    // ---- camera island / pill: sizes from the official photos
     const lens = new TH.Group(), rimMat = mat(isP ? '#d6cfc0' : '#c4c3e6', { metalness: 1, roughness: isP ? 0.22 : 0.3, envMapIntensity: 1.8 }), darkMat = mat('#0e0f12', { roughness: 0.4, metalness: 0.6 });
     const islMesh = new TH.Mesh(plate(rr(isl.w, isl.h, isl.w / 2), isl.raise + backT, 0.35), isP ? rimMat : mat(C.frame, { metalness: 0.6, roughness: 0.28, clearcoat: 0.4 })); islMesh.rotation.y = Math.PI; islMesh.position.set(LX(d, isl.cx), LY(d, isl.top + isl.h / 2), backT); lens.add(islMesh);
     lenses.forEach((l) => {
@@ -87,13 +88,13 @@
     });
     SIZE[d.id + '.island'] = isl.h;
     part(d, 'island', 'Rear cameras', zc(sink), -16, isP ? false : false, lens, { title: d.name + ' rear cameras', lines: [(isP ? 'stadium island ' : 'raised pill ') + isl.w + ' x ' + isl.h + ' mm, ' + lenses.length + ' lenses (measured on official photos)', 'glass diameters: ' + lenses.map((l) => f1(l.glassD)).join(' / ') + ' mm (measured)', 'sensors and pupils derived from published specs', 'which opening is which: ' + (isP ? 'spec order' : 'estimated')], conf: ['measured', 'derived', 'spec'] });
-    // ---- bateria: bahia MEDIDA en el POCO, estimada en el S26
+    // ---- battery: bay MEASURED on the POCO, estimated on the S26
     const bt = IN.battery, bat = new TH.Group(); bat.add(new TH.Mesh(plate(rr(bt.w, bt.h, 3), bt.t, 0.3), mat(isP ? '#9b9ca2' : '#8d8f96', { roughness: 0.6, metalness: 0.1 })));
     const bl = new TH.Mesh(new TH.PlaneGeometry(bt.w * 0.7, bt.h * 0.14), G.flatMat(labelTex(bt.w * 0.7, bt.h * 0.14, d.battery.mAh + ' mAh', d.battery.chem))); bl.position.set(0, 0, bt.t + 0.04); bat.add(bl);
     if (isP) { const sp = new TH.Mesh(new TH.BoxGeometry(bt.w, 0.5, bt.t + 0.1), mat('#6b6c72', { roughness: 0.7 })); sp.position.set(0, 0, bt.t / 2); bat.add(sp); }   // dos celdas
     bat.position.set(LX(d, bt.cx), LY(d, bt.cyTop), 0); SIZE[d.id + '.battery'] = bt.h;
     part(d, 'battery', 'Battery', zc(sink + backT + 0.2), -9, true, bat, { title: d.name + ' battery', lines: [d.battery.mAh + ' mAh (spec)' + (isP ? ', dual cell ATL + COSMX (Xiaomi FAQ)' : ''), d.battery.charge.replace(', 4.5 W reverse', '').replace(', 27 W reverse', '') + ' (spec)', isP ? 'bay ' + bt.bayW + ' x ' + bt.bayH + ' mm (measured); implies ' + d.battery.impliedWhPerL + ' Wh/L' : 'size and position: estimated (' + d.battery.impliedWhPerL + ' Wh/L implied)'], conf: isP ? ['spec', 'measured', 'estimated'] : ['spec', 'estimated'] });
-    // ---- marco: perfil propio, botones medidos, aberturas de los bordes
+    // ---- frame: its own profile, measured buttons, openings in the edges
     const frameH = sunk ? t : t - 2 * glassT * 0.8, fz0 = sunk ? 0 : glassT * 0.8;
     const sf = rr(w, h, r), hole = rr(w - 2 * wall, h - 2 * wall, Math.max(r - wall, 1)); sf.holes.push(new TH.Path(hole.getPoints(14).reverse()));
     const frame = new TH.Group(), fm = mat(C.frame, isP ? { metalness: 1, roughness: 0.16, envMapIntensity: 1.9, clearcoat: 0.3 } : { metalness: 1, roughness: 0.36, envMapIntensity: 1.5 }); frame.add(new TH.Mesh(plate(sf, frameH, isP ? 0.55 : 0.3), fm));
@@ -107,7 +108,7 @@
     else { dots(ed.bottom.speakerHoles, ed.bottom.speakerFront - w / 2 - 5, -h / 2, -1); box(ed.bottom.simFront - w / 2, -h / 2 + 0.05, 10, 0.4, 0.9, mat('#303034', { metalness: 0.8, roughness: 0.4 })); const pc = new TH.Mesh(new TH.CircleGeometry(ed.bottom.penHole / 2, 32), dark); pc.rotation.x = Math.PI / 2; pc.position.set(ed.bottom.penFront - w / 2, -h / 2 - 0.03, frameH / 2); frame.add(pc); box(ed.top.earpieceFront - w / 2, h / 2 - 0.05, 9, 0.5, 1.2, dark); box((w - ed.top.micCxBack) - w / 2, h / 2 - 0.05, 1.2, 0.5, 1.2, dark); }
     SIZE[d.id + '.frame'] = h;
     part(d, 'frame', 'Aluminum frame', zc(fz0), 0, false, frame, { title: d.name + ' frame', lines: [DS.frame.kind, 'corner radius ' + r + ' mm (measured)', 'buttons measured: ' + L.buttons.map((b) => b.k + ' ' + b.len + ' mm at ' + b.yTop).join(', '), 'wall thickness: estimated'], conf: ['spec', 'measured', 'estimated'] });
-    // ---- placa base, SoC y componentes (POCO: medidos en la foto de repuestos; S26: estimados)
+    // ---- mainboard, SoC and components (POCO: measured on the spare-part photo; S26: estimated)
     const bd = IN.board, board = new TH.Group(), bmat = mat('#ffffff', { roughness: 0.5 }); bmat.map = boardTex(bd.w, bd.h, isP ? '#15171b' : '#2c6e47'); const bth = 1.1;
     board.add(new TH.Mesh(plate(rr(bd.w, bd.h, 5), bth, 0.1), bmat)); board.position.set(LX(d, bd.cx), LY(d, bd.cyTop), 0);
     { const R = MX.rng(11), n = 160, cap = new TH.InstancedMesh(new TH.BoxGeometry(1, 0.6, 0.5), mat('#b79a6a', { roughness: 0.5, metalness: 0.2 }), n), m4 = new TH.Matrix4(); for (let i = 0; i < n; i++) { const px = (R() - 0.5) * (bd.w - 5), py = (R() - 0.5) * (bd.h - 4), sx = 0.6 + R() * 1.2; m4.makeScale(sx, 1, 1); if (R() > 0.5) m4.makeRotationZ(Math.PI / 2).scale(V(sx, 1, 1)); m4.setPosition(px, py, bth + 0.25); cap.setMatrixAt(i, m4); } board.add(cap); }
@@ -122,7 +123,7 @@
     soc.position.set(LX(d, sp.cx), LY(d, sp.cyTop), 0); SIZE[d.id + '.soc'] = pk;
     const cores = d.soc.cpu.reduce((s2, q) => s2 + q.n, 0);
     part(d, 'soc', d.soc.name, zc(sink + backT + 0.3 + bth), 9, true, soc, { title: d.soc.name, lines: [d.soc.node + ', ' + cores + ' cores, ' + d.soc.gpu, d.soc.ram, d.soc.storage, isP ? 'thermal pad ' + sp.w + ' x ' + sp.h + ' mm (measured)' : 'package size and position: estimated'], conf: isP ? ['spec', 'measured', 'estimated'] : ['spec', 'estimated'] });
-    // ---- extras: POCO = motor, altavoz y placa de USB-C medidos; S26 = camara de vapor y S Pen
+    // ---- extras: POCO = motor, speaker and USB-C board measured; S26 = vapour chamber and S Pen
     if (isP) {
       const mo = IN.motor, hp = new TH.Group(); hp.add(OA(new TH.Mesh(new TH.BoxGeometry(mo.w, mo.h, 3.4), mat('#c4c7cd', { metalness: 0.85, roughness: 0.4 })), { position: V(0, 0, 1.7) })); hp.add(OA(new TH.Mesh(new TH.CylinderGeometry(1.2, 1.2, 0.2, 20), mat('#3d7be0', { metalness: 0.6, roughness: 0.3 })), { position: V(-mo.w * 0.2, 0, 3.5), rotation: new TH.Euler(Math.PI / 2, 0, 0) })); hp.position.set(LX(d, mo.cx), LY(d, mo.cyTop), 0); SIZE['poco.haptic'] = mo.w;
       part(d, 'haptic', 'Vibration motor', zc(sink + backT + 0.3), 7, false, hp, { title: d.name + ' vibration motor', lines: ['X-axis linear motor (spec)', 'box ' + mo.w + ' x ' + mo.h + ' mm at the top (measured on the official photo)'], conf: ['spec', 'measured'] });
@@ -140,7 +141,7 @@
       const sk = new TH.Group(); sk.add(OA(new TH.Mesh(new TH.BoxGeometry(18, 7, 2.6), mat('#303034', { roughness: 0.5 })), { position: V(0, 0, 1.3) })); sk.position.set(ed.bottom.speakerFront - w / 2, -h / 2 + 8, 0); SIZE['s26.audio'] = 18;
       part(d, 'audio', 'Speakers', zc(sink + backT + 0.2), 4, true, sk, { title: d.name + ' speakers', lines: ['down-firing speaker + earpiece tweeter (Stuff)', 'balls inside the modules reduce tinny sound (teardown)', 'size and position: estimated'], conf: ['spec', 'estimated'] });
     }
-    // ---- pila de pantalla: cada capa es una pieza
+    // ---- display stack: every layer is a part
     const pc = L.punch, fp = new TH.Group(); fp.add(new TH.Mesh(new TH.BoxGeometry(8, 8, 0.3), mat('#6b6d73', { metalness: 0.5, roughness: 0.4 }))); fp.position.set(0, 40 - h / 2, 0); SIZE[d.id + '.fp'] = 8;
     part(d, 'fp', 'Ultrasonic fingerprint', zTop - 1.75 - t / 2, 14, true, fp, { title: d.name + ' fingerprint sensor', lines: ['ultrasonic, under the display (spec)', 'size and position: estimated'], conf: ['spec', 'estimated'] });
     const sf2 = new TH.Group(), sc = d.selfie; sf2.add(new TH.Mesh(new TH.BoxGeometry(sc.sensor.w, sc.sensor.h, 0.4), mat('#1a2540', { roughness: 0.4 }))); sf2.position.set(0, LY(d, pc.cyTop), 0); SIZE[d.id + '.selfie'] = 4;
@@ -183,7 +184,7 @@
     });
     c.save(); c.globalAlpha = s.focusA; let x = 520; x += H2.tag(c, x, 252, 'measured') + 8; x += H2.tag(c, x, 252, 'derived') + 8; H2.tag(c, x, 252, 'spec'); c.restore();
   }
-  // estructura trasera de cada equipo (vista desde atras, a escala) con las cotas medidas
+  // back structure of each device (seen from the back, to scale) with the measured dimensions
   function layoutPanel(a) {
     if (!H2.panel(a, 'Fig 3 - rear camera structure', 'Measured on official photos.', 'Seen from the back, same scale, +/-1.5 mm.')) return; const c = MX.ctx, S = 3.5;
     D.forEach((d, col) => {
@@ -199,7 +200,7 @@
     });
     c.fillStyle = T.mute; c.font = '400 16px ' + MX.MONO; c.textAlign = 'left'; c.fillText('Photos: GSMArena, Xiaomi spare-parts, Android Central. Numbers in circles = camera list order.', 86, 1296); H2.endPanel();
   }
-  // interior: POCO medido en la foto oficial de repuestos, S26 estimado
+  // interior: POCO measured on the official spare-part photo, S26 estimated
   function interiorPanel(a) {
     if (!H2.panel(a, 'Fig 3 - inside', 'POCO measured. S26 estimated.', 'Back view, same scale. Solid = measured, dashed = estimated.')) return; const c = MX.ctx, S = 3.5;
     D.forEach((d, col) => {
@@ -297,7 +298,7 @@
       hint: t < 4.6 ? 'ASSEMBLING' : t < T_IMP ? (e > 0.5 ? 'EXPLODED VIEW' : '') : t < 33 ? 'BACK' : '' };
   }
 
-  /* ------------------------------------------------------------ sonido: material, tamano y posicion de cada pieza; cada equipo con su paleta */
+  /* ------------------------------------------------------------ sound: material, size and position of each part; each device with its own palette */
   const MATOF = { poco: { back: 'plastic', island: 'aluminum', battery: 'pouch', frame: 'aluminum', board: 'pcb', soc: 'ceramic', audio: 'plastic', haptic: 'aluminum', sub: 'pcb', fp: 'ceramic', selfie: 'ceramic', glass: 'glass', optics: 'plastic', oled: 'glass', tft: 'pcb', sheet: 'rubber' }, s26: { back: 'glass', island: 'steel', battery: 'pouch', frame: 'aluminum', board: 'pcb', soc: 'ceramic', audio: 'plastic', vapor: 'aluminum', spen: 'steel', fp: 'ceramic', selfie: 'ceramic', glass: 'glass', optics: 'plastic', oled: 'glass', privacy: 'plastic', tft: 'pcb', sheet: 'rubber' } };
   const PAN = { poco: -0.62, s26: 0.62 }, SCALE = { poco: { root: 50, mode: 'mixolydian' }, s26: { root: 54, mode: 'lydian' } };
   function audio() {

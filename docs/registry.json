@@ -184,7 +184,7 @@
         "features": 4,
         "blind": "recognised"
       },
-      "specSha256": "14a31b37838601a4d63d0d8dd4b7bae606553ce8d97e04fa872ed3d9fbe160f4"
+      "specSha256": "eb9c0d84a47a7f2df7fdb2e28cd035acf2593a80e4ce1d79c9810ec3037cc938"
     },
     {
       "id": "hub",
@@ -804,7 +804,7 @@
         "features": 5,
         "blind": "recognised"
       },
-      "specSha256": "2fb4a5a230d7c16fce14a6e2770634b32be757dd5075b12e8990b9b930d24790"
+      "specSha256": "812dd123ec4992854190fef9b2f34ea0588512792119cf282d74cd5719d1b25a"
     },
     {
       "id": "k20a",
@@ -6484,7 +6484,7 @@
         "features": 4,
         "blind": "recognised"
       },
-      "specSha256": "a7d348d07d8e1aac47ef80aa8f66772ec400224a1f35e7e3a8982b58eb6b8fed"
+      "specSha256": "0d75d342a31f74ab4afc2b8aa26dc5a2da7503ccde13e23b9777ba8fab381578"
     },
     {
       "id": "winrar",

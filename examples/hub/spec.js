@@ -1,12 +1,12 @@
 /*
- * spec.js - Fig 4: buje de 3 velocidades (tipo Sturmey-Archer AW) como SPEC declarativo. No hay codigo de escena: kit/spec.js compila esto a piezas,
- * cinematica, camara, sonido y video. Todo lo que sale en pantalla viene de aca.
+ * spec.js - Fig 4: 3-speed hub (Sturmey-Archer AW type) as a declarative SPEC. There is no scene code: kit/spec.js compiles this into parts,
+ * kinematics, camera, sound and film. Everything on screen comes from here.
  *
- * Que es evidencia y que no (ver research.claims):
- *   SPEC      relaciones publicadas 75 % / 100 % / 133 %.
- *   DERIVED   dientes de la corona (60) y del sol (20), del foro CycleChat, cruzados con (60+20)/60 = 1,333 y con zr = zs + 2 zp.
- *   ESTIMATED modulo, anchos, diametros de caja, brida, rodamientos, numero de satelites y pinon: nadie los publica, van punteados.
- * No modelado: trinquetes, embrague y palanca de cambios. La trayectoria de potencia por modo esta simplificada y lo dice el video.
+ * What is evidence and what is not (see research.claims):
+ *   SPEC      published ratios 75 % / 100 % / 133 %.
+ *   DERIVED   ring (60) and sun (20) teeth, from the CycleChat forum, cross-checked with (60+20)/60 = 1.333 and with zr = zs + 2 zp.
+ *   ESTIMATED module, widths, shell diameters, flange, bearings, number of planets and sprocket: nobody publishes them, they are dashed.
+ * Not modelled: pawls, clutch and shift lever. The power path per mode is simplified and the film says so.
  */
 window.SPEC = (() => {
   const M = 0.8, ZS = 20, ZP = 20, ZR = 60, ORBIT = M * (ZS + ZP) / 2, PL = [0, 90, 180, 270];

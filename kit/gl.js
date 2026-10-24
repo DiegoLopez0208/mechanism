@@ -1,9 +1,9 @@
 /*
- * kit/gl.js - escenario 3D sobre three.js 0.186 (kit/vendor/three.bundle.js).
- * Pipeline de producto: color gestionado (sRGB), tone mapping Neutral, entorno de estudio (RoomEnvironment), luz principal con sombras suaves,
- * camara en perspectiva de focal larga (o isometrica ortografica), MSAA 4x, oclusion ambiental GTAO, profundidad de campo (Bokeh), bloom suave
- * y OutputPass. El mundo usa los ejes del plano tecnico: x a la derecha, y hacia arriba en la vista superior, z hacia arriba (altura);
- * internamente three usa X=x, Y=z, Z=-y. La salida se compone sobre el canvas 2D del arnes (MX.run) para dibujar etiquetas y cotas encima.
+ * kit/gl.js - 3D stage on three.js 0.186 (kit/vendor/three.bundle.js).
+ * Product pipeline: managed colour (sRGB), Neutral tone mapping, studio environment (RoomEnvironment), key light with soft shadows,
+ * long-lens perspective camera (or orthographic isometric), 4x MSAA, GTAO ambient occlusion, depth of field (Bokeh), soft bloom
+ * and OutputPass. The world uses technical-drawing axes: x to the right, y up in the top view, z up (height);
+ * internally three uses X=x, Y=z, Z=-y. The output is composited onto the harness's 2D canvas (MX.run) so labels and dimensions go on top.
  */
 (function (g) {
   'use strict';
@@ -107,7 +107,7 @@ float mxFbm(vec3 p) { return 0.55 * mxNoise(p) + 0.3 * mxNoise(p * 2.03 + 7.1) +
   };
 
   /* ------------------------------------------------------------ escenario */
-  // o: { w, h, fov (grados; 0 = ortografica), shadow (opacidad de la sombra en el suelo), floorY, key: [x,y,z],
+  // o: { w, h, fov (degrees; 0 = orthographic), shadow (opacity of the floor shadow), floorY, key: [x,y,z],
   //      exposure, ao, bloom, envIntensity, bgInner, bgOuter }
   G.stage = (o) => {
     const W = o.w, H = o.h, FOV = o.fov == null ? 22 : o.fov;
@@ -124,7 +124,7 @@ float mxFbm(vec3 p) { return 0.55 * mxNoise(p) + 0.3 * mxNoise(p * 2.03 + 7.1) +
     renderer.toneMapping = tmap === 'neutral' ? TH.NeutralToneMapping : TH.AgXToneMapping;
     renderer.toneMappingExposure = (o.exposure == null ? ((MX.THEME.gl && MX.THEME.gl.exposure) || 1.0) : o.exposure) * (tmap === 'neutral' ? 1 : 1.18);
     const scene = new TH.Scene();
-    // fondo: papel con un velo de luz suave (se dibuja dentro de la escena para que el posprocesado lo vea)
+    // background: paper with a soft veil of light (drawn inside the scene so post-processing sees it)
     const TG = MX.THEME.gl || {}, night = !!MX.THEME.dark;
     const bgc = document.createElement('canvas'); bgc.width = TG.grid ? W : 512; bgc.height = TG.grid ? H : 640; const bx = bgc.getContext('2d'), gr = bx.createRadialGradient(bgc.width / 2, 270 * bgc.height / 640, 40 * bgc.height / 640, bgc.width / 2, 300 * bgc.height / 640, 520 * bgc.height / 640);
     gr.addColorStop(0, o.bgInner || TG.inner || (night ? '#2b2f3a' : '#faf9f5')); gr.addColorStop(1, o.bgOuter || TG.outer || (night ? '#090a0e' : '#dedbd1')); bx.fillStyle = gr; bx.fillRect(0, 0, bgc.width, bgc.height);
@@ -144,7 +144,7 @@ float mxFbm(vec3 p) { return 0.55 * mxNoise(p) + 0.3 * mxNoise(p * 2.03 + 7.1) +
     const floor = new TH.Mesh(new TH.PlaneGeometry(1200, 1200), new TH.ShadowMaterial({ opacity: (o.shadow == null ? 0.2 : o.shadow) * (TG.floorK || (night ? 3.2 : 1)), color: TG.floor || (night ? '#000000' : '#2a2418') }));
     floor.rotation.x = -Math.PI / 2; floor.position.y = o.floorY == null ? -14 : o.floorY; floor.receiveShadow = true; scene.add(floor);
 
-    // posprocesado: render con MSAA en HalfFloat -> GTAO -> Bokeh (opcional) -> Bloom -> OutputPass (tone mapping + sRGB)
+    // post-processing: MSAA render in HalfFloat -> GTAO -> Bokeh (optional) -> Bloom -> OutputPass (tone mapping + sRGB)
     const rt = new TH.WebGLRenderTarget(RW, RH, { type: TH.HalfFloatType, samples: 4 });
     const composer = new TH.EffectComposer(renderer, rt); composer.setPixelRatio(1); composer.setSize(RW, RH);
     // ssr: screen-space reflections, the metal reflects the parts next to it (not only the studio). As in Eevee it is a reflection LAYER over the
@@ -172,8 +172,8 @@ float mxFbm(vec3 p) { return 0.55 * mxNoise(p) + 0.3 * mxNoise(p * 2.03 + 7.1) +
       fragmentShader: 'uniform sampler2D tDiffuse; varying vec2 vUv; void main() { vec4 c = texture2D(tDiffuse, vUv); float l = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722)); vec3 s = mix(vec3(l), c.rgb, 1.28); s = (s - 0.5) * 1.08 + 0.5; gl_FragColor = vec4(clamp(s, 0.0, 1.0), c.a); }' }));
     const st = { renderer, scene, camera, composer, canvas: cv, floor, key, fill, rim, ao, bokeh, bloom, view: null, W, H, fov: FOV, aoSkip: [] };
 
-    // vista: yaw (0 = mirando el borde y-min, 90 = mirando el borde x-max), pitch (0 = elevacion, 90 = planta), zoom (px por mm en el plano del blanco),
-    // blanco t y su posicion en pantalla (cx, cy); dof: apertura del desenfoque (0 = todo nitido), focus: distancia al plano nitido (por defecto el blanco)
+    // view: yaw (0 = looking at the y-min edge, 90 = looking at the x-max edge), pitch (0 = elevation, 90 = plan), zoom (px per mm at the target plane),
+    // target t and its screen position (cx, cy); dof: blur aperture (0 = all sharp), focus: distance to the sharp plane (the target by default)
     st.setView = (v) => {
       st.view = v; const p = Math.min(v.pitch, 89.9) * rad, y = v.yaw * rad, S = v.zoom, cx = v.cx == null ? W / 2 : v.cx, cy = v.cy == null ? H / 2 : v.cy, t = G.v(v.tx || 0, v.ty || 0, v.tz || 0);
       let d = 600;
@@ -188,9 +188,9 @@ float mxFbm(vec3 p) { return 0.55 * mxNoise(p) + 0.3 * mxNoise(p * 2.03 + 7.1) +
       if (bokeh.enabled) { bokeh.uniforms.focus.value = v.focus == null ? d : v.focus; bokeh.uniforms.aperture.value = a * 1e-4; bokeh.uniforms.maxblur.value = Math.min(0.03, 0.004 + a * 0.004); }
       st.dist = d;
     };
-    // punto del mundo (x,y,z del plano) -> pixel de pantalla
+    // world point (plan x,y,z) -> screen pixel
     st.project = (x, y, z) => { const q = G.v(x, y, z).project(camera); return [(q.x * 0.5 + 0.5) * W, (-q.y * 0.5 + 0.5) * H]; };
-    // la oclusion ambiental ignora las piezas atenuadas (si no, un fantasma translucido proyectaria sombra como si fuese solido)
+    // ambient occlusion ignores dimmed parts (otherwise a translucent ghost would cast shadow as if it were solid)
     const aoRender = ao.render.bind(ao);
     ao.render = function (...args) { const hidden = []; st.aoSkip.forEach((o2) => { if (o2.visible) { o2.visible = false; hidden.push(o2); } }); aoRender(...args); hidden.forEach((o2) => { o2.visible = true; }); };
     // only metal reflects (the shadow floor and the dielectrics would otherwise mirror the object); the list is taken at the first render, when
@@ -372,13 +372,13 @@ float mxFbm(vec3 p) { return 0.55 * mxNoise(p) + 0.3 * mxNoise(p * 2.03 + 7.1) +
   };
 
   /* ------------------------------------------------------------ geometria y texturas */
-  // caja con aristas biseladas: w (x), d (y del plano), h (altura); centrada en x,z y apoyada en y=0 (arriba)
+  // box with bevelled edges: w (x), d (plan y), h (height); centred on x,z and resting on y=0 (top)
   G.rbox = (w, d, h, r = 0.25) => {
     r = Math.max(0.02, Math.min(r, w / 2 - 0.01, d / 2 - 0.01, h / 2 - 0.01));
     const s = new TH.Shape(), x = w / 2 - r, y = d / 2 - r; s.moveTo(-x, -y); s.lineTo(x, -y); s.lineTo(x, y); s.lineTo(-x, y); s.closePath();
     const dep = Math.max(0.001, h - 2 * r);
     const geo = new TH.ExtrudeGeometry(s, { depth: dep, bevelEnabled: true, bevelThickness: r, bevelSize: r, bevelOffset: 0, bevelSegments: 4, curveSegments: 1 });
-    geo.translate(0, 0, -dep / 2 + h / 2); geo.rotateX(-Math.PI / 2); return geo;     // queda apoyada en y=0 hasta y=h
+    geo.translate(0, 0, -dep / 2 + h / 2); geo.rotateX(-Math.PI / 2); return geo;     // rests on y=0 up to y=h
   };
   G.canvasTex = (w, h, fn) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); fn(x, w, h); const t = new TH.CanvasTexture(c); t.anisotropy = 8; t.colorSpace = TH.SRGBColorSpace; return t; };
   // material fisico: acepta cualquier parametro de MeshPhysicalMaterial (clearcoat, transmission, ior, thickness, iridescence, anisotropy, sheen...)
@@ -388,9 +388,9 @@ float mxFbm(vec3 p) { return 0.55 * mxNoise(p) + 0.3 * mxNoise(p * 2.03 + 7.1) +
     const d = Array.isArray(detail) ? detail : G.DETAIL[detail]; if (d) m.userData.mxDetail = d.slice();
     return m;
   };
-  // vidrio con transmision real (refracta lo que tiene detras); thickness en mm
+  // glass with real transmission (refracts what is behind it); thickness in mm
   G.glass = (tint, o = {}) => new TH.MeshPhysicalMaterial(Object.assign({ color: tint || '#ffffff', roughness: 0.04, metalness: 0, transmission: 1, ior: 1.5, thickness: 1.2, attenuationColor: tint || '#ffffff', attenuationDistance: 40, specularIntensity: 1, clearcoat: 0.3 }, o));
-  // lamina plana encima de una cara. face: 'top' | 'px' (cara x+) | 'pz' (cara hacia el borde y-min). pos: [x, y, z] locales de la pieza (mundo three)
+  // flat sheet on a face. face: 'top' | 'px' (x+ face) | 'pz' (face towards the y-min edge). pos: [x, y, z] local to the part (three's world)
   G.decal = (face, w, h, mat, pos) => {
     const m = new TH.Mesh(new TH.PlaneGeometry(w, h), mat);
     if (face === 'top') m.rotation.x = -Math.PI / 2; else if (face === 'px') m.rotation.y = Math.PI / 2;
