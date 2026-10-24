@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- **Specs are contained:** `check-spec`, `export-svg` and `registry` re-run under Node's permission model (read the kit and
+  the spec's folder, write only their outputs, no processes or network). A spec could previously leave `node:vm` through a
+  host object; a gate test now plants one that tries. `--trusted` / `MECHANISM_TRUSTED=1` opt out.
+- **Render browser over a pipe:** DevTools uses `--remote-debugging-pipe`, so no TCP port is open during a render
+  (`MECHANISM_CDP=port` keeps the old path).
+- **Real coverage:** kit files loaded through `vm` now carry their absolute path, so coverage measures the gate itself;
+  `npm run test:coverage` covers `kit/` and `scripts/` with thresholds and runs in CI.
+- **Every example in CI:** `npm run check:all` gates every `examples/*/spec.js` (CI listed 11 of 29 by hand). The register
+  now includes the Studio design studies.
+- **Faster viewers:** interactive pages load the recorded sounds (1.1 MB) after the page; the play button waits for them.
+- **Shorter skill:** SKILL.md keeps the steps and rules (17 KB, was 40 KB); details moved to `references/`.
+- **Lint ratchet:** a file may not gain lines over 200 characters (`scripts/lint-baseline.json`).
+- `findBrowser` also finds Chrome stable, Chromium (deb and snap) and Edge on Linux, Edge and Chromium on macOS.
+- `docs/repo-size.md`: where the clone's weight comes from and how to remove it.
+
 - **Technical film gallery:** 34 active films across Studio (22), Workflow (6)
   and Paper (6), preserving the blue site identity and the Rubik, Enigma and
   Cherry themes. Sixteen revised Studio construction studies include source
