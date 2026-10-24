@@ -3,5 +3,5 @@
   "private": true,
   "type": "module",
   "description": "Runs the real React DOM in jsdom to record what it does to the DOM; the film's gate compares a model with this record (scripts/make-react-sample.mjs).",
-  "dependencies": { "react": "18.3.1", "react-dom": "18.3.1", "jsdom": "25.0.1" }
+  "dependencies": { "react": "18.3.1", "react-dom": "19.3.1", "jsdom": "25.0.1" }
 }
