@@ -77,13 +77,13 @@ jobs:
           ffmpeg -version
           ffprobe -version
       - name: Encoding, browser harness and media server
-        run: node --test tests/encoding.test.mjs tests/browser.test.mjs tests/media-server.test.mjs
+        run: node scripts/test-annotate.mjs tests/encoding.test.mjs tests/browser.test.mjs tests/media-server.test.mjs
       - name: Render, colour tags, audio streams and encoder fallback
-        run: node --test --test-concurrency=1 tests/render.test.mjs tests/presentation.test.mjs
+        run: node scripts/test-annotate.mjs --test-concurrency=1 tests/render.test.mjs tests/presentation.test.mjs
       - name: PNG colour conversion, requested fps and native study views
-        run: node --test --test-concurrency=1 tests/study-quality.test.mjs
+        run: node scripts/test-annotate.mjs --test-concurrency=1 tests/study-quality.test.mjs
       - name: Studio camera (exploded view hold, flight to the first stop, picture and sound in sync)
-        run: node --test --test-concurrency=1 tests/camera.test.mjs
+        run: node scripts/test-annotate.mjs --test-concurrency=1 tests/camera.test.mjs
 
   paper:
     runs-on: ubuntu-24.04
@@ -102,9 +102,9 @@ jobs:
           command -v ffmpeg
           command -v ffprobe
       - name: Engine manifest and Paper (vector scene, declared 2D geometry, SVG export, mesh adapter, visual contract)
-        run: node --test --test-concurrency=1 tests/manifest.test.mjs tests/paper.test.mjs tests/paper-contract.test.mjs tests/paper-geometry.test.mjs tests/svg2d.test.mjs tests/rpi4-board.test.mjs
+        run: node scripts/test-annotate.mjs --test-concurrency=1 tests/manifest.test.mjs tests/paper.test.mjs tests/paper-contract.test.mjs tests/paper-geometry.test.mjs tests/svg2d.test.mjs tests/rpi4-board.test.mjs
       - name: Mechanism Draft as a standalone install (built outside the repository)
-        run: node --test --test-concurrency=1 tests/draft-skill.test.mjs
+        run: node scripts/test-annotate.mjs --test-concurrency=1 tests/draft-skill.test.mjs
       - name: The committed Draft plugin matches its files.json, with nothing extra
         working-directory: plugins/mechanism-draft
         run: node scripts/skill-doctor.mjs --strict
@@ -126,4 +126,4 @@ jobs:
         with:
           node-version: 22
       - name: Visual preflight (camera, labels, frame, geometry area, NOT RUN reporting)
-        run: node --test --test-concurrency=1 tests/preflight.test.mjs
+        run: node scripts/test-annotate.mjs --test-concurrency=1 tests/preflight.test.mjs
