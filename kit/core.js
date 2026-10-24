@@ -148,7 +148,10 @@
   /* ------------------------------------------------------------ arnes de render */
   // MX.run({ w, h, fps, duration, draw(ctx, t), audio() -> Float32Array, sr })
   MX.run = (cfg) => {
-    const W = cfg.w, H = cfg.h, FPS = cfg.fps || 30, DUR = cfg.duration;
+    const frameQuery = typeof location === 'undefined' ? null : new URLSearchParams(location.search);
+    const W = cfg.w, H = cfg.h, FPS = Number(frameQuery?.get('fps') ?? cfg.fps ?? 30), DUR = cfg.duration;
+    if (!(Number.isFinite(FPS) && FPS > 0)) throw new Error('fps must be positive and finite');
+    g.__frameInfo = { width: W, height: H, fps: FPS };
     const cv = document.getElementById('c') || Object.assign(document.body.appendChild(document.createElement('canvas')), { id: 'c' });
     cv.width = W; cv.height = H; const octx = cv.getContext('2d', cfg.contextOptions || {});
     // supersampling: the scene is drawn on a canvas SS times larger (same W x H coordinates through the transform) and reduced

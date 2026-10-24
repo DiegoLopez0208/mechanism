@@ -62,6 +62,29 @@
       fadeKey[p.id] = key;
     }
     // estado s: { e (explosion 0..1), assemble(id) -> { k: 0..1 llegada, alpha }, focus, focusSet, focusA, vis(p), view }
+    F.studyBounds = (includeContext = false) => {
+      st.scene.updateMatrixWorld(true);
+      const bounds = new TH.Box3(); bounds.studyPoints = [];
+      F.parts.filter(p => p.group.visible).forEach(p => p.group.traverse(mesh => {
+        if (!mesh.isMesh || !mesh.geometry || !mesh.visible) return;
+        let ancestor = mesh.parent;
+        while (ancestor && ancestor !== st.scene) { if (!ancestor.visible) return; ancestor = ancestor.parent; }
+        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        if (!materials.some(material => material.visible && (includeContext || material.opacity >= .3))) return;
+        if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+        bounds.union(mesh.geometry.boundingBox.clone().applyMatrix4(mesh.matrixWorld));
+        const local = mesh.geometry.boundingBox;
+        for (const x of [local.min.x, local.max.x]) for (const y of [local.min.y, local.max.y]) {
+          for (const z of [local.min.z, local.max.z]) bounds.studyPoints.push(new TH.Vector3(x, y, z).applyMatrix4(mesh.matrixWorld));
+        }
+      }));
+      return bounds;
+    };
+    F.drawStudy = (ctx, rect, bounds = F.studyBounds()) => {
+      const image = st.studyImage(bounds, Math.round(rect.w), Math.round(rect.h), F.studyBounds());
+      ctx.drawImage(image, rect.x, rect.y, rect.w, rect.h);
+      return st.studyDiagnostics;
+    };
     F.apply = (s, render = true) => {
       if (cfg.beforeRender) cfg.beforeRender(s);
       st.aoSkip.length = 0;
@@ -158,6 +181,28 @@
         return out;
       };
       const pos = (ev) => { const r = cv.getBoundingClientRect(); return [(ev.clientX - r.left) / r.width * W, (ev.clientY - r.top) / r.height * H]; };
+      // Keyboard and screen-reader layer: real buttons and a range input laid over the painted ones. The canvas stays the picture;
+      // these are invisible until focused, then show a ring. They also give the pointer a hand cursor over every control.
+      const layer = document.createElement('div'); layer.id = 'mx-a11y'; layer.setAttribute('role', 'toolbar'); layer.setAttribute('aria-label', 'Viewer controls');
+      const lcss = document.createElement('style');
+      // the example pages size the canvas as height:100vh + max-width:100vw, which squashes the picture (and every hit area) when the window is
+      // narrower than the canvas ratio: size it by its ratio instead
+      lcss.textContent = 'canvas#c{width:min(100vw,calc(100vh*' + W + '/' + H + '))!important;height:auto!important;aspect-ratio:' + W + '/' + H + '}#mx-a11y button,#mx-a11y input{position:fixed;margin:0;padding:0;border:0;background:transparent;opacity:0;cursor:pointer}#mx-a11y :focus-visible{opacity:1;outline:2px solid #ffb347;outline-offset:2px;background:rgba(255,179,71,.18)}';
+      document.head.appendChild(lcss); document.body.appendChild(layer);
+      const range = document.createElement('input'); range.type = 'range'; range.min = 0; range.max = 100; range.value = 0; range.setAttribute('aria-label', 'Explode');
+      range.addEventListener('input', () => { S.eT = range.value / 100; }); layer.appendChild(range);
+      let lsig = '', lbtn = [];
+      const overlay = () => {
+        const bs = btns(), sig = bs.map((b) => b.label + b.on).join('|');
+        if (sig !== lsig) {
+          lsig = sig; lbtn.forEach((e) => e.remove());
+          lbtn = bs.map((b) => { const e = document.createElement('button'); e.type = 'button'; e.textContent = b.label; e.setAttribute('aria-pressed', b.on); e.addEventListener('click', () => b.fn()); layer.appendChild(e); return e; });
+        }
+        const r = cv.getBoundingClientRect(), sx = r.width / W, sy = r.height / H, put = (e, x, y, w, h) => { e.style.left = r.left + x * sx + 'px'; e.style.top = r.top + y * sy + 'px'; e.style.width = w * sx + 'px'; e.style.height = h * sy + 'px'; };
+        bs.forEach((b, i) => put(lbtn[i], b.x, b.y, b.w, b.h));
+        put(range, SL.x0 - 14, SL.y - 22, SL.x1 - SL.x0 + 28, 44);
+        if (document.activeElement !== range) range.value = Math.round(S.eT * 100);
+      };
       const rc = new TH.Raycaster(), visible = (m) => { let q = m; while (q) { if (q.visible === false) return false; q = q.parent; } return true; };
       const pick = (p) => { rc.setFromCamera(new TH.Vector2(p[0] / W * 2 - 1, -(p[1] / H) * 2 + 1), st.camera); const hit = rc.intersectObjects(F.hit.filter(visible), false)[0]; if (!hit) return null; const q = hit.point; return { id: hit.object.userData.pid, pt: axes === 'three' ? [q.x, q.y, q.z] : [q.x, -q.z, q.y] }; };
       cv.addEventListener('pointerdown', (ev) => {
@@ -188,7 +233,7 @@
           if (S.pts.length) { const P = S.pts.map((q) => F.P(q[0], q[1], q[2])); c.strokeStyle = T.ember; c.fillStyle = T.ember; c.lineWidth = 2.5; P.forEach((q) => { c.beginPath(); c.arc(q[0], q[1], 7, 0, 6.2832); c.fill(); }); if (P.length === 2) { c.beginPath(); c.moveTo(P[0][0], P[0][1]); c.lineTo(P[1][0], P[1][1]); c.stroke(); const dd = Math.hypot(S.pts[0][0] - S.pts[1][0], S.pts[0][1] - S.pts[1][1], S.pts[0][2] - S.pts[1][2]), mx = (P[0][0] + P[1][0]) / 2, my = (P[0][1] + P[1][1]) / 2, lbl = dd.toFixed(2) + ' mm'; c.font = '700 28px ' + MX.MONO; const tw = c.measureText(lbl).width; c.fillStyle = T.paper; c.fillRect(mx - tw / 2 - 8, my - 22, tw + 16, 38); c.fillStyle = T.ember; c.textAlign = 'center'; c.fillText(lbl, mx, my + 7); } }
           c.restore();
         };
-        F.frame(ctx, s); requestAnimationFrame(loop);
+        overlay(); F.frame(ctx, s); requestAnimationFrame(loop);
       };
       requestAnimationFrame(loop);
     };

@@ -15,7 +15,7 @@ import { withBrowser } from './lib/browser.mjs';
 const args = process.argv.slice(2);
 const page = args.find((a, i) => !a.startsWith('--') && !(i > 0 && args[i - 1].startsWith('--'))) || '';
 const opt = (k, d) => { const i = args.indexOf('--' + k); return i >= 0 ? args[i + 1] : d; };
-if (!page) { console.error('uso: node scripts/render.mjs <pagina.html> [--duration 28] [--fps 30] [--blur 4] [--out out/x.mp4] [--still t]'); process.exit(1); }
+if (!page) { console.error('usage: node scripts/render.mjs <pagina.html> [--duration 28] [--fps 30] [--blur 4] [--out out/x.mp4] [--still t]'); process.exit(1); }
 
 const DUR_ARG = opt('duration', null), FPS = Number(opt('fps', 30)), DRAFT = args.includes('--draft'), BLUR = Number(opt('blur', DRAFT ? 1 : 4)), SHUT = Number(opt('shutter', 0.5)), CRF = opt('crf', DRAFT ? '24' : '17'), PRESET = opt('preset', DRAFT ? 'veryfast' : 'medium');
 const ENCODER = opt('encoder', 'jpeg');      // measured 2026-10-18 (docs/perf-quality.md): JPEG+x264 gives the smaller file and the higher SSIM; browser H.264 is 1.5-1.8x faster
@@ -23,7 +23,7 @@ const METHOD = opt('method', ''), BACKGROUND = opt('background', '');
 if (METHOD && !['studio', 'workflow', 'paper'].includes(METHOD)) throw new Error('--method must be studio, workflow or paper');
 if (BACKGROUND && !['graphite', 'blueprint', 'porcelain', 'ivory'].includes(BACKGROUND)) throw new Error('--background must be graphite, blueprint, porcelain or ivory');
 if (opt('export', '') && METHOD && METHOD !== 'studio') throw new Error('Model exports use --method studio; Workflow and Paper are 2D engines');
-if (!['jpeg', 'browser'].includes(ENCODER)) throw new Error('--encoder must be jpeg or browser');
+if (!['jpeg', 'png', 'browser'].includes(ENCODER)) throw new Error('--encoder must be jpeg, png or browser');
 if (!(FPS > 0 && Number.isFinite(FPS))) throw new Error('--fps must be positive and finite');
 const OUT = path.resolve(opt('out', 'out/figure.mp4')), FFMPEG = process.env.FFMPEG || 'ffmpeg';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -36,7 +36,7 @@ const png = (d) => Buffer.from(d.split(',')[1], 'base64');
 await withBrowser(async ({ send, ev: evalJs, progress, stopWatchdog, onCleanup }) => {
   await send('Page.enable');
   const url = new URL(pathToFileURL(path.resolve(page)));
-  for (const [key, value] of Object.entries({ render: '1', t: '0', theme: opt('style', opt('theme', '')), length: opt('length', ''), aspect: opt('aspect', ''), method: METHOD, background: BACKGROUND, ss: opt('ss', ''), ssr: opt('ssr', ''), tonemap: opt('tonemap', ''), pathtrace: opt('pathtrace', '') })) if (value !== '') url.searchParams.set(key, value);
+  for (const [key, value] of Object.entries({ render: '1', t: '0', fps: String(FPS), theme: opt('style', opt('theme', '')), length: opt('length', ''), aspect: opt('aspect', ''), method: METHOD, background: BACKGROUND, ss: opt('ss', ''), ssr: opt('ssr', ''), tonemap: opt('tonemap', ''), pathtrace: opt('pathtrace', '') })) if (value !== '') url.searchParams.set(key, value);
   await send('Page.navigate', { url: url.href });
   for (let i = 0; i < 100; i++) { await sleep(150); if (await evalJs('typeof window.__frame === "function"')) break; if (i === 99) throw new Error('la pagina no expuso __frame (usa MX.run); titulo de la pagina: ' + await evalJs('document.title')); }      // kit/boot.js writes the load error (a missing module) into the title
   mkdirSync(path.dirname(OUT), { recursive: true });
@@ -46,19 +46,21 @@ await withBrowser(async ({ send, ev: evalJs, progress, stopWatchdog, onCleanup }
   if (ex) { const b = await evalJs(ex === 'glb' ? `window.__exportGLB(${Number(opt('e', 0))})` : `window.__exportSTL(${Number(opt('e', 0))})`); const f = OUT.replace(/.mp4$/, '.' + ex); writeFileSync(f, Buffer.from(b, 'base64')); console.log('modelo:', f, (Buffer.from(b, 'base64').length / 1024).toFixed(0) + ' KB'); return; }
   const SPECDUR = await evalJs('window.__specInfo ? window.__specInfo().duration : null'), DUR = Number(DUR_ARG || SPECDUR || 28), FROM = Number(opt('from', 0)), TO = Number(opt('to', DUR));
   const rem = opt('remux', null);       // --remux out/x.mp4: regenera SOLO el audio y lo pega sobre el video ya renderizado (segundos, no minutos)
-  if (rem) { const wav = path.join(path.dirname(OUT), '.audio-' + process.pid + '.wav'), tmp = rem.replace(/.mp4$/, '.remux.mp4'); writeFileSync(wav, Buffer.from(await evalJs('window.__audioWav()'), 'base64')); const rr = spawnSync(FFMPEG, ['-y', '-i', rem, '-i', wav, '-af', loudAf(wav), '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', tmp], { encoding: 'utf8' }); if (rr.status !== 0) throw new Error('ffmpeg fallo: ' + rr.stderr.slice(-400)); renameSync(tmp, rem); rmSync(wav, { force: true }); console.log('audio nuevo en', rem); return; }
+  if (rem) { const wav = path.join(path.dirname(OUT), '.audio-' + process.pid + '.wav'), tmp = rem.replace(/.mp4$/, '.remux.mp4'); writeFileSync(wav, Buffer.from(await evalJs('window.__audioWav()'), 'base64')); const rr = spawnSync(FFMPEG, ['-y', '-i', rem, '-i', wav, '-af', loudAf(wav), '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-ar', '48000', '-b:a', '160k', '-shortest', '-movflags', '+faststart', tmp], { encoding: 'utf8' }); if (rr.status !== 0) throw new Error('ffmpeg fallo: ' + rr.stderr.slice(-400)); renameSync(tmp, rem); rmSync(wav, { force: true }); console.log('audio nuevo en', rem); return; }
   const still = opt('still', null);
   if (still != null) { const f = OUT.replace(/\.mp4$/, `-still-${still}.png`); writeFileSync(f, png(await evalJs(`window.__frame(${Number(still)}, ${BLUR}, ${SHUT})`))); console.log('still:', f); }
   else {
     if (!(Number.isFinite(FROM) && Number.isFinite(TO) && FROM >= 0 && TO > FROM && TO <= DUR)) throw new Error('invalid clip interval');
     const size = await evalJs('({ width: document.getElementById("c").width, height: document.getElementById("c").height, parts: window.SPEC?.parts?.length || 0 })');
+    const studyBefore = await evalJs('typeof __studyDiagnostics === "function" ? __studyDiagnostics().resources || null : null');
     const bitrate = Number(opt('bitrate', bitrateFor({ ...size, fps: FPS, draft: DRAFT })));
     if (!(bitrate > 0 && Number.isFinite(bitrate))) throw new Error('--bitrate must be positive and finite');
     const browser = ENCODER === 'browser' && await evalJs(`(${installEncoder.toString()})(${JSON.stringify({ fps: FPS, bitrate, blur: BLUR, shutter: SHUT })})`);
     if (ENCODER === 'browser' && !browser) console.warn('VideoEncoder/H.264 unavailable; falling back to JPEG');
-    console.log(`encoder: ${browser ? 'browser (software), bitrate ' + bitrate : 'jpeg'}`);
+    console.log(`encoder: ${browser ? 'browser (software), bitrate ' + bitrate : ENCODER === 'png' ? 'png (RGB input)' : 'jpeg'}`);
     const vtmp = OUT.replace(/.mp4$/, '.video-' + process.pid + '.mp4');
-    const enc = spawn(FFMPEG, videoArgs({ browser, fps: FPS, crf: CRF, preset: PRESET, out: vtmp }), { stdio: ['pipe', 'ignore', 'inherit'] });
+    const input = ENCODER === 'png' ? 'png' : 'jpeg';
+    const enc = spawn(FFMPEG, videoArgs({ browser, fps: FPS, crf: CRF, preset: PRESET, out: vtmp, input }), { stdio: ['pipe', 'ignore', 'inherit'] });
     let encError = null; enc.on('error', (e) => { encError = e; }); enc.stdin.on('error', (e) => { encError = e; });
     const encDone = new Promise((res) => enc.on('close', res));
     const write = async (buf) => {
@@ -76,7 +78,7 @@ await withBrowser(async ({ send, ev: evalJs, progress, stopWatchdog, onCleanup }
         if (browser) {
           await evalJs(`window.__video.step(${i}, ${t})`);
           if (i % 15 === 14) await write(Buffer.from(await evalJs('window.__video.drain()'), 'base64'));
-        } else await write(png(await evalJs(`window.__frame(${t}, ${BLUR}, ${SHUT}, 'jpg')`)));
+        } else await write(png(await evalJs(`window.__frame(${t}, ${BLUR}, ${SHUT}, '${input === 'png' ? 'png' : 'jpg'}')`)));
         progress();
         if (i % 60 === 0) console.log(`frame ${i}/${total}  ${((Date.now() - t0) / 1000).toFixed(0)} s`);
       }
@@ -92,10 +94,12 @@ await withBrowser(async ({ send, ev: evalJs, progress, stopWatchdog, onCleanup }
       enc.stdin.destroy(); enc.kill(); await encDone; rmSync(vtmp, { force: true }); throw e;
     }
     detachEncoder(); stopWatchdog();
+    const studyAfter = await evalJs('typeof __studyDiagnostics === "function" ? __studyDiagnostics().resources || null : null');
+    if (studyBefore) console.log('study resources: ' + JSON.stringify({ before: studyBefore, after: studyAfter }));
     console.log(`video: ${total} frames, ${((Date.now() - t0) / total).toFixed(2)} ms/frame`); console.log('audio...');
     const wav = path.join(path.dirname(OUT), '.audio-' + process.pid + '.wav'); writeFileSync(wav, Buffer.from(await evalJs('window.__audioWav()'), 'base64'));
     // loudnorm a -16 LUFS: suena parejo en el telefono y en el escritorio
-    const r = spawnSync(FFMPEG, ['-y', '-i', vtmp, '-ss', String(FROM), '-t', String(TO - FROM), '-i', wav, '-af', loudAf(wav), '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', OUT], { encoding: 'utf8' });
+    const r = spawnSync(FFMPEG, ['-y', '-i', vtmp, '-ss', String(FROM), '-t', String(TO - FROM), '-i', wav, '-af', loudAf(wav), '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-ar', '48000', '-b:a', '160k', '-shortest', '-movflags', '+faststart', OUT], { encoding: 'utf8' });
     if (r.status !== 0) throw new Error('ffmpeg fallo: ' + r.stderr.slice(-500));
     rmSync(vtmp, { force: true }); rmSync(wav, { force: true });
     console.log('listo:', OUT, `(film ${(TO - FROM).toFixed(1)} s, rendered in ${((Date.now() - t0) / 1000).toFixed(0)} s of wall time)`);

@@ -2,6 +2,8 @@
 
 Dimensioned engineering drawings (SVG) of flat parts, at true scale 1:1 or on an A4 sheet, and technical-drawing films, from a spec whose every number says where it comes from. Draft is a part of [Mechanism](https://github.com/DiegoLopez0208/mechanism) packaged on its own: the evidence gate, the declared 2D geometry, the SVG exporter, the vector Paper sheet and the film pipeline, without the 3D Studio film or the Workflow engine. This folder is self-contained: it runs with nothing else from the repository.
 
+**Versions:** this plugin is 0.4.0 and shares its engine with Mechanism 0.11.1. The "Mechanism Draft 0.3" in the header comment of an exported SVG is the version of the SVG format, not of the plugin.
+
 Stages: 0.1 Paper sheets and films; 0.2 declared parametric 2D geometry; 0.3 the SVG export; 0.4 the first real part (`examples/rpi4-board`); BH-1 evidence classes (a number the user gave is never verified; DERIVED and MEASURED told apart from printed figures), the 1:1 legend fix and these docs.
 
 ## Install

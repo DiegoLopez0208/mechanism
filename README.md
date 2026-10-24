@@ -1,5 +1,7 @@
 <h1 align="center">mechanism</h1>
 
+<h3 align="center">Every number cites its source, or it does not render.</h3>
+
 <p align="center"><b>Models and drawings that say where every number comes from.</b><br>
 A skill for coding agents: it researches a real object, writes a spec where every number names its source,<br>
 runs a gate that refuses what does not add up and says plainly what was checked and what was not,<br>
@@ -28,6 +30,15 @@ and outputs a film, an interactive viewer, a 3D model or a dimensioned SVG drawi
   <img src="docs/media/k20a.gif" width="260" alt="Honda K20A, firing order 1-3-4-2">
   <img src="docs/media/hub.gif" width="260" alt="Three-speed planetary hub">
 </p>
+
+## Technical film collection
+
+The [live gallery](https://diegolopez0208.github.io/mechanism/#examples) contains
+34 films: 22 Studio assemblies, six Workflow processes and six Paper drawings.
+The revised Studio additions are 12-second native 3D construction studies with
+source notes and explicit estimates. Rubik, Enigma and Cherry remain in the
+collection. [Production and quality notes](docs/technical-quality.md) describe
+the render paths, limits and repeatable checks.
 
 ## What it does
 

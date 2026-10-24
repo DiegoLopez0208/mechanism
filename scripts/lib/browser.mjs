@@ -40,9 +40,9 @@ export async function startBrowser({ executable = findBrowser(), timeout = Numbe
   const cleanup = () => {
     if (closed) return cleanupPromise; closed = true; clearTimeout(timer);
     process.off('exit', cleanup); process.off('SIGINT', sigint); process.off('SIGTERM', sigterm);
-    for (const dispose of disposers) { try { dispose(); } catch {} }
+    for (const dispose of disposers) { try { dispose(); } catch { /* teardown: keep closing */ } }
     for (const { reject, timer: t } of pending.values()) { clearTimeout(t); reject(new Error('browser session closed')); } pending.clear();
-    try { ws?.close(); } catch {} killTree(proc.pid);
+    try { ws?.close(); } catch { /* socket already closed */ } killTree(proc.pid);
     // Windows may still hold the directory until the child exit/WS close events
     // have been delivered. Yield to the event loop before retrying the deletion.
     cleanupPromise = (async () => {

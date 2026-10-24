@@ -1,0 +1,4 @@
+# Everything is reviewed by the maintainer. The gate and the kit decide what ships as VERIFIED, so changes there are never unreviewed.
+*                       @DiegoLopez0208
+/kit/spec-core.js       @DiegoLopez0208
+/tests/gate.test.mjs    @DiegoLopez0208

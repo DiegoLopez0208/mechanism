@@ -1,6 +1,7 @@
 // ffmpeg's JPEG decoder produces full-range BT.601. Convert samples AND tag them.
 export const colorTags = ['-color_range', 'tv', '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'iec61966-2-1'];
 export const jpegConversion = 'scale=in_range=pc:in_color_matrix=bt601:out_range=tv:out_color_matrix=bt709:flags=accurate_rnd+full_chroma_int,format=yuv420p,setparams=range=limited:color_primaries=bt709:color_trc=iec61966-2-1:colorspace=bt709';
+export const pngConversion = 'scale=in_range=pc:out_range=tv:out_color_matrix=bt709:flags=accurate_rnd+full_chroma_int,format=yuv420p,setparams=range=limited:color_primaries=bt709:color_trc=iec61966-2-1:colorspace=bt709';
 
 export function bitrateFor({ width, height, fps, parts = 0, draft = false }) {
   // Screen text needs more bits than a photographic scene. Scale with pixels,
@@ -8,11 +9,12 @@ export function bitrateFor({ width, height, fps, parts = 0, draft = false }) {
   return Math.round(width * height * fps * (draft ? 0.16 : 0.4 + Math.min(0.2, parts / 800)));
 }
 
-export function videoArgs({ browser, fps, crf, preset, out }) {
+export function videoArgs({ browser, fps, crf, preset, out, input = 'jpeg' }) {
+  if (!['jpeg', 'png'].includes(input)) throw new Error('input must be jpeg or png');
   return ['-y', '-v', 'error', ...(browser
     ? ['-f', 'h264', '-r', String(fps), '-i', '-', '-c:v', 'copy', '-bsf:v',
       'h264_metadata=video_full_range_flag=0:colour_primaries=1:transfer_characteristics=13:matrix_coefficients=1']
-    : ['-f', 'image2pipe', '-framerate', String(fps), '-c:v', 'mjpeg', '-i', '-', '-vf', jpegConversion,
+    : ['-f', 'image2pipe', '-framerate', String(fps), '-c:v', input === 'png' ? 'png' : 'mjpeg', '-i', '-', '-vf', input === 'png' ? pngConversion : jpegConversion,
       '-c:v', 'libx264', '-crf', String(crf), '-preset', preset, '-pix_fmt', 'yuv420p']),
   ...colorTags, '-movflags', '+faststart', out];
 }

@@ -7,7 +7,12 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
+    "test:fast": "node --test tests/gate.test.mjs tests/kit.test.mjs tests/geom2d.test.mjs tests/versions.test.mjs tests/media-server.test.mjs tests/sound.test.mjs",
+    "test:coverage": "node --test --experimental-test-coverage tests/gate.test.mjs tests/kit.test.mjs tests/geom2d.test.mjs tests/sound.test.mjs",
+    "lint": "node scripts/lint.mjs",
     "check": "node scripts/check-spec.mjs"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=22"
+  }
 }

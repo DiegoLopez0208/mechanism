@@ -16,7 +16,7 @@ function run(args) {
   const r = spawnSync(process.execPath, ['scripts/render.mjs', ...args], { cwd: root, encoding: 'utf8', timeout: 600000 });
   assert.equal(r.status, 0, r.stdout + '\n' + r.stderr); return r.stdout + r.stderr;
 }
-test('both encoders produce timed, colour-managed MP4 with stereo; still/export/remux remain usable', opts, () => {
+test('JPEG, PNG and browser encoders produce timed, colour-managed MP4 with stereo; still/export/remux remain usable', opts, () => {
   const dir = mkdtempSync(path.join(os.tmpdir(), 'mx-render-test-')), page = 'examples/switch/index.html';
   try {
     const reference = path.join(dir, 'reference.png');
@@ -26,7 +26,7 @@ test('both encoders produce timed, colour-managed MP4 with stereo; still/export/
       assert.equal(r.status, 0, r.stderr?.toString()); return r.stdout;
     };
     const expected = raw(reference);
-    for (const encoder of ['jpeg', 'browser']) {
+    for (const encoder of ['jpeg', 'png', 'browser']) {
       const out = path.join(dir, encoder + '.mp4');
       run([page, '--length', 'short', '--draft', '--encoder', encoder, '--from', '1', '--to', '2', '--out', out]);
       const p = spawnSync(ffprobe, ['-v', 'error', '-show_streams', '-of', 'json', out], { encoding: 'utf8' });
@@ -35,6 +35,7 @@ test('both encoders produce timed, colour-managed MP4 with stereo; still/export/
       assert.equal(v.r_frame_rate, '30/1'); assert.equal(Number(v.nb_frames), 30); assert.equal(Number(v.duration), 1);
       assert.equal(v.pix_fmt, 'yuv420p'); assert.equal(v.color_range, 'tv'); assert.equal(v.color_space, 'bt709');
       assert.equal(v.color_primaries, 'bt709'); assert.equal(v.color_transfer, 'iec61966-2-1'); assert.equal(a.channels, 2);
+      assert.equal(Number(a.sample_rate), 48000, 'loudnorm resamples to 192 kHz; the mux must bring it back to a rate platforms keep');
       const pixels = raw(out, 'select=eq(n\\,15)'), metric = comparePixels(pixels, expected, v.width, v.height, 3);
       assert.ok(metric.meanAbs < 3 && metric.ssim >= 0.93, encoder + ': ' + JSON.stringify(metric));
       const audio = spawnSync(ffmpeg, ['-v', 'error', '-i', out, '-vn', '-f', 's16le', '-'], { maxBuffer: 1024 * 1024 });
