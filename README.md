@@ -146,10 +146,10 @@ Or by hand, as a plain skill:
 ```bash
 # macOS / Linux: a sparse clone (no site media, little history; tests include compact golden frames)
 git clone --depth 1 --filter=blob:none --sparse https://github.com/DiegoLopez0208/mechanism ~/.claude/skills/mechanism
-git -C ~/.claude/skills/mechanism sparse-checkout set kit scripts examples data tools tests
+git -C ~/.claude/skills/mechanism sparse-checkout set kit scripts examples data tools tests references
 # Windows (PowerShell)
 git clone --depth 1 --filter=blob:none --sparse https://github.com/DiegoLopez0208/mechanism $env:USERPROFILE\.claude\skills\mechanism
-git -C $env:USERPROFILE\.claude\skills\mechanism sparse-checkout set kit scripts examples data tools tests
+git -C $env:USERPROFILE\.claude\skills\mechanism sparse-checkout set kit scripts examples data tools tests references
 ```
 
 Then ask: *"Use mechanism to model a mechanical keyboard switch from its published sources"* or *"a dimensioned SVG of a 120 x 80 mm plate with four 6 mm holes"*. Needs Node 22+; films and stills also need Edge or Chrome (on Linux, Google Chrome stable) and `ffmpeg`, and Studio films want a GPU. The gate and the SVG export need only Node.
