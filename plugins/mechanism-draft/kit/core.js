@@ -192,7 +192,10 @@
     const ui = Object.assign(document.createElement('div'), { textContent: '▶ click to play' });
     Object.assign(ui.style, { position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', font: '20px ' + MX.MONO, color: '#2a2925', background: 'rgba(244,243,238,.78)', cursor: 'pointer', letterSpacing: '.08em' });
     document.body.appendChild(ui); frame(cfg.poster == null ? DUR * 0.5 : cfg.poster, 1);
-    ui.addEventListener('click', () => {
+    ui.addEventListener('click', async () => {
+      // kit/boot.js loads the recorded sounds after the page on interactive views: wait for them, so the film plays with its real soundtrack
+      if (ui.dataset.wait) return; const label = ui.textContent; ui.dataset.wait = '1'; ui.textContent = 'loading sound…';
+      await g.MX_AUDIO_READY; delete ui.dataset.wait; ui.textContent = label;
       ui.style.display = 'none';
       const data = cfg.audio ? cfg.audio() : new Float32Array(cfg.sr || 44100), sr = (data && data.sr) || cfg.sr || 44100, ac = new (g.AudioContext || g.webkitAudioContext)({ sampleRate: sr });
       const st2 = data && data.L ? [data.L, data.R] : [data], ab = ac.createBuffer(st2.length, st2[0].length, sr); st2.forEach((ch, i) => ab.copyToChannel(ch, i)); const src = ac.createBufferSource(); src.buffer = ab; src.connect(ac.destination);
