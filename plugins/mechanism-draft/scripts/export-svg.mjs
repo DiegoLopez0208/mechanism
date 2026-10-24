@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 // export-svg.mjs - Draft 0.3: an engineering SVG of every 2D drawing part of a spec, with no browser (kit/svg2d.js over kit/geom2d.js).
 //
-//   node scripts/export-svg.mjs <spec.js> --mode geometry-1to1|sheet-fit --out <dir> [--json] [--allow-collisions]
+//   node scripts/export-svg.mjs <spec.js> --mode geometry-1to1|sheet-fit --out <dir> [--json] [--allow-collisions] [--trusted]
 //
 // The spec must pass the gate (kit/spec-core.js) or nothing is written. Files are <out>/<spec id>-<part id>.svg (slugs only), always
 // inside <out>; a file already there is replaced only when it is an earlier export of this tool. Contract: docs/draft-svg.md.
 import fs from 'node:fs';
 import vm from 'node:vm';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const args = process.argv.slice(2), opt = (k) => { const i = args.indexOf('--' + k); return i >= 0 ? args[i + 1] : null; };
@@ -18,8 +19,19 @@ const mode = opt('mode'), outArg = opt('out');
 if (!['geometry-1to1', 'sheet-fit'].includes(mode)) fail('--mode must be geometry-1to1 (1 unit = 1 mm of the part) or sheet-fit (an A4 sheet, scaled and labelled as such)');
 if (!outArg) fail('--out <dir> is required');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+// A spec is JavaScript and node:vm is not a sandbox: as check-spec.mjs does, re-run under Node's permission model, reading only the
+// kit and the spec's folder and writing only inside --out (or, while it does not exist, inside the highest folder of it still to be made).
+// --trusted or MECHANISM_TRUSTED=1 skips it.
+if (!process.permission && !args.includes('--trusted') && process.env.MECHANISM_TRUSTED !== '1') {
+  const flag = ['--permission', '--experimental-permission'].find((f) => process.allowedNodeEnvironmentFlags.has(f));
+  if (!flag) fail('this Node has no permission model to contain the spec; use Node 22.13+ or pass --trusted for a spec you wrote');
+  let w = path.resolve(outArg); while (!fs.existsSync(w) && !fs.existsSync(path.dirname(w)) && path.dirname(w) !== w) w = path.dirname(w);
+  const r = spawnSync(process.execPath, [flag, '--allow-fs-read=' + root, '--allow-fs-read=' + path.dirname(path.resolve(file)), '--allow-fs-read=' + w, '--allow-fs-read=' + path.join(w, '*'),
+    '--allow-fs-write=' + w, '--allow-fs-write=' + path.join(w, '*'), fileURLToPath(import.meta.url), ...args], { stdio: 'inherit' });
+  process.exit(r.status ?? 1);
+}
 const ctx = vm.createContext({ console }); ctx.window = ctx;
-for (const f of ['kit/kin.js', 'kit/enigma.js', 'kit/cube.js', 'kit/rar5.js', 'kit/deflate.js', 'kit/react-reconcile.js', 'kit/geom2d.js', 'kit/spec-core.js', 'kit/svg2d.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
+for (const f of ['kit/kin.js', 'kit/enigma.js', 'kit/cube.js', 'kit/rar5.js', 'kit/deflate.js', 'kit/react-reconcile.js', 'kit/geom2d.js', 'kit/spec-core.js', 'kit/svg2d.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: path.join(root, f) });
 const dataJs = path.join(path.dirname(path.resolve(file)), 'data.js'); if (fs.existsSync(dataJs)) vm.runInContext(fs.readFileSync(dataJs, 'utf8'), ctx, { filename: dataJs });
 vm.runInContext(fs.readFileSync(path.resolve(file), 'utf8'), ctx, { filename: file });
 if (!ctx.SPEC) fail('the file does not define window.SPEC');

@@ -25,12 +25,15 @@ export async function startBrowser({ executable = findBrowser(), timeout = Numbe
   if (!executable) throw new Error('no Chromium browser found (set BROWSER=<path>)');
   if (!(timeout > 0 && Number.isFinite(timeout))) throw new Error('browser timeout must be positive and finite');
   const profile = mkdtempSync(path.join(os.tmpdir(), 'mx-cdp-'));
-  const proc = spawn(executable, ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`,
+  // DevTools over a private pipe (fds 3 and 4) by default: no TCP port that another local process could reach while a film renders.
+  // MECHANISM_CDP=port goes back to a loopback port, for a browser build without pipe support.
+  const usePipe = process.env.MECHANISM_CDP !== 'port';
+  const proc = spawn(executable, ['--headless=new', usePipe ? '--remote-debugging-pipe' : '--remote-debugging-port=0', `--user-data-dir=${profile}`,
     '--hide-scrollbars', '--mute-audio', '--force_high_performance_gpu', '--no-first-run',
     '--force-device-scale-factor=1', '--disable-extensions', '--disable-sync',
     '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows',
     ...(process.env.BROWSER_SOFTWARE === '1' ? ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] : []),
-    ...flags, 'about:blank'], { stdio: 'ignore', detached: process.platform !== 'win32', windowsHide: true });
+    ...flags, 'about:blank'], { stdio: usePipe ? ['ignore', 'ignore', 'ignore', 'pipe', 'pipe'] : 'ignore', detached: process.platform !== 'win32', windowsHide: true });
   let ws, closed = false, timer, serial = 0, startupError, cleanupPromise;
   const pending = new Map(), disposers = new Set();
   proc.on('error', (e) => { startupError = e; });
@@ -63,36 +66,58 @@ export async function startBrowser({ executable = findBrowser(), timeout = Numbe
   process.once('exit', cleanup); process.once('SIGINT', sigint); process.once('SIGTERM', sigterm);
   try {
     const deadline = Date.now() + timeout;
-    let port, tab;
-    while (!tab && Date.now() < deadline) {
-      if (startupError) throw startupError;
-      if (proc.exitCode !== null) throw new Error(`browser exited during startup (${proc.exitCode})`);
-      try {
-        port = Number(readFileSync(path.join(profile, 'DevToolsActivePort'), 'utf8').split('\n')[0]);
-        if (Number.isInteger(port) && port > 0 && port <= 65535) {
-          const response = await fetch(`http://127.0.0.1:${port}/json/list`, { signal: AbortSignal.timeout(Math.min(1000, timeout)) });
-          tab = (await response.json()).find((t) => t.type === 'page' && t.url === 'about:blank');
-        }
-      } catch { /* port file is written asynchronously */ }
-      if (!tab) await sleep(50);
-    }
-    if (!tab) throw new WatchdogError(timeout);
-    ws = new WebSocket(tab.webSocketDebuggerUrl);
-    await new Promise((resolve, reject) => {
-      const t = setTimeout(() => reject(new WatchdogError(timeout)), timeout);
-      ws.onopen = () => { clearTimeout(t); resolve(); }; ws.onerror = () => { clearTimeout(t); reject(new Error('CDP connection failed')); };
-    });
-    ws.onmessage = (event) => {
-      const d = JSON.parse(event.data), p = pending.get(d.id);
+    let port = null, sessionId, write;
+    const onMessage = (text) => {
+      const d = JSON.parse(text), p = pending.get(d.id);
       if (p) { clearTimeout(p.timer); pending.delete(d.id); d.error ? p.reject(new Error(d.error.message)) : p.resolve(d.result); }
       else if (d.method) onEvent(d);
     };
-    ws.onclose = () => { for (const p of pending.values()) { clearTimeout(p.timer); p.reject(new Error('CDP connection closed')); } pending.clear(); };
-    const send = (method, params = {}) => new Promise((resolve, reject) => {
+    const dropAll = () => { for (const p of pending.values()) { clearTimeout(p.timer); p.reject(new Error('CDP connection closed')); } pending.clear(); };
+    const raw = (method, params, session) => new Promise((resolve, reject) => {
       if (closed) return reject(new Error('browser session closed'));
       const id = ++serial, t = setTimeout(() => { pending.delete(id); reject(new WatchdogError(timeout)); cleanup(); }, timeout);
-      pending.set(id, { resolve, reject, timer: t }); ws.send(JSON.stringify({ id, method, params }));
+      pending.set(id, { resolve, reject, timer: t }); write(JSON.stringify(session ? { id, method, params, sessionId: session } : { id, method, params }));
     });
+    if (usePipe) {
+      // messages are JSON separated by a NUL byte; page commands go to a flattened session attached to the about:blank tab
+      const toBrowser = proc.stdio[3], fromBrowser = proc.stdio[4]; let buf = '';
+      fromBrowser.setEncoding('utf8');
+      fromBrowser.on('data', (chunk) => { buf += chunk; for (let i; (i = buf.indexOf('\0')) >= 0;) { const m = buf.slice(0, i); buf = buf.slice(i + 1); onMessage(m); } });
+      fromBrowser.on('close', dropAll); fromBrowser.on('error', () => {}); toBrowser.on('error', () => {}); proc.once('exit', dropAll);
+      write = (s) => toBrowser.write(s + '\0');
+      ws = { close: () => { toBrowser.destroy(); fromBrowser.destroy(); } };
+      let page;
+      while (!page && Date.now() < deadline) {
+        if (startupError) throw startupError;
+        if (proc.exitCode !== null) throw new Error(`browser exited during startup (${proc.exitCode})`);
+        page = (await raw('Target.getTargets', {})).targetInfos.find((t) => t.type === 'page' && t.url === 'about:blank');
+        if (!page) await sleep(50);
+      }
+      if (!page) throw new WatchdogError(timeout);
+      ({ sessionId } = await raw('Target.attachToTarget', { targetId: page.targetId, flatten: true }));
+    } else {
+      let tab;
+      while (!tab && Date.now() < deadline) {
+        if (startupError) throw startupError;
+        if (proc.exitCode !== null) throw new Error(`browser exited during startup (${proc.exitCode})`);
+        try {
+          port = Number(readFileSync(path.join(profile, 'DevToolsActivePort'), 'utf8').split('\n')[0]);
+          if (Number.isInteger(port) && port > 0 && port <= 65535) {
+            const response = await fetch(`http://127.0.0.1:${port}/json/list`, { signal: AbortSignal.timeout(Math.min(1000, timeout)) });
+            tab = (await response.json()).find((t) => t.type === 'page' && t.url === 'about:blank');
+          }
+        } catch { /* port file is written asynchronously */ }
+        if (!tab) await sleep(50);
+      }
+      if (!tab) throw new WatchdogError(timeout);
+      ws = new WebSocket(tab.webSocketDebuggerUrl);
+      await new Promise((resolve, reject) => {
+        const t = setTimeout(() => reject(new WatchdogError(timeout)), timeout);
+        ws.onopen = () => { clearTimeout(t); resolve(); }; ws.onerror = () => { clearTimeout(t); reject(new Error('CDP connection failed')); };
+      });
+      ws.onmessage = (event) => onMessage(event.data); ws.onclose = dropAll; write = (s) => ws.send(s);
+    }
+    const send = (method, params = {}) => raw(method, params, sessionId);
     const ev = async (expression) => {
       const r = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });
       if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text);
