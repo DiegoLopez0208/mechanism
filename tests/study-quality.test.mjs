@@ -32,7 +32,9 @@ test('the shutter follows the requested output fps rather than the figure defaul
 });
 
 test('native study views stay populated across cuts and out-of-order seeks; the native canvas is preserved', {
-  skip: !findBrowser() && !process.env.CI ? 'no Chromium browser found' : false, timeout: 180000,
+  // three films and 34 seeks each through software WebGL: 180 s was too tight for the CI runner (main went red on it) and a 2-core
+  // machine needs about 6 min, so it gets the same 15 min as the other browser tests
+  skip: !findBrowser() && !process.env.CI ? 'no Chromium browser found' : false, timeout: 900000,
 }, async () => {
   for (const id of ['lock-assembly', 'react-reconcile', 'rpi4-drawing']) await withBrowser(async browser => {
     await browser.send('Page.enable');
