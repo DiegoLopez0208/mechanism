@@ -22,7 +22,7 @@ const COLOR = { VERIFIED: '#2ea043', CONSISTENT: '#bf8700', INCOMPLETE: '#d29922
 
 const records = names.map((n) => {
   const dir = path.join(root, 'examples', n), ctx = vm.createContext({ console, TextEncoder, TextDecoder }); ctx.window = ctx;
-  KIT.forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f }));
+  KIT.forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: path.join(root, f) }));
   const data = path.join(dir, 'data.js'); if (fs.existsSync(data)) vm.runInContext(fs.readFileSync(data, 'utf8'), ctx, { filename: data });
   vm.runInContext(fs.readFileSync(path.join(dir, 'spec.js'), 'utf8'), ctx, { filename: 'spec.js' });
   const spec = ctx.SPEC, r = ctx.MX.spec.validate(spec), v = r.verdict, rc = v.recognition || {};

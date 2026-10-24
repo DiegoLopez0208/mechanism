@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ctx = vm.createContext({ console, TextEncoder, TextDecoder }); ctx.window = ctx;
-for (const f of ['kit/kin.js', 'kit/enigma.js', 'kit/cube.js', 'kit/rar5.js', 'kit/deflate.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
+for (const f of ['kit/kin.js', 'kit/enigma.js', 'kit/cube.js', 'kit/rar5.js', 'kit/deflate.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: path.join(root, f) });
 const D = ctx.MX.deflate, R = ctx.MX.rar5;
 
 // deterministic pseudo random bytes (no Math.random: a failure must be reproducible)
@@ -108,7 +108,7 @@ test('kin: a compound train (two meshes joined by a shaft, so two mesh component
 
 test('react-reconcile: the model predicts what the real React DOM did in every recorded scenario', () => {
   const rctx = vm.createContext({ console }); rctx.window = rctx;
-  vm.runInContext(fs.readFileSync(path.join(root, 'kit/react-reconcile.js'), 'utf8'), rctx); vm.runInContext(fs.readFileSync(path.join(root, 'examples/react/data.js'), 'utf8'), rctx);
+  vm.runInContext(fs.readFileSync(path.join(root, 'kit/react-reconcile.js'), 'utf8'), rctx, { filename: path.join(root, 'kit/react-reconcile.js') }); vm.runInContext(fs.readFileSync(path.join(root, 'examples/react/data.js'), 'utf8'), rctx);
   const S = rctx.REACT_SAMPLE, j = (a) => Array.from(a).sort().join('');
   assert.ok(S.scenarios.length >= 8);
   for (const s of S.scenarios) {
@@ -122,7 +122,7 @@ test('react-reconcile: the model predicts what the real React DOM did in every r
 
 test('react-reconcile: diff of what a component returns touches the same node as the real React DOM', () => {
   const rctx = vm.createContext({ console }); rctx.window = rctx;
-  vm.runInContext(fs.readFileSync(path.join(root, 'kit/react-reconcile.js'), 'utf8'), rctx); vm.runInContext(fs.readFileSync(path.join(root, 'examples/react/data.js'), 'utf8'), rctx);
+  vm.runInContext(fs.readFileSync(path.join(root, 'kit/react-reconcile.js'), 'utf8'), rctx, { filename: path.join(root, 'kit/react-reconcile.js') }); vm.runInContext(fs.readFileSync(path.join(root, 'examples/react/data.js'), 'utf8'), rctx);
   const C = rctx.REACT_SAMPLE.counter, li = (t) => ({ type: 'li', text: t }), tree = (n) => ({ type: 'div', children: [{ type: 'h1', text: 'Counter' }, { type: 'p', text: 'count: ' + n }, { type: 'button', text: '+1' }, { type: 'ul', children: [li('a'), li('b'), li('c')] }] });
   const d = rctx.MX.react.diff(tree(0), tree(1));
   assert.equal(C.total, 8); assert.deepEqual(Array.from(d.updated), Array.from(C.touched)); assert.equal(d.created, C.added); assert.equal(d.removed, C.removed); assert.equal(d.kept, 8);

@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // the modules scripts/check-spec.mjs loads, in a context with no THREE and no document: the geometry must not need either
-const load = () => { const ctx = vm.createContext({ console }); ctx.window = ctx; for (const f of ['kit/kin.js', 'kit/geom2d.js', 'kit/spec-core.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f }); return ctx; };
+const load = () => { const ctx = vm.createContext({ console }); ctx.window = ctx; for (const f of ['kit/kin.js', 'kit/geom2d.js', 'kit/spec-core.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: path.join(root, f) }); return ctx; };
 const ctx = load(), G = ctx.MX.geom2d, S = ctx.MX.spec;
 const plain = (v) => JSON.parse(JSON.stringify(v));
 const specOf = (name) => { const c = load(); vm.runInContext(fs.readFileSync(path.join(root, 'examples', name, 'spec.js'), 'utf8'), c); return { spec: c.SPEC, ctx: c }; };
@@ -148,7 +148,7 @@ test('the gate: geometry checks are consistency, not evidence; a dimension is co
   assert.match(S.validate(broken).errors.join(' '), /part plate: geometry: hole off is not inside the material/);
   assert.ok(!S.validate(spec).errors.some((e) => /missing at/.test(e)));
   // without kit/geom2d.js a drawing is an error, not a silent pass
-  const bare = vm.createContext({ console }); bare.window = bare; vm.runInContext(fs.readFileSync(path.join(root, 'kit', 'spec-core.js'), 'utf8'), bare);
+  const bare = vm.createContext({ console }); bare.window = bare; vm.runInContext(fs.readFileSync(path.join(root, 'kit', 'spec-core.js'), 'utf8'), bare, { filename: path.join(root, 'kit', 'spec-core.js') });
   assert.match(bare.MX.spec.validate(spec).errors.join(' '), /kit\/geom2d\.js is not loaded/);
 });
 

@@ -15,7 +15,7 @@ const load = () => {
   const core = fs.readFileSync(path.join(root, 'kit/core.js'), 'utf8').split('\n').find((l) => l.includes('MX.rng ='));
   assert.ok(core, 'MX.rng not found in kit/core.js');
   vm.runInContext('window.MX = window.MX || {};\nconst MX = window.MX;\n' + core, ctx);
-  for (const f of ['kit/audio.js', 'kit/sound.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
+  for (const f of ['kit/audio.js', 'kit/sound.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: path.join(root, f) });
   return ctx.MX;
 };
 const MX = load();
