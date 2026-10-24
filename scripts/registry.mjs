@@ -20,7 +20,8 @@ if (!process.permission && !process.argv.includes('--trusted') && process.env.ME
   const flag = ['--permission', '--experimental-permission'].find((f) => process.allowedNodeEnvironmentFlags.has(f));
   if (!flag) { console.error('registry: this Node has no permission model to contain the specs; use Node 22.13+ or pass --trusted'); process.exit(1); }
   const writes = [path.join(docs, 'registry.json'), path.join(docs, 'registry.html'), path.join(docs, 'badges'), path.join(docs, 'badges', '*')];
-  const r = spawnSync(process.execPath, [flag, '--allow-fs-read=' + root, ...writes.map((w) => '--allow-fs-write=' + w), fileURLToPath(import.meta.url), ...process.argv.slice(2)], { stdio: 'inherit' });
+  const grants = ['--allow-fs-read=' + root, ...writes.map((w) => '--allow-fs-write=' + w)];
+  const r = spawnSync(process.execPath, [flag, ...grants, fileURLToPath(import.meta.url), ...process.argv.slice(2)], { stdio: 'inherit' });
   process.exit(r.status ?? 1);
 }
 const KIT = ['kit/kin.js', 'kit/enigma.js', 'kit/cube.js', 'kit/rar5.js', 'kit/deflate.js', 'kit/react-reconcile.js', 'kit/geom2d.js', 'kit/spec-core.js'];
