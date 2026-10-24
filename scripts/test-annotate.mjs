@@ -12,10 +12,11 @@ child.stdout.on('data', (chunk) => { process.stdout.write(chunk); tap += chunk; 
 child.on('close', (code) => {
   if (code && process.env.GITHUB_ACTIONS) {
     const esc = (s) => s.replace(/%/g, '%25').replace(/\r/g, '').replace(/\n/g, '%0A');
+    const prop = (s) => esc(s).replace(/:/g, '%3A').replace(/,/g, '%2C');      // the title is a property: ':' and ',' end it
     // a failing test is a "not ok N - name" line followed by an indented YAML block up to its "..." line
     for (const m of tap.matchAll(/^(\s*)not ok \d+ - (.+)\n((?:\1 +.*\n)*?)\1 +\.\.\.$/gm)) {
       const body = m[3].split('\n').filter((l) => !/^\s*(duration_ms:|type:|---$)/.test(l)).slice(0, 30).join('\n');
-      console.log(`::error title=${esc(m[2]).slice(0, 200)}::${esc(body).slice(0, 4000)}`);
+      console.log(`::error title=${prop(m[2]).slice(0, 200)}::${esc(body).slice(0, 4000)}`);
     }
   }
   process.exit(code ?? 1);
