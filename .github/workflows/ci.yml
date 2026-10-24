@@ -34,13 +34,10 @@ jobs:
           node-version: 22
       - name: Tests (the evidence gate, the DEFLATE / RAR5 models against zlib, version consistency, 2D geometry, sound engines)
         run: npm run test:fast
-      - name: Every shipped example passes its own gate
-        shell: bash      # pipefail: a failing gate must not be hidden by tail
-        run: |
-          for e in hub switch enigma k20a rubik rtx4090 mos6502 rar5 winrar lock react; do
-            echo "== $e"
-            node scripts/check-spec.mjs examples/$e/spec.js --json /tmp/$e.verdict.json | tail -n 3
-          done
+      - name: Coverage of the kit, with thresholds (the gate, the pure models, 2D geometry, sound)
+        run: npm run test:coverage
+      - name: Every example under examples/ passes its own gate (found by folder, not by a hand-kept list)
+        run: node scripts/check-all.mjs --json ${{ runner.temp }}/verdicts
       - name: A template that was never filled in must NOT pass
         run: |
           node scripts/new.mjs ci-draft --title "CI draft"
