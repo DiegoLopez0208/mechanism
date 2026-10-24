@@ -58,7 +58,9 @@
   /* ---------------------------------------------------------- sizing, input, theme */
   let W = 1, H = 1; const resize = () => { const r = host.getBoundingClientRect(); W = Math.max(280, r.width); H = Math.max(280, r.height); renderer.setSize(W, H, false); camera.aspect = W / H; camera.position.set(4, 14, W / H < 0.9 ? 470 : 390); camera.lookAt(4, 0, 0); camera.updateProjectionMatrix(); };
   new ResizeObserver(resize).observe(host); resize();
-  const mouse = { x: 0, y: 0, tx: 0, ty: 0 }; let scrollK = 0, seen = true, last = performance.now() / 1000, T = 0;
+  // Begin assembled: at low frame rates, the capped animation clock otherwise
+  // leaves the entire 3D hero invisible for several seconds of real time.
+  const mouse = { x: 0, y: 0, tx: 0, ty: 0 }; let scrollK = 0, seen = true, last = performance.now() / 1000, T = 2.3;
   host.addEventListener('pointermove', (e) => { const r = host.getBoundingClientRect(); mouse.tx = ((e.clientX - r.left) / r.width - 0.5) * 2; mouse.ty = ((e.clientY - r.top) / r.height - 0.5) * 2; });
   host.addEventListener('pointerleave', () => { mouse.tx = 0; mouse.ty = 0; });
   host.addEventListener('click', () => { if (!move) startMove(T); });

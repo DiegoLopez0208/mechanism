@@ -56,7 +56,10 @@
   function section(c, a, k) {
     const { scene, T, W, H, FS } = k, IN = scene.inch, cx = i => (scene.first + i * scene.pitch) * IN, S = scene.plug * IN, N = scene.code.length, tall = H >= 1600;
     const idx = a.intro ? -1 : a.closing ? 3 : a.index, p = a.closing || a.intro ? 1 : a.progress, ink = T.ink, AMBER = T.dark ? '#f2c14e' : '#b45f06', ON = T.dark ? '#14191f' : '#ffffff';
-    const kk = Math.min((W - 140) / 40, H * (tall ? .39 : .4) / 31), left = (W - 40 * kk) / 2, top = H * .17, X = x => left + (x + 3) * kk, Y = y => top + (scene.cap + 4.5 - y) * kk;
+    const area = k.viewport;
+    const kk = area ? Math.min(area.w / 40, area.h / (scene.cap + 9)) : Math.min((W - 140) / 40, H * (tall ? .39 : .4) / 31);
+    const left = area ? area.x + (area.w - 40 * kk) / 2 : (W - 40 * kk) / 2;
+    const top = area ? area.y : H * .17, X = x => left + (x + 3) * kk, Y = y => top + (scene.cap + 4.5 - y) * kk;
     const OUT = -scene.tip - 4, drawn = a.intro ? sg(a.t, 0, 1.6) : 1;
     let dx = OUT, code = scene.code;      // which key is in and how far (key shoulder at dx, in mm)
     if (idx === 2) dx = OUT * (1 - P.motion.spring((p - .04) * k.plan.slot, .9, .8));
@@ -91,6 +94,7 @@
       c.fillStyle = BRASS; c.fill(); c.strokeStyle = ink; c.lineWidth = 2.6; c.lineJoin = 'round'; c.stroke(); c.restore(); }
     c.restore();
     // drafting callouts, one by one in the first stage
+    if (area) return Y(-1.6) + 20;
     const reveal = n => idx > 0 ? 1 : idx === 0 ? sg(p, .04 + n * .13, .2 + n * .13) : 0;
     const call = (s, tx, ty, px, py, n, side) => { const u = reveal(n); if (u <= 0) return; c.save(); c.globalAlpha = u; c.strokeStyle = T.teal; c.lineWidth = 1.6; c.beginPath(); c.moveTo(tx, ty - 8); c.lineTo(px, py); c.stroke(); c.beginPath(); c.arc(px, py, 5, 0, Math.PI * 2); c.fillStyle = T.teal; c.fill();
       c.font = '700 ' + 21 * FS + 'px ' + MX.SANS; const w = c.measureText(s).width + 22, x0 = side === 'right' ? tx - w : tx; box(c, x0, ty - 26 * FS, w, 36 * FS, T.paper, T.plateEdge, 6); label(c, s, x0 + 11, ty - 1, 21 * FS, T.ink, 700, 'left'); c.restore(); };
@@ -114,7 +118,7 @@
   const DIMCOL = (T, st) => (st === 'compared' || st === 'derived' ? T.teal : st === 'estimated' ? T.ember : T.ink);
   const DIMDASH = (st) => (st === 'derived' ? [9, 5] : st === 'measured' ? [3, 4] : []);
   const arrow = (c, x, y, ang, s) => { c.beginPath(); c.moveTo(x, y); c.lineTo(x - s * Math.cos(ang - .32), y - s * Math.sin(ang - .32)); c.lineTo(x - s * Math.cos(ang + .32), y - s * Math.sin(ang + .32)); c.closePath(); c.fill(); };
-  function pieceDrawing(c, v, rect, T, reveal, FS) {
+  function pieceDrawing(c, v, rect, T, reveal, FS, options = {}) {
     const [l, t, r, b] = v.bounds, k = Math.min(rect.w / (r - l), rect.h / (b - t)), mx = rect.x + rect.w / 2 - (l + r) / 2 * k, my = rect.y + rect.h / 2 - (t + b) / 2 * k;
     const X = x => mx + x * k, Y = y => my + y * k;
     // the material: a flat tint, hatched when the drawing is a section (holes stay empty: even-odd)
@@ -145,7 +149,7 @@
       c.setLineDash(ln.style === 'center' ? [18, 5, 3, 5] : ln.style === 'hidden' ? [8, 5] : []); c.strokeStyle = ln.style === 'visible' ? T.ink : T.mute; c.lineWidth = ln.style === 'visible' ? 2.2 : 1.3; c.stroke(); c.restore();
     }
     // dimensions, in sheet pixels around the lines the geometry placed
-    c.save(); c.globalAlpha = reveal; const fs = 19 * FS;
+    c.save(); c.globalAlpha = reveal; const fs = 19 * FS, occupied = [];
     for (const d of v.dims) {
       const col = DIMCOL(T, d.status); c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 1.3; c.font = '600 ' + fs + 'px ' + MX.SANS; c.setLineDash(DIMDASH(d.status));
       if (d.kind === 'linear') {
@@ -155,10 +159,26 @@
         else { for (const q of [a, e]) { c.moveTo(q[0] + s * 6, q[1]); c.lineTo(at + s * 8, q[1]); } c.moveTo(at, a[1]); c.lineTo(at, e[1]); }
         c.stroke();
         const len = h ? Math.abs(e[0] - a[0]) : Math.abs(e[1] - a[1]), sz = Math.min(12, len / 3);
+        const tw = c.measureText(d.text).width;
+        occupied.push(h ? [(a[0] + e[0]) / 2 - tw / 2, at - 7 - fs, tw, fs * 1.2]
+          : [at - 7 - fs, (a[1] + e[1]) / 2 - tw / 2, fs * 1.2, tw]);
         if (h) { const dir = Math.sign(e[0] - a[0]) || 1; arrow(c, a[0], at, dir > 0 ? Math.PI : 0, sz); arrow(c, e[0], at, dir > 0 ? 0 : Math.PI, sz); c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.fillText(d.text, (a[0] + e[0]) / 2, at - 7); }
         else { const dir = Math.sign(e[1] - a[1]) || 1; arrow(c, at, a[1], dir > 0 ? -Math.PI / 2 : Math.PI / 2, sz); arrow(c, at, e[1], dir > 0 ? Math.PI / 2 : -Math.PI / 2, sz); c.save(); c.translate(at - 7, (a[1] + e[1]) / 2); c.rotate(-Math.PI / 2); c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.fillText(d.text, 0, 0); c.restore(); }
       } else {      // a leader from the contour: diameter, corner radius, or a note (pattern, cut-out size)
         const cx = X(d.c[0]), cy = Y(d.c[1]), rr = d.r * k, u = Math.cos(d.angle), w = Math.sin(d.angle), p0 = [cx + rr * u, cy + rr * w], ll = d.len != null ? Math.max(24, d.len * k) : 46, p1 = [p0[0] + ll * u, p0[1] + ll * w], side = u >= 0 ? 1 : -1;      // the leader length the geometry placed the callout with
+        if (options.avoidCollisions) {
+          const width = c.measureText(d.text).width, tx = side > 0 ? rect.x + rect.w - width : rect.x + width;
+          const left = side > 0 ? tx : tx - width;
+          const overlaps = box => occupied.some(q => box[0] < q[0] + q[2] + 6 && box[0] + box[2] + 6 > q[0]
+            && box[1] < q[1] + q[3] + 6 && box[1] + box[3] + 6 > q[1]);
+          let yy = Math.max(rect.y + fs, Math.min(rect.y + rect.h - fs, p1[1]));
+          const candidates = [yy];
+          for (let i = 1; i < 18; i++) candidates.push(yy - i * fs * 1.6, yy + i * fs * 1.6);
+          yy = candidates.find(y => y > rect.y + fs && y < rect.y + rect.h - fs
+            && !overlaps([left, y - fs / 2, width, fs])) ?? yy;
+          p1[0] = tx - side * 24; p1[1] = yy;
+          occupied.push([left, yy - fs / 2, width, fs]);
+        }
         c.beginPath(); c.moveTo(p0[0], p0[1]); c.lineTo(p1[0], p1[1]); c.lineTo(p1[0] + side * 18, p1[1]); c.stroke();
         if (d.kind !== 'note' || rr > 0) arrow(c, p0[0], p0[1], Math.atan2(-w, -u), 11);
         c.textAlign = side > 0 ? 'left' : 'right'; c.textBaseline = 'middle'; c.fillText(d.text, p1[0] + side * 24, p1[1]);
@@ -199,6 +219,34 @@
     text(c, 'SHEET ' + String(a.index + 1).padStart(2, '0') + ' / ' + String(plan.items.length).padStart(2, '0'), W * .60, H - 72, 17, W * .32, T.mute);
   }
   E.piece = pieceDrawing;
+  // Native study viewport: line work is fitted from geometry, never from a
+  // raster Studio frame or a cropped drawing sheet. Screen fit is not scale.
+  E.study = (c, rect, a, { spec, plan, views, scene, T }) => {
+    const diagnostics = { renderer: 'canvas2d-vector', rasterSource: false, viewport: rect, fontSize: 22 };
+    c.save(); c.translate(rect.x, rect.y); c.fillStyle = T.paper; c.fillRect(0, 0, rect.w, rect.h);
+    const pad = 52;
+    text(c, scene ? 'MECHANISM SECTION' : views.layout === 'piece' ? 'DECLARED GEOMETRY' : 'ORTHOGRAPHIC CONSTRUCTION',
+      pad, 35, 20, rect.w - pad * 2, T.teal, 700);
+    if (scene) {
+      section(c, a, { scene, plan, T, W: rect.w, H: rect.h, FS: 1,
+        viewport: { x: pad, y: 80, w: rect.w - pad * 2, h: rect.h - 160 } });
+      text(c, 'HOUSING / PLUG / KEY PINS / DRIVERS / SPRINGS', pad, rect.h - 50, 20, rect.w - pad * 2, T.ink);
+    } else if (views.layout === 'piece') {
+      const item = views.entries.find(entry => entry.id === a.item.id) || views.entries[0];
+      E.piece(c, item.views.front, { x: pad + 15, y: 73, w: rect.w - pad * 2 - 30, h: rect.h - 165 }, T, 1, 1.1, { avoidCollisions: true });
+    } else {
+      const main = { x: pad, y: 66, w: rect.w - pad * 2, h: rect.h * .50 };
+      drawing(c, views.entries, 'front', main, T, a.item.id, 1, false, 0);
+      const small = { x: pad, y: rect.h * .68, w: (rect.w - pad * 3) / 2, h: rect.h * .17 };
+      drawing(c, views.entries, 'top', small, T, a.item.id, 1, true, 0);
+      drawing(c, views.entries, 'side', { ...small, x: rect.w / 2 + pad / 2 }, T, a.item.id, 1, true, 0);
+      text(c, 'FRONT', pad, rect.h * .63, 20, rect.w - pad * 2, T.mute);
+      text(c, 'TOP', pad, rect.h * .90, 20, small.w, T.mute);
+      text(c, 'SIDE', rect.w / 2 + pad / 2, rect.h * .90, 20, small.w, T.mute);
+    }
+    text(c, 'SCREEN-FITTED VIEW / NOT A MANUFACTURING DRAWING', pad, rect.h - 17, 18, rect.w - pad * 2, T.mute);
+    c.restore(); return diagnostics;
+  };
   // the vector scenes Paper draws with no 3D model, by spec.paperScene.kind (kit/manifest.js paperScenes names the same kinds; tested)
   E.scenes={'pin-section':{steps:sceneSteps,draw:section}};
   // views: the mesh adapter's view set, or null for a spec whose vector scene needs no meshes; F: the old entry point (the figure)
@@ -208,6 +256,7 @@
     if(!views&&!scene)throw new Error('Paper: no view set and no vector scene it can draw (paperScene.kind: '+JSON.stringify(kind)+')');
     const plan=P.plan(spec,'paper',length),T=MX.THEME,entries=views?views.entries:[],details=views?views.parts:{},piece=!!(views&&views.layout==='piece');      // piece: a view set of declared 2D geometry (kit/geom2d.js)
     if(scene){plan.items=impl.steps(scene);plan.slot=(plan.end-plan.begin)/plan.items.length;}
+    g.__drawStudy = (c, rect, t) => E.study(c, rect, P.at(plan, t), { spec, plan, views, scene, T });
     const viewCache=new Map();
     const cols=['A','B','C','D','E','F'];
     return P.mount({plan,spec,validation,config,W,H,engine:'paper-vector2d',shapeCheck,notRun:views&&!piece?null:'vector_scene_without_mesh_projection',diagnostics:()=>({renderer:'canvas2d-vector',studioFrames:0,projection:'orthographic'}),

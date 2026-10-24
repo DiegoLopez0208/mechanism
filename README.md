@@ -31,6 +31,15 @@ and outputs a film, an interactive viewer, a 3D model or a dimensioned SVG drawi
   <img src="docs/media/hub.gif" width="260" alt="Three-speed planetary hub">
 </p>
 
+## Technical film collection
+
+The [live gallery](https://diegolopez0208.github.io/mechanism/#examples) contains
+34 films: 22 Studio assemblies, six Workflow processes and six Paper drawings.
+The revised Studio additions are 12-second native 3D construction studies with
+source notes and explicit estimates. Rubik, Enigma and Cherry remain in the
+collection. [Production and quality notes](docs/technical-quality.md) describe
+the render paths, limits and repeatable checks.
+
 ## What it does
 
 Ask your agent for an exploded view or a drawing of something real: a machine, a chip, a board, or **software** (a file format, a protocol, an algorithm's output).

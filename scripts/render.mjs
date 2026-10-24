@@ -23,7 +23,7 @@ const METHOD = opt('method', ''), BACKGROUND = opt('background', '');
 if (METHOD && !['studio', 'workflow', 'paper'].includes(METHOD)) throw new Error('--method must be studio, workflow or paper');
 if (BACKGROUND && !['graphite', 'blueprint', 'porcelain', 'ivory'].includes(BACKGROUND)) throw new Error('--background must be graphite, blueprint, porcelain or ivory');
 if (opt('export', '') && METHOD && METHOD !== 'studio') throw new Error('Model exports use --method studio; Workflow and Paper are 2D engines');
-if (!['jpeg', 'browser'].includes(ENCODER)) throw new Error('--encoder must be jpeg or browser');
+if (!['jpeg', 'png', 'browser'].includes(ENCODER)) throw new Error('--encoder must be jpeg, png or browser');
 if (!(FPS > 0 && Number.isFinite(FPS))) throw new Error('--fps must be positive and finite');
 const OUT = path.resolve(opt('out', 'out/figure.mp4')), FFMPEG = process.env.FFMPEG || 'ffmpeg';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -36,7 +36,7 @@ const png = (d) => Buffer.from(d.split(',')[1], 'base64');
 await withBrowser(async ({ send, ev: evalJs, progress, stopWatchdog, onCleanup }) => {
   await send('Page.enable');
   const url = new URL(pathToFileURL(path.resolve(page)));
-  for (const [key, value] of Object.entries({ render: '1', t: '0', theme: opt('style', opt('theme', '')), length: opt('length', ''), aspect: opt('aspect', ''), method: METHOD, background: BACKGROUND, ss: opt('ss', ''), ssr: opt('ssr', ''), tonemap: opt('tonemap', ''), pathtrace: opt('pathtrace', '') })) if (value !== '') url.searchParams.set(key, value);
+  for (const [key, value] of Object.entries({ render: '1', t: '0', fps: String(FPS), theme: opt('style', opt('theme', '')), length: opt('length', ''), aspect: opt('aspect', ''), method: METHOD, background: BACKGROUND, ss: opt('ss', ''), ssr: opt('ssr', ''), tonemap: opt('tonemap', ''), pathtrace: opt('pathtrace', '') })) if (value !== '') url.searchParams.set(key, value);
   await send('Page.navigate', { url: url.href });
   for (let i = 0; i < 100; i++) { await sleep(150); if (await evalJs('typeof window.__frame === "function"')) break; if (i === 99) throw new Error('la pagina no expuso __frame (usa MX.run); titulo de la pagina: ' + await evalJs('document.title')); }      // kit/boot.js writes the load error (a missing module) into the title
   mkdirSync(path.dirname(OUT), { recursive: true });
@@ -52,13 +52,15 @@ await withBrowser(async ({ send, ev: evalJs, progress, stopWatchdog, onCleanup }
   else {
     if (!(Number.isFinite(FROM) && Number.isFinite(TO) && FROM >= 0 && TO > FROM && TO <= DUR)) throw new Error('invalid clip interval');
     const size = await evalJs('({ width: document.getElementById("c").width, height: document.getElementById("c").height, parts: window.SPEC?.parts?.length || 0 })');
+    const studyBefore = await evalJs('typeof __studyDiagnostics === "function" ? __studyDiagnostics().resources || null : null');
     const bitrate = Number(opt('bitrate', bitrateFor({ ...size, fps: FPS, draft: DRAFT })));
     if (!(bitrate > 0 && Number.isFinite(bitrate))) throw new Error('--bitrate must be positive and finite');
     const browser = ENCODER === 'browser' && await evalJs(`(${installEncoder.toString()})(${JSON.stringify({ fps: FPS, bitrate, blur: BLUR, shutter: SHUT })})`);
     if (ENCODER === 'browser' && !browser) console.warn('VideoEncoder/H.264 unavailable; falling back to JPEG');
-    console.log(`encoder: ${browser ? 'browser (software), bitrate ' + bitrate : 'jpeg'}`);
+    console.log(`encoder: ${browser ? 'browser (software), bitrate ' + bitrate : ENCODER === 'png' ? 'png (RGB input)' : 'jpeg'}`);
     const vtmp = OUT.replace(/.mp4$/, '.video-' + process.pid + '.mp4');
-    const enc = spawn(FFMPEG, videoArgs({ browser, fps: FPS, crf: CRF, preset: PRESET, out: vtmp }), { stdio: ['pipe', 'ignore', 'inherit'] });
+    const input = ENCODER === 'png' ? 'png' : 'jpeg';
+    const enc = spawn(FFMPEG, videoArgs({ browser, fps: FPS, crf: CRF, preset: PRESET, out: vtmp, input }), { stdio: ['pipe', 'ignore', 'inherit'] });
     let encError = null; enc.on('error', (e) => { encError = e; }); enc.stdin.on('error', (e) => { encError = e; });
     const encDone = new Promise((res) => enc.on('close', res));
     const write = async (buf) => {
@@ -76,7 +78,7 @@ await withBrowser(async ({ send, ev: evalJs, progress, stopWatchdog, onCleanup }
         if (browser) {
           await evalJs(`window.__video.step(${i}, ${t})`);
           if (i % 15 === 14) await write(Buffer.from(await evalJs('window.__video.drain()'), 'base64'));
-        } else await write(png(await evalJs(`window.__frame(${t}, ${BLUR}, ${SHUT}, 'jpg')`)));
+        } else await write(png(await evalJs(`window.__frame(${t}, ${BLUR}, ${SHUT}, '${input === 'png' ? 'png' : 'jpg'}')`)));
         progress();
         if (i % 60 === 0) console.log(`frame ${i}/${total}  ${((Date.now() - t0) / 1000).toFixed(0)} s`);
       }
@@ -92,6 +94,8 @@ await withBrowser(async ({ send, ev: evalJs, progress, stopWatchdog, onCleanup }
       enc.stdin.destroy(); enc.kill(); await encDone; rmSync(vtmp, { force: true }); throw e;
     }
     detachEncoder(); stopWatchdog();
+    const studyAfter = await evalJs('typeof __studyDiagnostics === "function" ? __studyDiagnostics().resources || null : null');
+    if (studyBefore) console.log('study resources: ' + JSON.stringify({ before: studyBefore, after: studyAfter }));
     console.log(`video: ${total} frames, ${((Date.now() - t0) / total).toFixed(2)} ms/frame`); console.log('audio...');
     const wav = path.join(path.dirname(OUT), '.audio-' + process.pid + '.wav'); writeFileSync(wav, Buffer.from(await evalJs('window.__audioWav()'), 'base64'));
     // loudnorm a -16 LUFS: suena parejo en el telefono y en el escritorio

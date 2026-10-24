@@ -62,6 +62,29 @@
       fadeKey[p.id] = key;
     }
     // estado s: { e (explosion 0..1), assemble(id) -> { k: 0..1 llegada, alpha }, focus, focusSet, focusA, vis(p), view }
+    F.studyBounds = (includeContext = false) => {
+      st.scene.updateMatrixWorld(true);
+      const bounds = new TH.Box3(); bounds.studyPoints = [];
+      F.parts.filter(p => p.group.visible).forEach(p => p.group.traverse(mesh => {
+        if (!mesh.isMesh || !mesh.geometry || !mesh.visible) return;
+        let ancestor = mesh.parent;
+        while (ancestor && ancestor !== st.scene) { if (!ancestor.visible) return; ancestor = ancestor.parent; }
+        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        if (!materials.some(material => material.visible && (includeContext || material.opacity >= .3))) return;
+        if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+        bounds.union(mesh.geometry.boundingBox.clone().applyMatrix4(mesh.matrixWorld));
+        const local = mesh.geometry.boundingBox;
+        for (const x of [local.min.x, local.max.x]) for (const y of [local.min.y, local.max.y]) {
+          for (const z of [local.min.z, local.max.z]) bounds.studyPoints.push(new TH.Vector3(x, y, z).applyMatrix4(mesh.matrixWorld));
+        }
+      }));
+      return bounds;
+    };
+    F.drawStudy = (ctx, rect, bounds = F.studyBounds()) => {
+      const image = st.studyImage(bounds, Math.round(rect.w), Math.round(rect.h), F.studyBounds());
+      ctx.drawImage(image, rect.x, rect.y, rect.w, rect.h);
+      return st.studyDiagnostics;
+    };
     F.apply = (s, render = true) => {
       if (cfg.beforeRender) cfg.beforeRender(s);
       st.aoSkip.length = 0;

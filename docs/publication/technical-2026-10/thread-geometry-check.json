@@ -1,0 +1,13 @@
+{
+  "screw": {
+    "phase": 2,
+    "samples": 16
+  },
+  "nut": {
+    "phase": 0,
+    "samples": 12
+  },
+  "pitch": 4,
+  "separation": 2,
+  "method": "Crest phases from actual generated mesh vertices in assembly coordinates at t=0"
+}

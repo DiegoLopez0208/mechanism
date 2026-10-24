@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- **Technical film gallery:** 34 active films across Studio (22), Workflow (6)
+  and Paper (6), preserving the blue site identity and the Rubik, Enigma and
+  Cherry themes. Sixteen revised Studio construction studies include source
+  notes and explicit geometry estimates; earlier rejected studies are archived.
+- **Export quality:** lossless PNG input, correct RGB-to-BT.709 conversion and
+  requested-fps propagation. The legacy JPEG and browser encoding routes remain.
+- **Reproducible production:** native Studio sources, per-film fingerprints,
+  export receipts, publication checksums and technical audit results.
+
 - **Fix: the site headings lost their serif** (`--head` referred to itself in `index.html`). The title block, object count and film-length label no longer show 0.8-era numbers.
 - **Fix: films carry 48 kHz audio.** `loudnorm` resamples to 192 kHz and the mux kept 96 kHz; both AAC muxes now set `-ar 48000`, and `render.test` asserts it for both encoders.
 - **Viewer: keyboard and screen-reader access.** `F.explore` lays real buttons and an `Explode` range input over the painted controls, announces BREAK IT through an `aria-live` status, and sizes the canvas by its ratio so a narrow window no longer squashes it.

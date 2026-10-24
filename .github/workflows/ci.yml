@@ -83,6 +83,8 @@ jobs:
         run: node --test tests/encoding.test.mjs tests/browser.test.mjs tests/media-server.test.mjs
       - name: Render, colour tags, audio streams and encoder fallback
         run: node --test --test-concurrency=1 tests/render.test.mjs tests/presentation.test.mjs
+      - name: PNG colour conversion, requested fps and native study views
+        run: node --test --test-concurrency=1 tests/study-quality.test.mjs
       - name: Studio camera (exploded view hold, flight to the first stop, picture and sound in sync)
         run: node --test --test-concurrency=1 tests/camera.test.mjs
 

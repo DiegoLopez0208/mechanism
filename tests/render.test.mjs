@@ -16,7 +16,7 @@ function run(args) {
   const r = spawnSync(process.execPath, ['scripts/render.mjs', ...args], { cwd: root, encoding: 'utf8', timeout: 600000 });
   assert.equal(r.status, 0, r.stdout + '\n' + r.stderr); return r.stdout + r.stderr;
 }
-test('both encoders produce timed, colour-managed MP4 with stereo; still/export/remux remain usable', opts, () => {
+test('JPEG, PNG and browser encoders produce timed, colour-managed MP4 with stereo; still/export/remux remain usable', opts, () => {
   const dir = mkdtempSync(path.join(os.tmpdir(), 'mx-render-test-')), page = 'examples/switch/index.html';
   try {
     const reference = path.join(dir, 'reference.png');
@@ -26,7 +26,7 @@ test('both encoders produce timed, colour-managed MP4 with stereo; still/export/
       assert.equal(r.status, 0, r.stderr?.toString()); return r.stdout;
     };
     const expected = raw(reference);
-    for (const encoder of ['jpeg', 'browser']) {
+    for (const encoder of ['jpeg', 'png', 'browser']) {
       const out = path.join(dir, encoder + '.mp4');
       run([page, '--length', 'short', '--draft', '--encoder', encoder, '--from', '1', '--to', '2', '--out', out]);
       const p = spawnSync(ffprobe, ['-v', 'error', '-show_streams', '-of', 'json', out], { encoding: 'utf8' });

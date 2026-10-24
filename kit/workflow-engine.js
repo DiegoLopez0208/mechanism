@@ -220,8 +220,90 @@
     const vg = c.createRadialGradient(W / 2, H * .45, H * .3, W / 2, H * .45, H * .78); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, T.dark ? 'rgba(0,0,0,.38)' : 'rgba(70,60,40,.1)');
     c.fillStyle = vg; c.fillRect(0, 0, W, H);
   }
+  // Native process study. Draws directly into the requested viewport; it never
+  // crops a film frame or depicts independent calculations as conveyor stages.
+  E.study = (c, rect, state, { spec, plan, T }) => {
+    const diagnostics = { renderer: 'canvas2d-process', sourceStep: state.index, boxes: [], detailBoxes: [], minFont: 22 };
+    c.save(); c.translate(rect.x, rect.y); c.fillStyle = T.paper; c.fillRect(0, 0, rect.w, rect.h);
+    const labelAt = (str, x, y, size, width, color = T.ink, weight = 500) => {
+      return text(c, String(str), x, y, size, width, color, weight);
+    };
+    const card = (x, y, w, h, label, active = false) => {
+      box(c, x, y, w, h, T.plate, active ? T.teal : T.plateEdge, 7);
+      labelAt(label, x + 18, y + 31, 22, w - 36, active ? T.teal : T.mute, 700);
+      diagnostics.boxes.push({ x: rect.x + x, y: rect.y + y, w, h });
+    };
+    const gap = 26, pad = 26, cw = (rect.w - 2 * pad - 2 * gap) / 3;
+    const scene = spec.workflowScene;
+    if (scene?.kind === 'reconcile') {
+      const trees = [flat(scene.before), flat(scene.after)], updates = new Set(scene.updated || []);
+      for (let column = 0; column < 3; column++) {
+        const x = pad + column * (cw + gap);
+        card(x, 22, cw, rect.h - 82, ['BEFORE', 'AFTER', 'OBSERVED RESULT'][column], column === Math.min(2, state.index));
+        if (column < 2) trees[column].forEach((node, i) => {
+          const y = 97 + i * 48, xx = x + 18 + node.depth * 12, changed = column === 1 && updates.has(i);
+          box(c, xx, y - 23, cw - 36 - node.depth * 12, 36, changed ? MX.rgba(T.teal, .15) : T.paper, changed ? T.teal : T.plateEdge, 4);
+          labelAt(node.type + (node.type === 'p' ? ': ' + node.text : ''), xx + 8, y + 2, 22, cw - 62 - node.depth * 12, changed ? T.teal : T.ink);
+        });
+        else {
+          const vars = spec.mechanism.calc.vars;
+          [['touched', 'node touched'], ['alone', 'nodes untouched'], ['rebuilt', 'created / removed']].forEach(([key, label], i) => {
+            labelAt(vars[key].v, x + 20, 126 + i * 119, 48, cw - 40, T.teal, 700);
+            labelAt(label, x + 20, 161 + i * 119, 22, cw - 40, T.mute);
+          });
+        }
+      }
+      labelAt('RECORDED COUNTER FIXTURE / NOT ALL REACT UPDATES', pad, rect.h - 22, 18, rect.w - pad * 2, T.mute);
+    } else {
+      const steps = spec.mechanism?.steps, modes = spec.mechanism?.drive?.modes || [];
+      const mode = modes[plan.items[state.index]?.mode], vars = spec.mechanism?.calc?.vars || {};
+      const active = plan.items[state.index];
+      let groups;
+      if (steps) {
+        const indices = [Math.max(0, state.index - 1), state.index, Math.min(plan.items.length - 1, state.index + 1)];
+        groups = indices.map((i, n) => {
+          const missing = (n === 0 && state.index === 0) || (n === 2 && state.index === plan.items.length - 1);
+          return { label: ['PREVIOUS', 'CURRENT TOKEN', 'NEXT'][n],
+            title: missing ? (n === 0 ? 'START OF STREAM' : 'END OF STREAM') : plan.items[i].title,
+            detail: missing ? 'No neighbouring token.' : plan.items[i].value || plan.items[i].formula, active: n === 1 };
+        });
+      } else {
+        const keys = Object.keys(vars).filter(key => new RegExp('\\b' + key + '\\b').test(mode?.expr || ''));
+        const input = keys.map(key => key + ' = ' + vars[key].v + (vars[key].unit ? ' ' + vars[key].unit : '')).join('\n');
+        groups = [{ label: 'DECLARED INPUTS', title: input || 'See the linked spec', detail: 'Inputs carry their own evidence.' },
+          { label: 'MODEL EXPRESSION', title: mode?.expr || active?.formula || active?.title || '', detail: mode?.formula || active?.formula || '', active: true },
+          { label: 'PUBLISHED COMPARATOR', title: mode?.publish ? String(mode.publish.text ?? mode.publish.value ?? 'Recorded fixture') : 'NO COMPARATOR',
+            detail: mode?.publish ? 'Compared by the evidence gate.' : 'Shown, not verified by this calculation.' }];
+      }
+      groups.forEach((group, i) => {
+        const x = pad + i * (cw + gap); card(x, 116, cw, 330, group.label, group.active);
+        let y = 203;
+        for (const row of String(group.title).split('\n')) y += labelAt(row, x + 18, y, 25, cw - 36, T.ink, 650) + 7;
+        const detailY = Math.max(305, y + 18), lineHeight = 27.5, maxLines = Math.max(1, Math.floor((430 - detailY) / lineHeight) + 1);
+        c.font = '500 22px ' + MX.SANS;
+        const allLines = P.wrap(String(group.detail || ''), cw - 36, str => c.measureText(str).width);
+        const detailLines = allLines.slice(0, maxLines);
+        if (allLines.length > maxLines) {
+          let tail = detailLines.at(-1);
+          while (tail.length && c.measureText(tail + '…').width > cw - 36) tail = tail.slice(0, -1);
+          detailLines[maxLines - 1] = tail + '…';
+        }
+        detailLines.forEach((str, lineIndex) => labelAt(str, x + 18, detailY + lineIndex * lineHeight, 22, cw - 36, T.mute));
+        diagnostics.detailBoxes.push({ bottom: rect.y + detailY + Math.max(0, detailLines.length - 1) * lineHeight + 5, limit: rect.y + 440 });
+        if (i < 2) {
+          const xx = x + cw + 4, yy = 280; line(c, [xx, yy], [xx + gap - 8, yy], T.teal, 2);
+          c.beginPath(); c.moveTo(xx + gap - 14, yy - 5); c.lineTo(xx + gap - 8, yy); c.lineTo(xx + gap - 14, yy + 5);
+          c.strokeStyle = T.teal; c.stroke();
+        }
+      });
+      labelAt(steps ? 'TOKEN ORDER FROM THE RECORDED SAMPLE' : 'ONE CALCULATION / INDEPENDENT SPECIFICATION FIELDS', pad, 64, 20, rect.w - pad * 2, T.teal, 700);
+      labelAt('ILLUSTRATIVE TIMING / NOT A PERFORMANCE MEASUREMENT', pad, rect.h - 24, 18, rect.w - pad * 2, T.mute);
+    }
+    c.restore(); return diagnostics;
+  };
   E.run = ({ spec, validation, config, W, H, length }) => {
     const plan = P.plan(spec, 'workflow', length), T = MX.THEME, M = dims(H), scene = spec.workflowScene && spec.workflowScene.kind === 'reconcile' && plan.items.length === 5 ? spec.workflowScene : null;
+    g.__drawStudy = (c, rect, t) => E.study(c, rect, P.at(plan, t), { spec, plan, T });
     return P.mount({ plan, spec, validation, config, W, H, engine: 'workflow-canvas2d', notRun: 'workflow_draws_no_model_meshes',
       diagnostics: t => { const a = P.at(plan, t); return { operation: a.index, sourceStep: a.item.index, renderer: 'canvas2d', studioFrames: 0, scene: scene ? scene.kind : 'stations' }; },
       draw(c, a) {

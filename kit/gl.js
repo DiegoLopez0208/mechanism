@@ -273,6 +273,101 @@ float mxFbm(vec3 p) { return 0.55 * mxNoise(p) + 0.3 * mxNoise(p * 2.03 + 7.1) +
       composer.render();
     };
     st.blit = (ctx) => { ctx.drawImage(cv, 0, 0, W, H); };
+    // Native viewport export: fits 3D bounds, without cropping a portrait film.
+    // Its product renderer leaves the legacy camera and composer untouched.
+    let studyRenderer, studyEnvironment, studyCanvas, studyCamera;
+    const studyClones = new WeakMap();
+    const syncStudyObject = source => {
+      let copy = studyClones.get(source);
+      if (!copy) { copy = source.clone(false); studyClones.set(source, copy); }
+      copy.position.copy(source.position); copy.quaternion.copy(source.quaternion); copy.scale.copy(source.scale);
+      copy.matrixAutoUpdate = source.matrixAutoUpdate; copy.matrix.copy(source.matrix); copy.matrixWorldNeedsUpdate = true;
+      copy.visible = source.visible; copy.layers.mask = source.layers.mask; copy.renderOrder = source.renderOrder;
+      copy.castShadow = source.castShadow; copy.receiveShadow = source.receiveShadow; copy.frustumCulled = source.frustumCulled;
+      if (source.geometry) copy.geometry = source.geometry;
+      if (source.material) copy.material = source.material;
+      if (source.isLight) {
+        copy.color.copy(source.color); copy.intensity = source.intensity;
+        if (source.target) {
+          copy.target.position.setFromMatrixPosition(source.target.matrixWorld); copy.target.updateMatrixWorld(true);
+        }
+      }
+      const children = source.children.map(syncStudyObject);
+      for (const child of [...copy.children]) if (!children.includes(child)) copy.remove(child);
+      for (const child of children) if (child.parent !== copy) copy.add(child);
+      copy.children = children;
+      return copy;
+    };
+    st.studyImage = (bounds, width, height, liveBounds = bounds) => {
+      if (!bounds || bounds.isEmpty()) throw new Error('Studio study needs nonempty bounds');
+      if (!(width > 0 && height > 0)) throw new Error('Studio study needs a positive viewport');
+      if (o.pathtrace > 0) throw new Error('Study view currently uses the raster pipeline');
+      // Keep the legacy composer and its default framebuffer completely owned
+      // by the film. The study uses deterministic 2x spatial supersampling.
+      if (!studyRenderer) {
+        studyRenderer = new TH.WebGLRenderer({ antialias: false, alpha: false, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
+        studyRenderer.setPixelRatio(1); studyRenderer.outputColorSpace = TH.SRGBColorSpace;
+        studyRenderer.toneMapping = TH.NeutralToneMapping; studyRenderer.toneMappingExposure = 1;
+        studyRenderer.shadowMap.enabled = true; studyRenderer.shadowMap.type = TH.PCFSoftShadowMap;
+        const pmrem = new TH.PMREMGenerator(studyRenderer);
+        studyEnvironment = pmrem.fromScene(G.studioEnvironment()); pmrem.dispose();
+      }
+      if (studyRenderer.getContext().isContextLost()) throw new Error('Studio study WebGL context was lost');
+      const targetWidth = width * 2, targetHeight = height * 2;
+      const size = studyRenderer.getSize(new TH.Vector2());
+      if (size.x !== targetWidth || size.y !== targetHeight) studyRenderer.setSize(targetWidth, targetHeight, false);
+      // Three caches transmission targets per camera. Reuse its identity across
+      // frames instead of allocating a new camera and GPU target every time.
+      const cam = studyCamera || (studyCamera = camera.clone()); cam.copy(camera);
+      const center = bounds.getCenter(new TH.Vector3());
+      const inverse = cam.quaternion.clone().invert(), corners = [];
+      if (bounds.studyPoints?.length) corners.push(...bounds.studyPoints.map(p => p.clone().sub(center).applyQuaternion(inverse)));
+      else for (const x of [bounds.min.x, bounds.max.x]) for (const y of [bounds.min.y, bounds.max.y]) {
+        for (const z of [bounds.min.z, bounds.max.z]) corners.push(new TH.Vector3(x, y, z).sub(center).applyQuaternion(inverse));
+      }
+      const aspect = width / height, margin = .10, inner = 1 - 2 * margin;
+      const direction = new TH.Vector3(0, 0, 1).applyQuaternion(cam.quaternion);
+      let distance = 600;
+      if (cam.isPerspectiveCamera) {
+        const tanY = Math.tan(cam.fov * rad / 2), tanX = tanY * aspect;
+        distance = Math.max(...corners.map(p => p.z + Math.max(Math.abs(p.x) / tanX, Math.abs(p.y) / tanY) / inner)) + 1;
+        cam.aspect = aspect; cam.clearViewOffset();
+      } else {
+        const extent = Math.max(...corners.map(p => Math.max(Math.abs(p.y), Math.abs(p.x) / aspect))) / inner;
+        cam.left = -extent * aspect; cam.right = extent * aspect; cam.top = extent; cam.bottom = -extent;
+      }
+      cam.near = .1; cam.far = distance + bounds.getSize(new TH.Vector3()).length() + 1000;
+      cam.position.copy(center).addScaledVector(direction, distance);
+      cam.updateProjectionMatrix(); cam.updateMatrixWorld(true);
+      // Reuse model geometry/materials while keeping renderer-owned light and
+      // shadow state isolated from the legacy compositor.
+      const productScene = syncStudyObject(scene);
+      productScene.environment = studyEnvironment.texture;
+      studyRenderer.render(productScene, cam);
+      if (studyRenderer.getContext().isContextLost()) throw new Error('Studio study WebGL context was lost while rendering');
+      const image = studyCanvas || (studyCanvas = document.createElement('canvas'));
+      if (image.width !== width || image.height !== height) { image.width = width; image.height = height; }
+      const context = image.getContext('2d', { alpha: false, willReadFrequently: true });
+      context.imageSmoothingEnabled = true; context.imageSmoothingQuality = 'high';
+      context.drawImage(studyRenderer.domElement, 0, 0, width, height);
+      const projectRange = points => {
+        const projected = points.map(p => p.clone().project(cam));
+        return projected.length ? [0, 1].map(end => ['x', 'y', 'z'].map(axis => end
+          ? Math.max(...projected.map(p => p[axis])) : Math.min(...projected.map(p => p[axis])))) : [];
+      };
+      st.studyDiagnostics = { viewport: [width, height], margin, renderer: 'studio-native-product',
+        resources: { study: { ...studyRenderer.info.memory }, native: { ...renderer.info.memory },
+          programs: studyRenderer.info.programs.length, heap: performance.memory?.usedJSHeapSize || null },
+        toneMapping: 'neutral', postprocessing: false,
+        bounds: projectRange(corners.map(p => p.clone().applyQuaternion(cam.quaternion).add(center))),
+        liveBounds: projectRange(liveBounds.studyPoints || []) };
+      return image;
+    };
+    st.disposeStudy = () => {
+      studyRenderer?.dispose(); studyEnvironment?.dispose();
+      if (studyCanvas) { studyCanvas.width = 1; studyCanvas.height = 1; }
+      studyRenderer = null; studyEnvironment = null; studyCanvas = null; studyCamera = null;
+    };
     return st;
   };
 
