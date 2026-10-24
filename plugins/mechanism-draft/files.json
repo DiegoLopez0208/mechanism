@@ -45,7 +45,7 @@
   "references/checks.md": "f456c3282d8e114bedd38647c973e62abc9576855e3bde81c6a92a3a906ef9a4",
   "references/scenes.md": "8066afe24aae7fe141675eb3379934b053db5c717f0c5c300381715c22432c21",
   "scripts/check-spec.mjs": "769c66cf6ecbb588569ee65cb08ede173f7109cc33c4ffe4609dba9f15e12f88",
-  "scripts/export-svg.mjs": "e94525ce55e04b99602f9d9be73a1bd47580f43dbdb796b39933ea27d1b0fcc0",
+  "scripts/export-svg.mjs": "6b4ea1ec7863907d7e97bb0777bfdc9030602298b6dfd31c5c87aa70962fed97",
   "scripts/lib/browser.mjs": "3736221cc891534b9e57d2dcdbb235fe69ae072c04dec0d1fb2ce9ec70c094ef",
   "scripts/lib/encoding.mjs": "bfba28ef3dccaa089b9a5e205ca4db3a0b9002ca33af352953d25e93391d0778",
   "scripts/new.mjs": "7a16495ec85ad5e056d41255305e98ffa16421e905be102ef24b6bae4ce9d0dc",

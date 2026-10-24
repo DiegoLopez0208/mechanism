@@ -19,7 +19,8 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), d
 if (!process.permission && !process.argv.includes('--trusted') && process.env.MECHANISM_TRUSTED !== '1') {
   const flag = ['--permission', '--experimental-permission'].find((f) => process.allowedNodeEnvironmentFlags.has(f));
   if (!flag) { console.error('registry: this Node has no permission model to contain the specs; use Node 22.13+ or pass --trusted'); process.exit(1); }
-  const writes = [path.join(docs, 'registry.json'), path.join(docs, 'registry.html'), path.join(docs, 'badges'), path.join(docs, 'badges', '*')];
+  fs.mkdirSync(path.join(docs, 'badges'), { recursive: true });      // a grant needs a folder that exists
+  const writes = [path.join(docs, 'registry.json'), path.join(docs, 'registry.html'), path.join(docs, 'badges')];
   const grants = ['--allow-fs-read=' + root, ...writes.map((w) => '--allow-fs-write=' + w)];
   const r = spawnSync(process.execPath, [flag, ...grants, fileURLToPath(import.meta.url), ...process.argv.slice(2)], { stdio: 'inherit' });
   process.exit(r.status ?? 1);

@@ -20,14 +20,17 @@ if (!['geometry-1to1', 'sheet-fit'].includes(mode)) fail('--mode must be geometr
 if (!outArg) fail('--out <dir> is required');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // A spec is JavaScript and node:vm is not a sandbox: as check-spec.mjs does, re-run under Node's permission model, reading only the
-// kit and the spec's folder and writing only inside --out (or, while it does not exist, inside the highest folder of it still to be made).
-// --trusted or MECHANISM_TRUSTED=1 skips it.
+// kit and the spec's folder and writing only inside --out. --out is made here, before the spec runs (a grant needs a folder that exists),
+// and removed again if the export fails and leaves it empty, so a failed gate still writes nothing. --trusted or MECHANISM_TRUSTED=1 skips it.
 if (!process.permission && !args.includes('--trusted') && process.env.MECHANISM_TRUSTED !== '1') {
   const flag = ['--permission', '--experimental-permission'].find((f) => process.allowedNodeEnvironmentFlags.has(f));
   if (!flag) fail('this Node has no permission model to contain the spec; use Node 22.13+ or pass --trusted for a spec you wrote');
-  let w = path.resolve(outArg); while (!fs.existsSync(w) && !fs.existsSync(path.dirname(w)) && path.dirname(w) !== w) w = path.dirname(w);
-  const r = spawnSync(process.execPath, [flag, '--allow-fs-read=' + root, '--allow-fs-read=' + path.dirname(path.resolve(file)), '--allow-fs-read=' + w, '--allow-fs-read=' + path.join(w, '*'),
-    '--allow-fs-write=' + w, '--allow-fs-write=' + path.join(w, '*'), fileURLToPath(import.meta.url), ...args], { stdio: 'inherit' });
+  const out = path.resolve(outArg), made = [];
+  for (let d = out; !fs.existsSync(d) && path.dirname(d) !== d; d = path.dirname(d)) made.push(d);      // deepest first
+  fs.mkdirSync(out, { recursive: true });
+  const grants = ['--allow-fs-read=' + root, '--allow-fs-read=' + path.dirname(path.resolve(file)), '--allow-fs-read=' + out, '--allow-fs-write=' + out];
+  const r = spawnSync(process.execPath, [flag, ...grants, fileURLToPath(import.meta.url), ...args], { stdio: 'inherit' });
+  if (r.status !== 0) for (const d of made) { try { fs.rmdirSync(d); } catch { break; } }      // only empty folders this run made
   process.exit(r.status ?? 1);
 }
 const ctx = vm.createContext({ console }); ctx.window = ctx;
