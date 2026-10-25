@@ -23,11 +23,11 @@ runs a gate that refuses what does not add up, and outputs a film, a viewer, a 3
   <a href="https://www.claudepluginhub.com/plugins/diegolopez0208-mechanism?ref=badge"><img alt="Listed on ClaudePluginHub" src="https://www.claudepluginhub.com/badge/diegolopez0208-mechanism"></a>
 </p>
 
-<p align="center"><img src="docs/media/enigma.gif" width="540" alt="Enigma I: the signal travelling through the rotors, checked against the published test vectors"></p>
+<p align="center"><img src="docs/media/enigma.webp" width="540" alt="Enigma I: the signal travelling through the rotors, checked against the published test vectors"></p>
 <p align="center">
-  <img src="docs/media/rubik.gif" width="260" alt="Rubik's cube: the 20-move superflip">
-  <img src="docs/media/k20a.gif" width="260" alt="Honda K20A, firing order 1-3-4-2">
-  <img src="docs/media/hub.gif" width="260" alt="Three-speed planetary hub">
+  <img src="docs/media/rubik.webp" width="260" alt="Rubik's cube: the 20-move superflip">
+  <img src="docs/media/k20a.webp" width="260" alt="Honda K20A, firing order 1-3-4-2">
+  <img src="docs/media/hub.webp" width="260" alt="Three-speed planetary hub">
 </p>
 
 ```
