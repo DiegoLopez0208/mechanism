@@ -1,10 +1,11 @@
 #!/usr/bin/env node
-// new.mjs - crea examples/<nombre>/ con una pagina, run.js y un spec.js minimo que NO pasa el chequeo hasta que reemplaces cada TODO por lo investigado (nace como borrador: un TODO o example.com es un error).
+// new.mjs - creates examples/<name>/ with a page, run.js and a minimal spec.js that does NOT pass the check until you replace every TODO with what
+// you researched (it is born a draft: a TODO or example.com is an error).
 //
 //   node scripts/new.mjs rubik --title "Rubik's cube"
 //   node scripts/check-spec.mjs examples/rubik/spec.js
 //
-// La pagina toma el HTML de examples/hub y la lista de scripts de kit/manifest.js (lo unico que cambia es spec.js).
+// The page takes the HTML of examples/hub and the script list of kit/manifest.js (the only thing that changes is spec.js).
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
@@ -12,12 +13,12 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const args = process.argv.slice(2), name = args.find((a) => !a.startsWith('--') && !(args[args.indexOf(a) - 1] || '').startsWith('--'));
 const opt = (k, d) => { const i = args.indexOf('--' + k); return i >= 0 ? args[i + 1] : d; };
-if (!name || !/^[a-z0-9][a-z0-9-]*$/.test(name)) { console.error('uso: node scripts/new.mjs <nombre-en-minusculas> [--title "Titulo"] [--fig "Fig 8"] [--dir <carpeta de trabajo>]'); process.exit(1); }
+if (!name || !/^[a-z0-9][a-z0-9-]*$/.test(name)) { console.error('usage: node scripts/new.mjs <lowercase-name> [--title "Title"] [--fig "Fig 8"] [--dir <work folder>]'); process.exit(1); }
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), work = opt('dir', null), dir = work ? path.resolve(work, name) : path.join(root, 'examples', name), title = opt('title', name), fig = opt('fig', 'Fig 1');
 // --dir <folder>: the object goes in a folder of YOUR project (never inside the skill folder: agents cannot write there), and its page points at the kit by absolute URL
 const rel = work ? dir.split(path.sep).join('/') : 'examples/' + name, kitUrl = pathToFileURL(path.join(root, 'kit') + path.sep).href;
 const taken = ['spec.js', 'index.html', 'run.js'].filter((f) => fs.existsSync(path.join(dir, f)));      // a folder that already holds your notes or a log is fine; one that holds the object itself is not
-if (taken.length) { console.error('ya existe ' + rel + ' (tiene ' + taken.join(', ') + '): elige otro nombre o borra esos archivos'); process.exit(1); }
+if (taken.length) { console.error('already exists: ' + rel + ' (it has ' + taken.join(', ') + '): choose another name or remove those files'); process.exit(1); }
 fs.mkdirSync(dir, { recursive: true });
 
 // the page takes its markup from examples/hub and its script list from kit/manifest.js (the same table kit/boot.js reads)
@@ -32,9 +33,9 @@ const hub = fs.readFileSync(path.join(tpl, 'index.html'), 'utf8').replace(/data-
 fs.writeFileSync(path.join(dir, 'index.html'), (work ? hub.split('../../kit/').join(kitUrl) : hub).replace(/<title>[^<]*<\/title>/, () => '<title>' + html(fig) + ' - ' + html(title) + '</title>'));
 fs.copyFileSync(path.join(tpl, 'run.js'), path.join(dir, 'run.js'));
 fs.writeFileSync(path.join(dir, 'spec.js'), `/*
- * spec.js - ${comment(title)}. Plantilla minima, BORRADOR: "node scripts/check-spec.mjs ${comment(rel)}/spec.js" falla hasta que cada TODO y example.com se reemplacen por lo que investigaste.
- * Reemplaza las fuentes, las afirmaciones y las piezas por lo que investigaste. Reglas: todo numero SPEC / MEASURED / DERIVED nombra su fuente
- * (DERIVED trae su cruce, MEASURED su error, ESTIMATED su motivo). Ver SKILL.md y examples/hub, examples/switch, examples/enigma.
+ * spec.js - ${comment(title)}. Plantilla minima, BORRADOR: "node scripts/check-spec.mjs ${comment(rel)}/spec.js" fails until every TODO and example.com is replaced with what you researched.
+ * Replace the sources, the claims and the parts with what you researched. Rules: every SPEC / MEASURED / DERIVED number names its source
+ * (DERIVED brings its cross-check, MEASURED its error, ESTIMATED its reason). See SKILL.md and examples/hub, examples/switch, examples/enigma.
  */
 window.SPEC = {
   id: '${name}', fig: ${JSON.stringify(fig)}, kicker: 'REAL OBJECT', title: ${JSON.stringify(title)}, sub: 'Every number says where it came from.',
@@ -57,4 +58,4 @@ window.SPEC = {
   director: {},
 };
 `);
-console.log('creado ' + rel + '/ (index.html, run.js, spec.js)\nsiguiente: edita spec.js con lo investigado -> node scripts/check-spec.mjs ' + rel + '/spec.js -> node scripts/probe.mjs \"' + rel + '/index.html?explore\" ' + (work ? rel + '/probe' : 'out/probe-' + name));
+console.log('created ' + rel + '/ (index.html, run.js, spec.js)\nnext: edit spec.js with what you researched -> node scripts/check-spec.mjs ' + rel + '/spec.js -> node scripts/probe.mjs \"' + rel + '/index.html?explore\" ' + (work ? rel + '/probe' : 'out/probe-' + name));

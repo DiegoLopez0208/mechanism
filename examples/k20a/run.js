@@ -1,2 +1,2 @@
-// run.js - arranca el spec (video guionado, o visor con ?explore). Todo lo demas esta en spec.js y en kit/.
+// run.js - starts the spec (scripted film, or the viewer with ?explore). Everything else is in spec.js and kit/.
 MX.spec.run(window.SPEC);

@@ -1,11 +1,11 @@
 /*
- * kit/iso.js - motor isometrico para figuras que se mueven.
- * Proyeccion isometrica real (30 grados), sombreado de cuatro tonos, contornos finos, sombras suaves en una sola
- * capa difuminada y tuberias/esferas/cilindros listos para usar. Todo es funcion pura de lo que se le pasa: el
- * mismo estado produce siempre el mismo frame, asi el video es determinista.
+ * kit/iso.js - isometric engine for figures that move.
+ * True isometric projection (30 degrees), four-tone shading, fine outlines, soft shadows in a single
+ * blurred layer, and ready-made pipes/spheres/cylinders. Everything is a pure function of its input: the
+ * same state always gives the same frame, so the film is deterministic.
  *
- * Convencion de mundo: x crece hacia abajo-derecha en pantalla, y hacia abajo-izquierda, z hacia arriba.
- * Las caras visibles de una caja son: arriba, la de x maximo (derecha) y la de y maximo (izquierda).
+ * World convention: x grows down-right on screen, y down-left, z up.
+ * The visible faces of a box are: the top, the max-x face (right) and the max-y face (left).
  */
 (function (g) {
   'use strict';
@@ -16,7 +16,7 @@
   MX.clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
   MX.lerp = (a, b, t) => a + (b - a) * t;
   MX.P = (x, y, z) => [cam.ox + (x - y) * C30 * cam.S, cam.oy + (x + y) * S30 * cam.S - (z || 0) * cam.S];
-  MX.len = (u) => u * cam.S;                        // unidades de mundo a pixeles (para anchos de linea, etc.)
+  MX.len = (u) => u * cam.S;                        // world units to pixels (for line widths, etc.)
   const ELL = { rx: C30 * Math.SQRT2, ry: S30 * Math.SQRT2 };   // un circulo horizontal de radio r: elipse (1.2247 r, 0.7071 r)
 
   /* ------------------------------------------------------------ color */
@@ -34,7 +34,7 @@
   MX.tones = (base) => { const A = parse(base); const m = (k) => css([A[0] * k, A[1] * k, A[2] * k]); return { top: m(1.07), left: m(0.93), right: m(0.8), edge: m(0.46) }; };
 
   MX.INK = '#2a2925';
-  MX.A = 1;                                       // alfa global: lo usan los ensamblados y los fundidos
+  MX.A = 1;                                       // global alpha: used by assemblies and fades
   MX.ctx = null;
 
   /* ------------------------------------------------------------ primitivas */
@@ -45,10 +45,10 @@
     if (o.stroke !== false) { c.globalAlpha = (MX.A * (o.alpha == null ? 1 : o.alpha)) * (o.strokeAlpha == null ? 0.55 : o.strokeAlpha); c.strokeStyle = o.edge || MX.INK; c.lineWidth = o.lw || 1.3; c.lineJoin = 'round'; c.stroke(); }
     c.globalAlpha = 1;
   };
-  // gradiente lineal entre dos puntos de pantalla
+  // linear gradient between two screen points
   function lg(a, b, c0, c1) { const g2 = MX.ctx.createLinearGradient(a[0], a[1], b[0], b[1]); g2.addColorStop(0, c0); g2.addColorStop(1, c1); return g2; }
 
-  // caja: x,y,z es la esquina minima; w (x), d (y), h (z)
+  // box: x,y,z is the minimum corner; w (x), d (y), h (z)
   MX.box = (x, y, z, w, d, h, base, o = {}) => {
     const T = MX.tones(base), c = MX.ctx, a = MX.A * (o.alpha == null ? 1 : o.alpha);
     const p = (xx, yy, zz) => MX.P(xx, yy, zz);
@@ -62,7 +62,7 @@
     return { top, lf, rt };
   };
 
-  // cilindro vertical centrado en (cx,cy), base en z, radio r, alto h
+  // vertical cylinder centred on (cx,cy), base at z, radius r, height h
   MX.cyl = (cx, cy, z, r, h, base, o = {}) => {
     const c = MX.ctx, T = MX.tones(base), a = MX.A * (o.alpha == null ? 1 : o.alpha), S = cam.S;
     const bot = MX.P(cx, cy, z), top = MX.P(cx, cy, z + h), rx = ELL.rx * r * S, ry = ELL.ry * r * S;
@@ -83,7 +83,7 @@
     if (o.stroke !== false) { c.globalAlpha = (MX.A * (o.alpha == null ? 1 : o.alpha)) * 0.55; c.strokeStyle = o.edge || MX.INK; c.lineWidth = o.lw || 1.2; c.stroke(); }
     c.globalAlpha = 1;
   };
-  // tuberia por una polilinea 3D: tres pasadas (contorno, cuerpo, brillo)
+  // pipe along a 3D polyline: three passes (outline, body, highlight)
   MX.tube = (pts, r, base, o = {}) => {
     const c = MX.ctx, w = MX.len(r) * 2, a = MX.A * (o.alpha == null ? 1 : o.alpha), P = pts.map((q) => MX.P(q[0], q[1], q[2]));
     const stroke = (lw, col, off) => { c.beginPath(); c.moveTo(P[0][0] + off[0], P[0][1] + off[1]); for (let i = 1; i < P.length; i++) c.lineTo(P[i][0] + off[0], P[i][1] + off[1]); c.lineWidth = lw; c.strokeStyle = col; c.stroke(); };
@@ -102,16 +102,16 @@
     c.beginPath(); c.arc(p[0], p[1], R, 0, 6.2832); c.fillStyle = gr; c.fill(); c.strokeStyle = MX.rgba(MX.INK, 0.5); c.lineWidth = 1.1; c.stroke(); c.globalAlpha = 1;
   };
   MX.line3 = (a, b, col, w, o = {}) => { const c = MX.ctx, A = MX.P(a[0], a[1], a[2]), B = MX.P(b[0], b[1], b[2]); c.globalAlpha = MX.A * (o.alpha == null ? 1 : o.alpha); c.strokeStyle = col; c.lineWidth = w; c.lineCap = 'round'; if (o.dash) c.setLineDash(o.dash); c.beginPath(); c.moveTo(A[0], A[1]); c.lineTo(B[0], B[1]); c.stroke(); c.setLineDash([]); c.globalAlpha = 1; };
-  // poligono plano en el suelo/plano z (para marcas, cintas, pantallas)
+  // flat polygon on the floor / z plane (for marks, belts, screens)
   MX.flat = (pts3, fill, o = {}) => MX.poly(pts3.map((q) => MX.P(q[0], q[1], q[2])), fill, o);
-  // paralelogramo en una cara vertical: u,v en [0,1] sobre la cara x=cte (rt) o y=cte (lf)
+  // parallelogram on a vertical face: u,v in [0,1] on the face x=const (rt) or y=const (lf)
   MX.faceQuad = (face, box, u0, v0, u1, v1, fill, o = {}) => {
     const [x, y, z, w, d, h] = box;
     const pt = face === 'rt' ? (u, v) => MX.P(x + w, y + u * d, z + v * h) : (u, v) => MX.P(x + u * w, y + d, z + v * h);
     MX.poly([pt(u0, v0), pt(u1, v0), pt(u1, v1), pt(u0, v1)], fill, o);
   };
 
-  /* ------------------------------------------------------------ sombras suaves (una sola capa difuminada) */
+  /* ------------------------------------------------------------ soft shadows (a single blurred layer) */
   const shadows = [];
   MX.shadow = (x, y, w, d, hgt, strength) => { shadows.push({ x, y, w, d, hgt: hgt || 0, s: strength == null ? 1 : strength }); };
   MX.flushShadows = (canvasW, canvasH) => {
@@ -128,7 +128,7 @@
     shadows.length = 0;
   };
 
-  // texto tendido sobre el plano z (estarcido en la placa): el eje x del texto va por el eje x del mundo
+  // text laid on the z plane (stencilled on the plate): the text's x axis runs along the world's x axis
   MX.planeText = (s, x, y, z, size, o = {}) => {
     const c = MX.ctx, p = MX.P(x, y, z), a = MX.A * (o.alpha == null ? 1 : o.alpha);
     c.save(); c.translate(p[0], p[1]); c.transform(C30, 0.5, -C30, 0.5, 0, 0);
@@ -138,7 +138,7 @@
   };
 
   /* ------------------------------------------------------------ texto en pantalla */
-  MX.MONO = '"Inter","Segoe UI Variable Text","Segoe UI","Helvetica Neue",Arial,sans-serif';          // etiquetas y numeros (Inter incrustada por kit/boot.js)
+  MX.MONO = '"Inter","Segoe UI Variable Text","Segoe UI","Helvetica Neue",Arial,sans-serif';          // labels and numbers (Inter embedded by kit/boot.js)
   MX.SERIF = '"Cormorant Garamond","Iowan Old Style","Palatino Linotype",Georgia,serif';          // titulos
   MX.SANS = MX.MONO;
   MX.text = (s, x, y, o = {}) => {

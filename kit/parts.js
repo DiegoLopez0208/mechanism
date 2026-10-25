@@ -1,20 +1,20 @@
 /*
- * kit/parts.js - biblioteca de piezas parametricas sobre three.js. Cada funcion recibe medidas REALES (mm) y devuelve un THREE.Group con el eje en z
- * (la cara mira al espectador), centrado en el origen. Nada es una caja decorativa: un engranaje tiene perfil de evolvente con su modulo, numero de
- * dientes, angulo de presion y holgura; un rodamiento tiene bolas; un resorte es una helice con paso y diametro de alambre.
+ * kit/parts.js - library of parametric parts on three.js. Each function takes REAL dimensions (mm) and returns a THREE.Group with its axis on z
+ * (the face looks at the viewer), centred on the origin. Nothing is a decorative box: a gear has an involute profile with its module, number of
+ * teeth, pressure angle and backlash; a bearing has balls; a spring is a helix with pitch and wire diameter.
  *
- *   MX.parts.gear({ m, z, width, bore, hub, web, mat })           engranaje exterior (evolvente, 20 grados)
- *   MX.parts.ring({ m, z, ro, width, mat })                       corona (dentado interior)
- *   MX.parts.sprocket({ pitch, teeth, roller, width, mat })       pinon de cadena (paso en mm, diametro de rodillo)
+ *   MX.parts.gear({ m, z, width, bore, hub, web, mat })           external gear (involute, 20 degrees)
+ *   MX.parts.ring({ m, z, ro, width, mat })                       ring gear (internal teeth)
+ *   MX.parts.sprocket({ pitch, teeth, roller, width, mat })       chain sprocket (pitch in mm, roller diameter)
  *   MX.parts.shaft / tube / disc / flange / plate / bearing / spring / bolt / nut / pin
- *   MX.parts.mat('steel' | 'brass' | ...)                         materiales fisicos con nombre
- * Los datos que cada pieza deja en group.userData (rp, ra, rf, z, m) los usa la cinematica para ubicar y engranar.
+ *   MX.parts.mat('steel' | 'brass' | ...)                         named physical materials
+ * The data each part leaves in group.userData (rp, ra, rf, z, m) is what the kinematics uses to place and mesh it.
  */
 (function (g) {
   'use strict';
   const MX = (g.MX = g.MX || {}), TH = g.THREE, G = MX.gl, P = (MX.parts = {}), TAU = Math.PI * 2, rad = Math.PI / 180;
 
-  /* ------------------------------------------------------------ materiales con nombre */
+  /* ------------------------------------------------------------ named materials */
   // each material also names its surface detail (kit/gl.js G.DETAIL): machined metal is brushed, cast metal mottled, plastics and rubber grained;
   // painted parts get a clear coat over the paint
   const MATS = {
@@ -27,12 +27,12 @@
   const cache = {};
   P.mat = (name) => { if (name && name.isMaterial) return name; if (name === 'glass') return cache.glass || (cache.glass = G.glass('#ffffff', { thickness: 1.0, roughness: 0.12, attenuationDistance: 30 })); const k = MATS[name] ? name : 'steel'; return cache[k] || (cache[k] = G.mat(MATS[k][0], MATS[k][1])); };
   P.materials = Object.keys(MATS);
-  // material de sonido (kit/sound.js) que corresponde a cada material fisico
+  // sound material (kit/sound.js) matching each physical material
   P.soundMat = (name) => ({ steel: 'steel', 'steel-dark': 'steel', chrome: 'steel', brass: 'aluminum', bronze: 'aluminum', copper: 'aluminum', aluminum: 'aluminum', 'aluminum-dark': 'aluminum', black: 'plastic', pcb: 'plastic', silicon: 'ceramic', graphite: 'steel', 'wr-pink': 'plastic', 'wr-blue': 'plastic', 'wr-green': 'plastic', 'wr-strap': 'rubber', 'honda-red': 'aluminum', 'nv-green': 'plastic', 'pcb-black': 'plastic', rubber: 'rubber', plastic: 'plastic', nylon: 'plastic', oxide: 'steel', gold: 'aluminum', ruby: 'ceramic', 'pom-red': 'plastic', 'pom-black': 'plastic', glass: 'glass' }[name] || 'steel');
 
   /* ------------------------------------------------------------ perfil de evolvente */
-  // o: { rp (radio primitivo), z, ra (radio de cabeza), rf (radio de pie), ht (semiancho angular del diente en el primitivo), alpha (grados) }
-  // Devuelve puntos [x, y] antihorarios; el diente 0 esta centrado en el angulo 0.
+  // o: { rp (pitch radius), z, ra (tip radius), rf (root radius), ht (half angular width of the tooth at the pitch circle), alpha (degrees) }
+  // Returns counter-clockwise [x, y] points; tooth 0 is centred on angle 0.
   P.involuteOutline = (o) => {
     const { rp, z, ra, rf, ht } = o, a = (o.alpha == null ? 20 : o.alpha) * rad, rb = rp * Math.cos(a), invA = Math.tan(a) - a;
     const th = (r) => { const p = Math.acos(Math.min(1, rb / r)); return ht - (Math.tan(p) - p - invA); };
@@ -59,7 +59,7 @@
     faces.forEach((f) => { const a = v[f[0]], b = v[f[1]], c = v[f[2]]; tri += Math.abs((b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y)) / 2; });
     const exp = Math.abs(TH.ShapeUtils.area(pts.shape)) - pts.holes.reduce((q, h) => q + Math.abs(TH.ShapeUtils.area(h)), 0); return exp > 1e-9 ? tri / exp : 1;
   };
-  // normales suavizadas por angulo: las curvas se ven lisas y las aristas de los dientes quedan vivas (ExtrudeGeometry da una normal plana por triangulo)
+  // angle-weighted smoothed normals: curves look smooth and tooth edges stay sharp (ExtrudeGeometry gives one flat normal per triangle)
   const creased = (geo, deg) => {
     const pos = geo.attributes.position, n = pos.count / 3, cosT = Math.cos((deg || 38) * rad), fn = new Float32Array(n * 3), key = (i) => Math.round(pos.getX(i) * 400) + ',' + Math.round(pos.getY(i) * 400) + ',' + Math.round(pos.getZ(i) * 400), map = new Map();
     for (let f = 0; f < n; f++) {
@@ -78,8 +78,8 @@
   const extrude = (shape, depth, bv) => { const d = Math.max(0.01, depth - 2 * bv), geo = new TH.ExtrudeGeometry(shape, { depth: d, bevelEnabled: bv > 0, bevelThickness: bv, bevelSize: bv * 0.7, bevelSegments: 1, curveSegments: 120 }); geo.translate(0, 0, -d / 2); return creased(geo); };
   const grp = (mesh, data) => { const gr = new TH.Group(); gr.add(mesh); Object.assign(gr.userData, data || {}); return gr; };
 
-  /* ------------------------------------------------------------ engranajes */
-  // o: { m (modulo), z (dientes), width, bore (radio del agujero), alpha, backlash, web: { n, r, d } (agujeros de aligeramiento), hub: { r, w } (cubo), mat }
+  /* ------------------------------------------------------------ gears */
+  // o: { m (module), z (teeth), width, bore (hole radius), alpha, backlash, web: { n, r, d } (lightening holes), hub: { r, w } (hub), mat }
   P.gear = (o) => {
     const rp = o.m * o.z / 2, ra = rp + o.m, rf = rp - 1.25 * o.m, bl = o.backlash == null ? 0.03 : o.backlash, alpha = o.alpha == null ? 20 : o.alpha;
     const sh = toShape(P.involuteOutline({ rp, z: o.z, ra, rf, ht: Math.PI / (2 * o.z) * (1 - bl), alpha }));
@@ -95,7 +95,7 @@
     sh.holes.push(new TH.Path(P.involuteOutline({ rp, z: o.z, ra: rp + 1.25 * o.m, rf: rp - o.m, ht: Math.PI / (2 * o.z) * (1 + bl), alpha }).map((p) => new TH.Vector2(p[0], p[1]))));
     return grp(new TH.Mesh(extrude(sh, o.width, Math.min(0.16, o.m * 0.18)), P.mat(o.mat || 'steel')), { kind: 'ring', m: o.m, z: o.z, rp, ra: rp - o.m, rf: rp + 1.25 * o.m, width: o.width });
   };
-  // pinon de cadena: el radio primitivo sale del paso (R = p / (2 sin(pi/n))); las muescas tienen el diametro del rodillo
+  // chain sprocket: the pitch radius comes from the pitch (R = p / (2 sin(pi/n))); the notches have the roller's diameter
   P.sprocket = (o) => {
     const n = o.teeth, p = o.pitch, R = p / (2 * Math.sin(Math.PI / n)), rr = (o.roller || p * 0.6) / 2 + 0.08, Rt = R + p * 0.28, pts = [];
     for (let i = 0; i < n; i++) {
@@ -112,10 +112,10 @@
   P.shaft = (o) => grp(cyl(o.r, o.r, o.len, o.mat || 'steel'), { kind: 'shaft', r: o.r, len: o.len });
   P.pin = P.shaft;
   P.disc = (o) => { const sh = new TH.Shape(); sh.absarc(0, 0, o.r, 0, TAU, false); if (o.bore) sh.holes.push(circlePath(o.bore)); (o.holes || []).forEach(([x, y, r]) => sh.holes.push(circlePath(r, x, y))); return grp(new TH.Mesh(extrude(sh, o.w, Math.min(0.18, o.w * 0.2)), P.mat(o.mat || 'steel')), { kind: 'disc', r: o.r, w: o.w }); };
-  // brida con n agujeros para radios sobre un circulo de radio hr
+  // flange with n spoke holes on a circle of radius hr
   P.flange = (o) => P.disc({ r: o.r, bore: o.bore, w: o.w, mat: o.mat, holes: Array.from({ length: o.n || 0 }, (_, i) => { const a = i / o.n * TAU; return [o.hr * Math.cos(a), o.hr * Math.sin(a), o.hd / 2]; }) });
   P.tube = (o) => { const sh = new TH.Shape(); sh.absarc(0, 0, o.ro, 0, TAU, false); sh.holes.push(circlePath(o.ri)); return grp(new TH.Mesh(extrude(sh, o.len, Math.min(0.25, (o.ro - o.ri) * 0.2)), P.mat(o.mat || 'aluminum')), { kind: 'tube', ro: o.ro, ri: o.ri, len: o.len }); };
-  // placa con esquinas redondeadas y agujeros [x, y, r]
+  // plate with rounded corners and holes [x, y, r]
   P.plate = (o) => {
     const w = o.w, h = o.h, r = Math.min(o.r || 1, w / 2, h / 2), s = new TH.Shape();
     s.moveTo(-w / 2 + r, -h / 2); s.lineTo(w / 2 - r, -h / 2); s.absarc(w / 2 - r, -h / 2 + r, r, -Math.PI / 2, 0, false); s.lineTo(w / 2, h / 2 - r); s.absarc(w / 2 - r, h / 2 - r, r, 0, Math.PI / 2, false);
@@ -125,7 +125,7 @@
     return grp(new TH.Mesh(g, P.mat(o.mat || 'steel')), { kind: 'plate', w, h, t: o.t });
   };
 
-  /* ------------------------------------------------------------ rodamiento, resorte, tornilleria */
+  /* ------------------------------------------------------------ bearing, spring, fasteners */
   P.bearing = (o) => {
     const ri = o.ri, ro = o.ro, w = o.w, t = Math.min((ro - ri) * 0.28, 1.6), balls = o.balls || 9, gr = new TH.Group(), rb = (ro - ri - 2 * t) / 2 * 0.98, rm = (ri + ro) / 2;
     const ring = (a, b) => { const s = new TH.Shape(); s.absarc(0, 0, b, 0, TAU, false); s.holes.push(circlePath(a)); return new TH.Mesh(extrude(s, w, 0.15), P.mat(o.mat || 'chrome')); };
@@ -134,7 +134,7 @@
     const cage = new TH.Mesh(new TH.TorusGeometry(rm, rb * 0.16, 8, 48), P.mat('brass')); cage.position.z = w * 0.02; gr.add(cage);
     gr.userData = { kind: 'bearing', ri, ro, w }; return gr;
   };
-  // resorte helicoidal: r (radio medio), wire (diametro del alambre), turns (espiras activas), len (largo)
+  // helical spring: r (mean radius), wire (wire diameter), turns (active coils), len (length)
   P.spring = (o) => {
     const pts = [], n = Math.max(24, Math.round(o.turns * 28));
     for (let i = 0; i <= n; i++) { const u = i / n, a = u * o.turns * TAU; pts.push(new TH.Vector3(o.r * Math.cos(a), o.r * Math.sin(a), (u - 0.5) * o.len)); }
@@ -151,7 +151,7 @@
   /* ------------------------------------------------------------ carcasas, bloques y vastagos en cruz */
   const rrect = (w, h, r) => { r = Math.min(r, w / 2 - 0.001, h / 2 - 0.001); const s = new TH.Shape(); s.moveTo(-w / 2 + r, -h / 2); s.lineTo(w / 2 - r, -h / 2); s.absarc(w / 2 - r, -h / 2 + r, r, -Math.PI / 2, 0, false); s.lineTo(w / 2, h / 2 - r); s.absarc(w / 2 - r, h / 2 - r, r, 0, Math.PI / 2, false); s.lineTo(-w / 2 + r, h / 2); s.absarc(-w / 2 + r, h / 2 - r, r, Math.PI / 2, Math.PI, false); s.lineTo(-w / 2, -h / 2 + r); s.absarc(-w / 2 + r, -h / 2 + r, r, Math.PI, 1.5 * Math.PI, false); return s; };
   const rrectPath = (w, h, r) => new TH.Path(rrect(w, h, r).getPoints(12));
-  // carcasa de seccion rectangular: w x d de afuera, pared wall, alto h (en z); floor > 0 le suma un piso cerrado; opening: [w, d] abre una ventana en el piso
+  // rectangular-section housing: w x d outside, wall thickness wall, height h (in z); floor > 0 adds a closed floor; opening: [w, d] cuts a window in it
   P.box = (o) => {
     const gr = new TH.Group(), r = o.r == null ? 0.6 : o.r, sh = rrect(o.w, o.d, r); sh.holes.push(rrectPath(o.w - 2 * o.wall, o.d - 2 * o.wall, Math.max(0.1, r - o.wall)));
     const wallH = o.h - (o.floor || 0), m = new TH.Mesh(extrude(sh, wallH, Math.min(0.12, o.wall * 0.2)), P.mat(o.mat || 'plastic')); m.position.z = (o.floor || 0) / 2; gr.add(m);
@@ -159,7 +159,7 @@
     gr.userData = { kind: 'box', w: o.w, d: o.d, h: o.h }; return gr;
   };
   P.block = (o) => grp(new TH.Mesh(extrude(rrect(o.w, o.d, o.r == null ? 0.4 : o.r), o.h, Math.min(0.1, o.h * 0.1)), P.mat(o.mat || 'plastic')), { kind: 'block', w: o.w, d: o.d, h: o.h });
-  // cruz (+) extruida: brazos de largo "arm" y espesor "thick", altura len en z (la interfaz del vastago de un switch MX)
+  // extruded cross (+): arms of length "arm" and thickness "thick", height len in z (the stem interface of an MX switch)
   // profile: a closed polygon (o.pts, [x, y] in mm, origin where the part sits) extruded by o.len: a key blade with V cuts, a cam, a tooth profile
   P.profile = (o) => {      // o.holes: a list of polygons (lists of [x, y]) cut out of the profile: no zero-width bridges needed
     const s = new TH.Shape(); o.pts.forEach((q, i) => (i ? s.lineTo(q[0], q[1]) : s.moveTo(q[0], q[1]))); s.closePath();
@@ -169,11 +169,11 @@
   };
   P.cross = (o) => { const a = o.arm / 2, t = o.thick / 2, s = new TH.Shape(); [[-a, -t], [-t, -t], [-t, -a], [t, -a], [t, -t], [a, -t], [a, t], [t, t], [t, a], [-t, a], [-t, t], [-a, t]].forEach((q, i) => (i ? s.lineTo(q[0], q[1]) : s.moveTo(q[0], q[1]))); s.closePath(); return grp(new TH.Mesh(extrude(s, o.len, 0.05), P.mat(o.mat || 'pom-red')), { kind: 'cross', arm: o.arm, thick: o.thick, len: o.len }); };
 
-  /* ------------------------------------------------------------ rotores de cifrado (Enigma): rueda de entrada, rotor, reflector */
+  /* ------------------------------------------------------------ cipher rotors (Enigma): entry wheel, rotor, reflector */
   const letterMats = {};
   const letterMat = (ch) => letterMats[ch] || (letterMats[ch] = G.flatMat(G.canvasTex(64, 64, (c, w, h) => { c.fillStyle = '#17181a'; c.font = '700 46px ' + MX.SANS; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(ch, w / 2, h / 2 + 2); })));
-  // o: { kind: 'rotor' | 'etw' | 'reflector', r, w, rc (radio del circulo de contactos), wiring (26 letras: entrada A..Z -> salida), notch (letra), mat, ringMat, xray }
-  // El cableado interno se dibuja desde los DATOS (el mismo que usa la simulacion): lo que se ve es lo que se calcula.
+  // o: { kind: 'rotor' | 'etw' | 'reflector', r, w, rc (radius of the contact circle), wiring (26 letters: input A..Z -> output), notch (letter), mat, ringMat, xray }
+  // The internal wiring is drawn from the DATA (the same the simulation uses): what you see is what is computed.
   P.rotor = (o) => {
     const kind = o.kind || 'rotor', r = o.r || 50, w = o.w || 12, rc = o.rc || 30, gr = new TH.Group(), phi = (k) => Math.PI / 2 - k * TAU / 26, wire = [...(o.wiring || 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')].map((ch) => ch.charCodeAt(0) - 65);
     const coreMat = P.mat(o.mat || 'black').clone(); if (o.xray !== false) { coreMat.transparent = true; coreMat.opacity = 0.55; coreMat.depthWrite = false; }
@@ -186,7 +186,7 @@
       }
       if (o.notch) { const ph = phi(o.notch.charCodeAt(0) - 65), nb = new TH.Mesh(new TH.BoxGeometry(3.4, 2.6, 1.8), P.mat('black')); nb.position.set((r - 2.4) * Math.cos(ph), (r - 2.4) * Math.sin(ph), -w / 2 + 0.9); nb.rotation.z = ph; gr.add(nb); }
     }
-    // contactos: clavijas con resorte del lado derecho (entrada) y placas del lado izquierdo; el reflector solo tiene placas del lado derecho
+    // contacts: spring pins on the right side (input) and plates on the left; the reflector only has plates on the right side
     const pinGeo = new TH.CylinderGeometry(0.8, 0.8, 2.2, 10); pinGeo.rotateX(Math.PI / 2); const padGeo = new TH.CylinderGeometry(1.7, 1.7, 0.7, 14); padGeo.rotateX(Math.PI / 2); const bm = P.mat('brass');
     const pins = new TH.InstancedMesh(pinGeo, bm, 26), pads = new TH.InstancedMesh(padGeo, bm, 26), m4 = new TH.Matrix4();
     for (let k = 0; k < 26; k++) {
@@ -204,8 +204,8 @@
     gr.userData = { kind: 'rotor', r, w, rc }; return gr;
   };
   /* ------------------------------------------------------------ motor de piston: ciguenal, biela, piston, bloque, arbol de levas, valvula */
-  // Convencion: el eje del ciguenal es z, los cilindros apuntan a +y y el angulo 0 de una munequilla es hacia +y (punto muerto superior).
-  // Una munequilla con angulo a (grados) queda en (r sin a, r cos a): el ciguenal gira con rotation.z = -theta.
+  // Convention: the crankshaft axis is z, the cylinders point to +y and angle 0 of a crankpin points to +y (top dead centre).
+  // A crankpin at angle a (degrees) sits at (r sin a, r cos a): the crankshaft turns with rotation.z = -theta.
   const hull = (pts) => {
     const p = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]), cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]), lo = [], up = [];
     p.forEach((q) => { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); });
@@ -214,7 +214,7 @@
   };
   const circ = (cx, cy, r, n = 28) => Array.from({ length: n }, (_, i) => [cx + r * Math.cos(i / n * TAU), cy + r * Math.sin(i / n * TAU)]);
   const dbl = (name) => { const m = P.mat(name).clone(); m.side = TH.DoubleSide; return m; };
-  // ciguenal: n cilindros a distancia pitch, carrera stroke, munequillas en throws[k] grados; contrapesos opuestos a cada munequilla
+  // crankshaft: n cylinders at distance pitch, stroke stroke, crankpins at throws[k] degrees; counterweights opposite each crankpin
   P.crankshaft = (o) => {
     const gr = new TH.Group(), r = o.stroke / 2, mat = o.mat || 'steel', zc = (k) => (k - (o.n - 1) / 2) * o.pitch, pinLen = o.pinLen, webT = o.webT, webR = o.webR || o.mainR + 5;
     const shaft = cyl(o.mainR, o.mainR, o.n * o.pitch + 2 * (o.nose || 16), mat); gr.add(shaft);
@@ -225,13 +225,13 @@
     }
     gr.userData = { kind: 'crankshaft', n: o.n, stroke: o.stroke, mainR: o.mainR, pinR: o.pinR }; return gr;
   };
-  // biela: l entre centros, extremo grande en y = -l/2 y pequeno en y = +l/2 (el origen es el punto medio), espesor t en z
+  // connecting rod: l between centres, big end at y = -l/2 and small end at y = +l/2 (the origin is the midpoint), thickness t in z
   P.conrod = (o) => {
     const sh = toShape(hull(circ(0, -o.l / 2, o.bigR, 36).concat(circ(0, o.l / 2, o.smallR, 28))));
     sh.holes.push(circlePath(o.bigBore, 0, -o.l / 2), circlePath(o.smallBore, 0, o.l / 2));
     return grp(new TH.Mesh(extrude(sh, o.t, 0.4), P.mat(o.mat || 'steel')), { kind: 'conrod', l: o.l, t: o.t });
   };
-  // piston: diametro d, alto total h, ch = altura de compresion (de la corona al eje del perno, que es el origen), tres canales de aros
+  // piston: diameter d, total height h, ch = compression height (from the crown to the pin axis, which is the origin), three ring grooves
   P.piston = (o) => {
     const R = o.d / 2, wall = o.wall || 3.4, top = 4.5, pts = [[0, 0], [R - 1.4, 0], [R, -1.4]];
     for (let i = 0; i < 3; i++) { const gy = 5 + i * 3.4; pts.push([R, -gy], [R - 1.2, -gy], [R - 1.2, -gy - 1.5], [R, -gy - 1.5]); }
@@ -239,7 +239,7 @@
     const m = new TH.Mesh(new TH.LatheGeometry(pts.map((p) => new TH.Vector2(p[0], p[1])), 56), dbl(o.mat || 'aluminum')); m.position.y = o.ch;
     return grp(m, { kind: 'piston', d: o.d, h: o.h, ch: o.ch });
   };
-  // bloque o culata vistos desde arriba: w en x, l en z, h en y, origen al centro; holes [[z, r, x]] son pasantes
+  // block or head seen from above: w in x, l in z, h in y, origin at the centre; holes [[z, r, x]] go through
   P.engblock = (o) => {
     const sh = rrect(o.w, o.l, o.r == null ? 4 : o.r); (o.holes || []).forEach((q) => sh.holes.push(circlePath(q[1], q[2] || 0, -q[0])));
     const geo = extrude(sh, o.h, Math.min(0.6, o.h * 0.04)); geo.rotateX(-Math.PI / 2);
@@ -254,16 +254,16 @@
     });
     gr.userData = { kind: 'camshaft', len: o.len }; return gr;
   };
-  // valvula de hongo: el origen es la cara del plato y el vastago sube a +y
+  // poppet valve: the origin is the face of the head and the stem rises to +y
   P.valve = (o) => {
     const pts = [[0, -0.5], [o.headR * 0.9, 0], [o.headR, 1], [o.stemR * 1.7, 3.2], [o.stemR, 6], [o.stemR, o.len], [0, o.len]];
     return grp(new TH.Mesh(new TH.LatheGeometry(pts.map((p) => new TH.Vector2(p[0], p[1])), 28), dbl(o.mat || 'steel')), { kind: 'valve', headR: o.headR, len: o.len });
   };
-  /* ------------------------------------------------------------ cubito del cubo de Rubik: cuerpo de plastico negro con pegatinas */
-  // o: { s (lado), stickers: { '+x': '#hex', '-y': ... } }; pegatinas solo en las caras que dan al exterior
+  /* ------------------------------------------------------------ Rubik's cube cubie: black plastic body with stickers */
+  // o: { s (side), stickers: { '+x': '#hex', '-y': ... } }; stickers only on the faces that face outwards
   const stickerMats = {};
   P.cubie = (o) => {
-    const gr = new TH.Group(), s = o.s, bv = s * 0.1, bs = s - 1.4 * bv, body = new TH.Mesh(extrude(rrect(bs, bs, s * 0.08), s, bv), P.mat('pom-black'));      // el bisel agranda el contorno 0.7 bv por lado: se descuenta para que el cubito mida s
+    const gr = new TH.Group(), s = o.s, bv = s * 0.1, bs = s - 1.4 * bv, body = new TH.Mesh(extrude(rrect(bs, bs, s * 0.08), s, bv), P.mat('pom-black'));      // the bevel grows the outline by 0.7 bv per side: it is subtracted so the cubie measures s
     gr.add(body);
     const faces = { '+x': [0, Math.PI / 2, 0], '-x': [0, -Math.PI / 2, 0], '+y': [-Math.PI / 2, 0, 0], '-y': [Math.PI / 2, 0, 0], '+z': [0, 0, 0], '-z': [0, Math.PI, 0] };
     Object.keys(o.stickers || {}).forEach((f) => {
@@ -274,7 +274,7 @@
   };
 
   /* ------------------------------------------------------------ placas de video y disipadores: ventilador axial y paquete de aletas */
-  // ventilador: r (punta), hub (radio del buje), blades palas con barrido sweep (grados), t espesor; el origen es el centro y gira sobre z
+  // fan: r (tip), hub (hub radius), blades with sweep (degrees), t thickness; the origin is the centre and it turns about z
   P.fan = (o) => {
     const gr = new TH.Group(), n = o.blades || 9, sw = (o.sweep || 38) * rad, rh = o.hub, mat = o.mat || 'black', w0 = TAU / n * 0.62;
     const hubS = new TH.Shape(); hubS.absarc(0, 0, rh, 0, TAU, false); gr.add(new TH.Mesh(extrude(hubS, o.t * 1.8, 0.3), P.mat(mat)));
@@ -284,7 +284,7 @@
     for (let i = 0; i < n; i++) { const b = new TH.Mesh(geo, P.mat(mat)); b.rotation.z = i * TAU / n; gr.add(b); }
     gr.userData = { kind: 'fan', r: o.r, t: o.t }; return gr;
   };
-  // paquete de aletas: w (x), d (y), h (z), n aletas de espesor t; el origen es el centro
+  // fin stack: w (x), d (y), h (z), n fins of thickness t; the origin is the centre
   P.fins = (o) => {
     const gr = new TH.Group(), geo = extrude(rrect(o.d, o.h, 0.6), o.t, 0.08), mt = P.mat(o.mat || 'aluminum');
     geo.applyMatrix4(new TH.Matrix4().makeBasis(new TH.Vector3(0, 1, 0), new TH.Vector3(0, 0, 1), new TH.Vector3(1, 0, 0)));

@@ -14,7 +14,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { withBrowser, findBrowser } from '../scripts/lib/browser.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), SPEC = path.join(root, 'examples', 'rpi4-board', 'spec.js');
-const load = () => { const c = vm.createContext({ console }); c.window = c; for (const f of ['kit/kin.js', 'kit/geom2d.js', 'kit/spec-core.js', 'kit/svg2d.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), c, { filename: f }); vm.runInContext(fs.readFileSync(SPEC, 'utf8'), c); return c; };
+const load = () => { const c = vm.createContext({ console }); c.window = c; for (const f of ['kit/kin.js', 'kit/geom2d.js', 'kit/spec-core.js', 'kit/svg2d.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), c, { filename: path.join(root, f) }); vm.runInContext(fs.readFileSync(SPEC, 'utf8'), c); return c; };
 const plain = (v) => JSON.parse(JSON.stringify(v)), close = (a, b, msg, eps = 1e-9) => assert.ok(Math.abs(a - b) <= eps, `${msg}: ${a} vs ${b}`);
 const attr = (tag, k) => { const m = new RegExp('\\s' + k + '="([^"]*)"').exec(tag); return m ? m[1] : null; };
 // what the PDF prints (RP-008343-DS-1) and where the DXF puts the holes (RP-008342-DS-1), written out here independently of the spec

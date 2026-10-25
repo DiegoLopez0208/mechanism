@@ -10,7 +10,14 @@ updates:
     directory: /tools/vendor-build
     schedule:
       interval: monthly
+  # the React example records what React 18.3.1 itself does (examples/react): the version IS the evidence, so it moves only by hand,
+  # together with a new sample (scripts/make-react-sample.mjs) and the README; Dependabot keeps to patch updates of the test harness
   - package-ecosystem: npm
     directory: /tools/react-evidence
     schedule:
       interval: monthly
+    ignore:
+      - dependency-name: "react"
+      - dependency-name: "react-dom"
+      - dependency-name: "jsdom"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]

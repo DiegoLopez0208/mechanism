@@ -9,8 +9,8 @@ import { withBrowser, findBrowser } from '../scripts/lib/browser.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ctx = vm.createContext({ URLSearchParams });
-vm.runInContext(fs.readFileSync(path.join(root, 'kit/presentation.js'), 'utf8'), ctx);
-for (const name of ['workflow-engine', 'paper-engine']) vm.runInContext(fs.readFileSync(path.join(root, 'kit/' + name + '.js'), 'utf8'), ctx);
+vm.runInContext(fs.readFileSync(path.join(root, 'kit/presentation.js'), 'utf8'), ctx, { filename: path.join(root, 'kit/presentation.js') });
+for (const name of ['workflow-engine', 'paper-engine']) vm.runInContext(fs.readFileSync(path.join(root, 'kit/' + name + '.js'), 'utf8'), ctx, { filename: path.join(root, 'kit/' + name + '.js') });
 const P = ctx.MX.presentation, plain = x => JSON.parse(JSON.stringify(x));
 test('three methods and four backgrounds are independent; legacy films stay opt-in', () => {
   assert.equal(P.resolve(new URLSearchParams()).enabled, false);

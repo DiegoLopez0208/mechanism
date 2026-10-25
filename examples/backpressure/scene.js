@@ -1,6 +1,6 @@
 /*
- * scene.js - Fig 1: "Backpressure". La maquina isometrica del control de flujo del PTY de NovaTerm.
- * Todo lo que se ve y se oye sale de simulate() (sim.js): posiciones de cajas, estado de la compuerta, el shell bloqueado.
+ * scene.js - Fig 1: "Backpressure". The isometric machine of NovaTerm's PTY flow control.
+ * Everything you see and hear comes from simulate() (sim.js): box positions, the gate's state, the blocked shell.
  */
 (function () {
   'use strict';
@@ -20,7 +20,7 @@
   const GG = { x: 9.2, y: 0.2, w: 1.0, d: 1.0 };
   const CRATE_Z_A = BA.z + BA.h + CR / 2, CRATE_Z_B = BB.h + CR / 2;
 
-  /* ---------------------------------------------------------------- cajas: posicion en cada etapa */
+  /* ---------------------------------------------------------------- boxes: position at each stage */
   const slotPos = (s) => {
     const a = Math.floor(s), f = s - a;
     const q = (i) => { const layer = Math.floor(i / 4), cell = ((i % 4) + 4) % 4; return [TK.cx + (cell % 2 ? 0.36 : -0.36), TK.cy + (cell < 2 ? -0.36 : 0.36), 0.16 + layer * 0.4 + CR / 2]; };
@@ -46,7 +46,7 @@
   function drawCrate(c, o = {}) {
     const [x, y, z] = c.pos, s = CR * c.sc, h = s / 2;
     MX.box(x - h, y - h, z - h, s, s, s, o.color || T.ember, { hi: true });
-    const zt = z + h, i = 0.17 * s;                                              // franja y puntos en la tapa: parece un paquete de datos
+    const zt = z + h, i = 0.17 * s;                                              // stripe and dots on the lid: it looks like a data packet
     MX.flat([[x - h + i, y - h + i * 2.4, zt], [x + h - i, y - h + i * 2.4, zt], [x + h - i, y - h + i * 3.6, zt], [x - h + i, y - h + i * 3.6, zt]], 'rgba(255,255,255,0.55)', { stroke: false });
     for (let k = 0; k < 3; k++) MX.flat([[x - h + i * (1 + k * 1.7), y + h - i * 3.2, zt], [x - h + i * (1.9 + k * 1.7), y + h - i * 3.2, zt], [x - h + i * (1.9 + k * 1.7), y + h - i * 2.2, zt], [x - h + i * (1 + k * 1.7), y + h - i * 2.2, zt]], 'rgba(60,20,0,0.35)', { stroke: false });
   }
@@ -60,7 +60,7 @@
     for (let x = 0; x <= 16; x++) MX.line3([x, -1.2, dz], [x, 7.2, dz], 'rgba(42,41,37,0.09)', 1);
     for (let y = -1; y <= 7; y++) MX.line3([-1, y, dz], [16.2, y, dz], 'rgba(42,41,37,0.09)', 1);
     for (const [x, y] of [[-0.6, -0.8], [15.8, -0.8], [-0.6, 6.8], [15.8, 6.8]]) MX.disc(x, y, 0.001 + dz, 0.16, T.steel);
-    // rotulos estarcidos sobre la placa, uno por estacion
+    // labels stencilled on the plate, one per station
     [['SHELL', 0.2, 5.6, 0.34], ['PTY QUEUE', 5.6, 6.5, 0.3], ['CREDIT GATE', 8.5, 6.5, 0.3], ['xterm PARSER', 12.3, 6.5, 0.3]].forEach(([s, x, y, z]) => MX.planeText(s, x, y, 0.001 + dz, z, { spacing: 2 }));
     MX.planeText('FLOW  >>>', 3.4, 5.7, 0.001 + dz, 0.3, { spacing: 4, color: 'rgba(232,89,12,0.5)' });
   }
@@ -89,7 +89,7 @@
     MX.shadow(TK.cx - TK.r, TK.cy - TK.r, TK.r * 2, TK.r * 2, TK.h);
     MX.cyl(TK.cx, TK.cy, dz, TK.r + 0.14, 0.16, T.steel);
     MX.cyl(TK.cx, TK.cy, dz + 0.16, TK.r, TK.h, '#bfe0e6', { glass: true, top: false });
-    // marcas de nivel (8 capas x 4 cajas = 32) en el borde derecho
+    // level marks (8 layers x 4 boxes = 32) on the right edge
     for (let k = 0; k <= 8; k++) { const zz = 0.16 + k * 0.4 + dz, a = MX.P(TK.cx + TK.r * 0.7071, TK.cy + TK.r * 0.7071, zz), long = k % 4 === 0; MX.ctx.strokeStyle = 'rgba(42,41,37,0.55)'; MX.ctx.lineWidth = long ? 2 : 1; MX.ctx.beginPath(); MX.ctx.moveTo(a[0], a[1]); MX.ctx.lineTo(a[0] + (long ? 16 : 9), a[1] + (long ? 9 : 5)); MX.ctx.stroke(); }
     crates.sort((a, b) => a.pos[2] - b.pos[2] || (a.pos[0] + a.pos[1]) - (b.pos[0] + b.pos[1]));
     for (const c of crates) drawCrate({ pos: [c.pos[0], c.pos[1], c.pos[2] + dz], sc: c.sc });
@@ -137,7 +137,7 @@
   function drawRail(t, dz) {
     MX.tube(RAIL.map((p) => [p[0], p[1], p[2] + dz]), 0.075, T.steel);
     for (const p of RAIL.slice(1, 4)) MX.sphere(p[0], p[1], p[2] + dz, 0.13, T.darkc);
-    // creditos viajando: una esfera por cada caja ya parseada que aun no llego al contador
+    // credits travelling: one sphere per box already parsed that has not reached the counter yet
     const len = []; let tot = 0; for (let i = 1; i < RAIL.length; i++) { const d = Math.hypot(RAIL[i][0] - RAIL[i - 1][0], RAIL[i][1] - RAIL[i - 1][1], RAIL[i][2] - RAIL[i - 1][2]); len.push(d); tot += d; }
     for (const p of S.pk) if (p.tParseEnd != null && t >= p.tParseEnd && t < p.tCredit) {
       let d = ((t - p.tParseEnd) / P.rail) * tot, i = 0; while (i < len.length - 1 && d > len[i]) { d -= len[i]; i++; }
@@ -174,7 +174,7 @@
     if (Math.floor(t * 2) % 2 === 0) MX.faceQuad('rt', bx, 0.1, 0.9 - rows * 0.052 - 0.03, 0.16, 0.9 - rows * 0.052, '#e8e3d4', { stroke: false });
   }
 
-  /* ---------------------------------------------------------------- camara, etiquetas, HUD */
+  /* ---------------------------------------------------------------- camera, labels, HUD */
   const CAMK = [
     { t: 0, S: 40, f: [8, 3.5, 1.2], a: [540, 640] }, { t: 9, S: 42, f: [8, 3.5, 1.2], a: [540, 640] },
     { t: 11, S: 58, f: [8.7, 3.0, 1.8], a: [520, 610] }, { t: 15, S: 58, f: [8.7, 3.0, 1.8], a: [520, 610] },
@@ -188,19 +188,19 @@
     const bre = 1 + 0.008 * Math.sin(t * 0.55), dx = 5 * Math.sin(t * 0.4), dy = 4 * Math.sin(t * 0.33 + 1), S2 = s * bre;
     const c = MX.cam; c.S = S2; c.ox = a[0] + dx - (f[0] - f[1]) * 0.8660254 * S2; c.oy = a[1] + dy - (f[0] + f[1]) * 0.5 * S2 + f[2] * S2;
   }
-  // etiqueta con posicion de pantalla fija: la camara esta quieta durante cada ventana, asi no se pisan
+  // label with a fixed screen position: the camera is still during each window, so they do not overlap
   const co = (pt, at, lines, t, t0, t1, o = {}) => { const a = E.out3(ramp(t, t0, t0 + 0.5)) * (1 - E.out3(ramp(t, t1 - 0.5, t1))); if (a <= 0.01) return; MX.callout(pt, at, lines, Object.assign({ alpha: a }, o)); };
   function drawCallouts(t) {
-    // plano general (camara 0-9 s y 21.6 s en adelante)
+    // wide shot (camera 0-9 s and from 21.6 s on)
     co([1.1, 3.5, 3.4], [120, 330], ['shell', 'program output'], t, 4.4, 8.6);
     co([TK.cx, TK.cy, 3.56], [470, 300], ['PTY reader queue', '256 chunks x 8 KiB'], t, 5.2, 8.8);
     co([GT.x, GT.y1, 3.0], [1010, 430], ['credit gate', 'high 256 KiB / resume 64 KiB'], t, 6.6, 9.0, { side: 'l' });
     co([11.6, 3.5, 0.8], [230, 850], ['IPC packet', '<= 64 KiB'], t, 7.4, 9.0);
     co([13.6, 3.2, 1.6], [930, 860], ['xterm parser', 'acks when bytes are parsed'], t, 7.9, 9.0, { side: 'l' });
-    // primer plano de la compuerta (camara 11-15 s)
+    // close-up of the gate (camera 11-15 s)
     co([GT.x, GT.y1, 2.95], [640, 300], ['gate closed', 'in flight hit 256 KiB'], t, 10.0, 12.2, { color: T.red });
     co([GG.x + 0.5, GG.y + 0.5, 3.0], [1010, 420], ['credit counter', 'only the parser pays it back'], t, 12.4, 15.0, { side: 'l', color: T.teal });
-    // primer plano del parser y el riel (camara 16.8-19 s)
+    // close-up of the parser and the rail (camera 16.8-19 s)
     co([RAIL[2][0], RAIL[2][1], RAIL[2][2]], [1000, 330], ['ack', 'credit returns upstream'], t, 16.9, 19.2, { side: 'l', color: T.teal });
     co([13.6, 3.2, 1.6], [1000, 790], ['parser decides', 'the pace of the whole line'], t, 17.0, 19.2, { side: 'l' });
     co([1.1, 3.5, 3.4], [120, 330], ['shell blocked', 'queue is full, memory stays flat'], t, 19.4, 22.8, { color: T.red });
@@ -273,7 +273,7 @@
     drawOutro(t);
   }
 
-  /* ---------------------------------------------------------------- audio: un cue por evento de la simulacion */
+  /* ---------------------------------------------------------------- audio: one cue per simulation event */
   function cues() {
     const c = [], scale = [523, 587, 659, 784, 880, 988];
     c.push({ t: 0.05, kind: 'whoosh', d: 1.0, v: 0.5 }, { t: 0.2, kind: 'pad', d: 3.2, notes: [45, 52, 57, 64], v: 1 });

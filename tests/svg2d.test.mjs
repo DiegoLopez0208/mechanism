@@ -14,7 +14,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { withBrowser, findBrowser } from '../scripts/lib/browser.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const load = () => { const c = vm.createContext({ console }); c.window = c; for (const f of ['kit/kin.js', 'kit/geom2d.js', 'kit/spec-core.js', 'kit/svg2d.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), c, { filename: f }); return c; };
+const load = () => { const c = vm.createContext({ console }); c.window = c; for (const f of ['kit/kin.js', 'kit/geom2d.js', 'kit/spec-core.js', 'kit/svg2d.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), c, { filename: path.join(root, f) }); return c; };
 const specOf = (name) => { const c = load(); vm.runInContext(fs.readFileSync(path.join(root, 'examples', name, 'spec.js'), 'utf8'), c); return { spec: c.SPEC, c }; };
 const close = (a, b, msg, eps = 1e-6) => assert.ok(Math.abs(a - b) <= eps, `${msg}: ${a} vs ${b}`);
 const DEMOS = { 'demo-plate': 'plate', 'demo-flange': 'flange', 'demo-section': 'bracket' };

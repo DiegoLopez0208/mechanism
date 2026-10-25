@@ -15,13 +15,13 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), dir = process.env.RAR_DIR || 'C:/Program Files/WinRAR';
 const RAR = path.join(dir, 'Rar.exe'), UNRAR = path.join(dir, 'UnRAR.exe');
-if (!fs.existsSync(RAR) || !fs.existsSync(UNRAR)) { console.error('no encuentro Rar.exe / UnRAR.exe en ' + dir + ' (RAR_DIR=...)'); process.exit(1); }
-const ctx = vm.createContext({ console, TextEncoder, TextDecoder }); ctx.window = ctx; vm.runInContext(fs.readFileSync(path.join(root, 'kit/rar5.js'), 'utf8'), ctx, { filename: 'kit/rar5.js' }); const R = ctx.MX.rar5;
+if (!fs.existsSync(RAR) || !fs.existsSync(UNRAR)) { console.error('cannot find Rar.exe / UnRAR.exe in ' + dir + ' (RAR_DIR=...)'); process.exit(1); }
+const ctx = vm.createContext({ console, TextEncoder, TextDecoder }); ctx.window = ctx; vm.runInContext(fs.readFileSync(path.join(root, 'kit/rar5.js'), 'utf8'), ctx, { filename: path.join(root, 'kit/rar5.js') }); const R = ctx.MX.rar5;
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mx-rar-')), content = 'Hello, WinRAR!', run = (exe, args, cwd) => spawnSync(exe, args, { cwd, encoding: 'utf8' });
 fs.writeFileSync(path.join(tmp, 'hello.txt'), content, 'ascii');
 const banner = (run(RAR, [], tmp).stdout || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean)[0] || '';
-const made = run(RAR, ['a', '-ma5', '-m0', '-ep', '-idq', 'hello.rar', 'hello.txt'], tmp); if (made.status !== 0) { console.error('Rar.exe fallo:', made.stdout, made.stderr); process.exit(1); }
+const made = run(RAR, ['a', '-ma5', '-m0', '-ep', '-idq', 'hello.rar', 'hello.txt'], tmp); if (made.status !== 0) { console.error('Rar.exe failed:', made.stdout, made.stderr); process.exit(1); }
 const real = Uint8Array.from(fs.readFileSync(path.join(tmp, 'hello.rar'))), parsed = R.parse(real);
 const fileBlk = parsed.blocks.find((b) => b.type === 2), timeRec = fileBlk.fields.find((f) => f.name === 'extra record' && /file time/.test(f.text)), mtime = Array.from(real.slice(timeRec.start + 3, timeRec.start + 11));
 const built = R.build({ name: 'hello.txt', data: R.ascii(content), mtime }), identical = R.hex(built) === R.hex(real);

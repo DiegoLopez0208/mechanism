@@ -1,8 +1,8 @@
 /*
- * kit/core.js - movimiento, tarjeta de figura, etiquetas y arnes de render.
- * Movimiento: curvas de easing y un resorte amortiguado analitico (sin integrar: valido para cualquier t).
- * Tarjeta: marco de papel con "Fig N", titulo, pista y lectura en vivo, como una lamina tecnica.
- * Arnes: window.__frame(t) devuelve un PNG con motion blur por subframes; window.__audioWav() el audio; click = reproducir.
+ * kit/core.js - motion, figure card, labels and the render harness.
+ * Motion: easing curves and an analytic damped spring (not integrated: valid for any t).
+ * Card: a paper frame with "Fig N", title, hint and live readout, like a technical plate.
+ * Harness: window.__frame(t) returns a PNG with sub-frame motion blur; window.__audioWav() the audio; click = play.
  */
 (function (g) {
   'use strict';
@@ -28,9 +28,9 @@
   MX.E.ioExpo = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t < 0.5 ? Math.pow(2, 20 * t - 10) / 2 : (2 - Math.pow(2, -20 * t + 10)) / 2);
   // camera arrival that settles like a damped spring (ratio .8: one small overshoot, no bounce) and lands exactly on 1; u is the 0..1 share of the move
   MX.E.settle = (u) => { u = clamp(u, 0, 1); if (u >= 1) return 1; const w = 2 * Math.PI * 1.15, z = 0.8, wd = w * Math.sqrt(1 - z * z), s = 3.2 * u, sp = 1 - Math.exp(-z * w * s) * (Math.cos(wd * s) + z / Math.sqrt(1 - z * z) * Math.sin(wd * s)), end = 1 - Math.exp(-z * w * 3.2) * (Math.cos(wd * 3.2) + z / Math.sqrt(1 - z * z) * Math.sin(wd * 3.2)); return sp + (1 - end) * u * u * u; };
-  MX.E.smooth = MX.E.bezier(0.45, 0, 0.2, 1);                         // arranque suave, frenado largo
-  MX.E.snap = MX.E.bezier(0.7, 0, 0.15, 1);                           // corte de camara: arranque brusco, frenado seco
-  // resorte subamortiguado: 0 -> 1 con rebote. f = frecuencia (Hz), z = amortiguamiento (0.2 rebota mucho, 0.7 casi nada)
+  MX.E.smooth = MX.E.bezier(0.45, 0, 0.2, 1);                         // gentle start, long stop
+  MX.E.snap = MX.E.bezier(0.7, 0, 0.15, 1);                           // camera cut: sharp start, hard stop
+  // underdamped spring: 0 -> 1 with overshoot. f = frequency (Hz), z = damping (0.2 bounces a lot, 0.7 hardly at all)
   MX.spring = (t, f = 2.2, z = 0.45) => {
     if (t <= 0) return 0;
     const w = 2 * Math.PI * f, wd = w * Math.sqrt(1 - z * z);
@@ -43,31 +43,31 @@
   MX.rng = (a) => () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   MX.fmt = (n) => Math.round(n).toLocaleString('en-US');
 
-  /* ------------------------------------------------------------ paleta de la lamina */
-  // Cuatro estilos: la paleta, la tipografia de los titulos, el diseno de la tarjeta y los parametros del escenario 3D (fondo, rejilla, sombra, resplandor, luz de contorno).
-  //   paper    papel claro con tarjeta de esquinas (el original)        night    el mismo en oscuro
-  //   dossier  plano de ingenieria azul con rejilla, mono, regla y cajetin de datos     studio   fondo de estudio negro, titulo grande y acento de la marca
+  /* ------------------------------------------------------------ plate palette */
+  // Four styles: the palette, the title typeface, the card layout and the 3D stage parameters (background, grid, shadow, glow, rim light).
+  //   paper    light paper with a corner-marked card (the original)        night    the same, dark
+  //   dossier  blue engineering sheet with grid, mono type, ruler and data block     studio   black studio background, large title and the brand accent
   const THEMES = {
     paper: { dark: false, paper: '#f6f5f0', plate: '#e8e6dd', plateEdge: '#cfccc0', ink: '#23221f', mute: '#8b887d', metal: '#d9d7cf', steel: '#bdbbb1', darkc: '#6b6a63', ember: '#c8542a', teal: '#0b7285', red: '#c0392b', green: '#2f9e44', gold: '#c9a227', glass: '#9bd3dc', line: 'rgba(35,34,31,0.2)', card: 'frame', titleFont: 'serif', gl: { inner: '#faf9f5', outer: '#dedbd1', floorK: 1, floor: '#2a2418', bloom: 0.12, thr: 0.92 } },
     night: { dark: true, paper: '#101218', plate: '#1a1d25', plateEdge: '#2b2f3a', ink: '#ecebe6', mute: '#8d909b', metal: '#8f939c', steel: '#6d717b', darkc: '#c9cbd2', ember: '#ff9a62', teal: '#5ad1d8', red: '#ff6b6b', green: '#69db7c', gold: '#e6c35c', glass: '#7ac7d6', line: 'rgba(236,235,230,0.22)', card: 'frame', titleFont: 'serif', gl: { inner: '#2b2f3a', outer: '#090a0e', floorK: 3.2, floor: '#000000', bloom: 0.035, thr: 0.985 } },
     dossier: { dark: true, paper: '#0a1828', plate: '#10253b', plateEdge: '#1d3b59', ink: '#d6e6f5', mute: '#6f8ba6', metal: '#7fa0bd', steel: '#5d7a96', darkc: '#bcd4e8', ember: '#ffb347', teal: '#4fd1ff', red: '#ff6b6b', green: '#6ee7a8', gold: '#ffd166', glass: '#5cc7e8', line: 'rgba(110,180,230,0.28)', card: 'dossier', titleFont: 'mono', mono: true, gl: { inner: '#153756', outer: '#050d18', floorK: 2.6, floor: '#000000', bloom: 0.07, thr: 0.97, grid: { px: 54, every: 5, minor: 'rgba(110,180,255,0.075)', major: 'rgba(110,180,255,0.16)' } } },
     studio: { dark: true, paper: '#09090c', plate: '#17171d', plateEdge: '#2a2a33', ink: '#f4f2ee', mute: '#8a8892', metal: '#9c9ba3', steel: '#74747c', darkc: '#d3d2d8', ember: '#ff9a62', teal: '#ff6a3d', red: '#ff6b6b', green: '#69db7c', gold: '#e6c35c', glass: '#7ac7d6', line: 'rgba(244,242,238,0.2)', card: 'studio', titleFont: 'sans', accent: true, gl: { inner: '#22222a', outer: '#030305', floorK: 3.4, floor: '#000000', bloom: 0.1, thr: 0.95, rimColor: 'accent', rimK: 2.2, exposure: 1.08, glow: 'accent', glowA: 0.4 } },
   };
-  MX.DEFAULT_STYLE = 'dossier';      // la firma visual de mechanism: plano azul, regla, cajetin de evidencia. Los otros tres estilos son opciones (--style)
+  MX.DEFAULT_STYLE = 'dossier';      // mechanism's visual signature: blue sheet, ruler, evidence block. The other three styles are options (--style)
   MX.styles = THEMES; MX.STYLE_NAMES = Object.keys(THEMES);
   const SERIF0 = MX.SERIF, MONO0 = MX.MONO, REALMONO = '"Cascadia Mono","Cascadia Code",Consolas,"SF Mono",Menlo,"DejaVu Sans Mono",monospace';
   MX.THEME = {};
-  // cambia de estilo EN SITIO (los modulos guardan la referencia a MX.THEME); accent: el color de la marca, que los estilos con accent usan en lugar del acento propio
+  // switches style IN PLACE (modules keep a reference to MX.THEME); accent: the brand colour, used by the styles that take one instead of their own
   MX.setStyle = (name, accent) => {
     const t = THEMES[name] || THEMES.paper; Object.keys(MX.THEME).forEach((k) => { delete MX.THEME[k]; }); Object.assign(MX.THEME, t); MX.THEME.name = THEMES[name] ? name : 'paper';
     if (accent && t.accent) MX.THEME.teal = accent;
-    MX.INK = MX.THEME.ink;      // el color de texto por defecto sigue al estilo (antes quedaba oscuro sobre fondos oscuros)
+    MX.INK = MX.THEME.ink;      // the default text colour follows the style (it used to stay dark on dark backgrounds)
     MX.SERIF = t.titleFont === 'mono' ? REALMONO : t.titleFont === 'sans' ? MONO0 : SERIF0; if (t.mono) { MX.MONO = REALMONO; } else { MX.MONO = MONO0; }
   };
   MX.setStyle(g.MX_THEME || MX.DEFAULT_STYLE);
 
   /* ------------------------------------------------------------ tarjetas alternativas */
-  // dossier: marco completo con regla de marcas, encabezado y titulo en monoespaciada, doble filete y cajetin de datos arriba a la derecha (o.blocks: [[nombre, valor]])
+  // dossier: full frame with tick ruler, header and title in monospace, double rule and a data block top right (o.blocks: [[name, value]])
   function cardDossier(c, T, W, H, m, o) {
     const a = o.alpha == null ? 1 : o.alpha, x0 = m + 34;
     c.save(); c.globalAlpha = a; c.strokeStyle = MX.rgba(T.ink, 0.5); c.lineWidth = 1.5; c.strokeRect(m, m, W - 2 * m, H - 2 * m);
@@ -89,7 +89,7 @@
     if (o.readout) MX.text(o.readout, W - x0, H - m - 30, { size: 17, color: T.ink, font: MX.MONO, align: 'right', alpha: a, w: 600 });
     return { x: m, y: m, w: W - 2 * m, h: H - 2 * m };
   }
-  // studio: sin marco; barra de acento, titulo grande en negrita, resto casi invisible
+  // studio: no frame; accent bar, large bold title, everything else nearly invisible
   function cardStudio(c, T, W, H, m, o) {
     const a = o.alpha == null ? 1 : o.alpha, x0 = m + 34, title = String(o.title || ''), size = Math.max(34, Math.min(74, (W - 2 * x0) / (Math.max(1, title.length) * 0.56)));
     c.save(); c.globalAlpha = a; c.fillStyle = T.teal; c.fillRect(x0, m + 40, 56, 5); c.restore();
@@ -103,7 +103,7 @@
   }
 
   /* ------------------------------------------------------------ tarjeta de figura */
-  // fondo de papel, marco, numero de figura, titulo, pista y lectura. Devuelve el area util.
+  // paper background, frame, figure number, title, hint and readout. Returns the usable area.
   MX.card = (W, H, o = {}) => {
     const c = MX.ctx, T = MX.THEME, m = 40;
     if (!o.overlay) {                                                  // overlay: el fondo ya lo dibujo la escena 3D
@@ -129,8 +129,8 @@
     return { x: m, y: m, w: W - 2 * m, h: H - 2 * m };
   };
 
-  /* ------------------------------------------------------------ etiquetas con linea guia */
-  // from: punto 3D [x,y,z]; at: punto de pantalla [x,y] donde va el texto; side: 'l' | 'r'
+  /* ------------------------------------------------------------ labels with leader lines */
+  // from: 3D point [x,y,z]; at: screen point [x,y] where the text goes; side: 'l' | 'r'
   MX.callout = (from, at, lines, o = {}) => {
     const c = MX.ctx, T = MX.THEME, a = o.alpha == null ? 1 : o.alpha; if (a <= 0.01) return;
     const f = MX.P(from[0], from[1], from[2]), side = o.side || 'r', size = o.size || 24, col = o.color || T.ink;
@@ -161,9 +161,9 @@
     const acc = document.createElement('canvas'); acc.width = W; acc.height = H; const actx = acc.getContext('2d');
     const present = () => { if (SS === 1) return; octx.setTransform(1, 0, 0, 1, 0, 0); octx.globalAlpha = 1; octx.filter = 'none'; octx.imageSmoothingEnabled = true; octx.imageSmoothingQuality = 'high'; octx.drawImage(hi, 0, 0, W, H); };
     const paint = (t) => { MX.ctx = ctx; ctx.setTransform(SS, 0, 0, SS, 0, 0); ctx.globalAlpha = 1; ctx.filter = 'none'; cfg.draw(ctx, clamp(t, 0, DUR - 1e-6)); present(); };
-    // motion blur: promedio de n subtiempos dentro de un obturador (fraccion del intervalo de frame)
+    // motion blur: average of n sub-times inside a shutter (a fraction of the frame interval)
     const frame = (t, n = 1, shutter = 0.5) => {
-      if (cfg.blurAt) n = Math.min(n, cfg.blurAt(t));      // adaptativo: sin movimiento no hace falta desenfoque, y cada subframe cuesta un render
+      if (cfg.blurAt) n = Math.min(n, cfg.blurAt(t));      // adaptive: without motion no blur is needed, and every sub-frame costs a render
       if (n <= 1) { paint(t); return; }
       for (let i = 0; i < n; i++) {
         paint(t + (i / (n - 1) - 0.5) * shutter / FPS);
@@ -188,11 +188,14 @@
     };
     const params = new URLSearchParams(location.search);
     if (params.has('render') || params.has('t')) { frame(parseFloat(params.get('t') || '0'), 1); return; }
-    // modo navegador: click para reproducir con audio
+    // browser mode: click to play with sound
     const ui = Object.assign(document.createElement('div'), { textContent: '▶ click to play' });
     Object.assign(ui.style, { position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', font: '20px ' + MX.MONO, color: '#2a2925', background: 'rgba(244,243,238,.78)', cursor: 'pointer', letterSpacing: '.08em' });
     document.body.appendChild(ui); frame(cfg.poster == null ? DUR * 0.5 : cfg.poster, 1);
-    ui.addEventListener('click', () => {
+    ui.addEventListener('click', async () => {
+      // kit/boot.js loads the recorded sounds after the page on interactive views: wait for them, so the film plays with its real soundtrack
+      if (ui.dataset.wait) return; const label = ui.textContent; ui.dataset.wait = '1'; ui.textContent = 'loading sound…';
+      await g.MX_AUDIO_READY; delete ui.dataset.wait; ui.textContent = label;
       ui.style.display = 'none';
       const data = cfg.audio ? cfg.audio() : new Float32Array(cfg.sr || 44100), sr = (data && data.sr) || cfg.sr || 44100, ac = new (g.AudioContext || g.webkitAudioContext)({ sampleRate: sr });
       const st2 = data && data.L ? [data.L, data.R] : [data], ab = ac.createBuffer(st2.length, st2[0].length, sr); st2.forEach((ch, i) => ab.copyToChannel(ch, i)); const src = ac.createBufferSource(); src.buffer = ab; src.connect(ac.destination);

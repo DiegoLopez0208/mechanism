@@ -5,18 +5,18 @@ import { spawn } from 'node:child_process';
 import { findBrowser, startBrowser, withBrowser } from '../scripts/lib/browser.mjs';
 
 const options = { skip: !findBrowser(), timeout: 90000 };
-test('five concurrent sessions use port zero, distinct profiles and ports; cleanup is idempotent', options, async () => {
+test('five concurrent sessions use a private pipe (no port), distinct profiles; cleanup is idempotent', options, async () => {
   const sessions = [];
   try {
     const attempts = await Promise.allSettled(Array.from({ length: 5 }, async (_, i) => {
       const b = await startBrowser(); sessions.push(b);
       assert.equal(await b.ev(`${i} + 1`), i + 1);
-      assert.ok(b.port > 0); assert.ok(existsSync(b.profile));
+      assert.equal(b.port, null); assert.ok(existsSync(b.profile));
     }));
     // Wait for every launch before cleanup even if one fails. Otherwise a late
     // successful launch can escape finally and keep the failed test runner alive.
     assert.deepEqual(attempts.filter(r => r.status === 'rejected').map(r => String(r.reason)), []);
-    assert.equal(new Set(sessions.map((b) => b.port)).size, 5);
+    assert.equal(new Set(sessions.map((b) => b.pid)).size, 5);
     assert.equal(new Set(sessions.map((b) => b.profile)).size, 5);
   } finally { for (const b of sessions) { await b.cleanup(); await b.cleanup(); } }
   for (const b of sessions) {
@@ -55,4 +55,9 @@ test('SIGINT cleanup closes the owned browser tree before exiting', options, asy
   const code = await new Promise((r, j) => { p.on('error', j); p.on('close', r); });
   assert.equal(code, 130, stderr); const owned = JSON.parse(stdout.trim());
   assert.throws(() => process.kill(owned.pid, 0)); assert.ok(!existsSync(owned.profile), owned.profile);
+});
+test('MECHANISM_CDP=port still connects over a loopback port', options, async () => {
+  const before = process.env.MECHANISM_CDP; process.env.MECHANISM_CDP = 'port';
+  try { await withBrowser(async (b) => { assert.ok(b.port > 0); assert.equal(await b.ev('6 * 7'), 42); }); }
+  finally { if (before === undefined) delete process.env.MECHANISM_CDP; else process.env.MECHANISM_CDP = before; }
 });

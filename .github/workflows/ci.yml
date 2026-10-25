@@ -16,8 +16,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
       - name: Syntax, line endings, indentation, final newline, line length
@@ -28,19 +28,16 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
       - name: Tests (the evidence gate, the DEFLATE / RAR5 models against zlib, version consistency, 2D geometry, sound engines)
         run: npm run test:fast
-      - name: Every shipped example passes its own gate
-        shell: bash      # pipefail: a failing gate must not be hidden by tail
-        run: |
-          for e in hub switch enigma k20a rubik rtx4090 mos6502 rar5 winrar lock react; do
-            echo "== $e"
-            node scripts/check-spec.mjs examples/$e/spec.js --json /tmp/$e.verdict.json | tail -n 3
-          done
+      - name: Coverage of the kit, with thresholds (the gate, the pure models, 2D geometry, sound)
+        run: npm run test:coverage
+      - name: Every example under examples/ passes its own gate (found by folder, not by a hand-kept list)
+        run: node scripts/check-all.mjs --json ${{ runner.temp }}/verdicts
       - name: A template that was never filled in must NOT pass
         run: |
           node scripts/new.mjs ci-draft --title "CI draft"
@@ -53,8 +50,8 @@ jobs:
     runs-on: windows-2022
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
       - run: npm run test:fast
@@ -66,9 +63,10 @@ jobs:
     timeout-minutes: 90      # about 25 min with SwiftShader on a 4-vCPU runner
     env:
       BROWSER_SOFTWARE: '1'
+      BROWSER_TIMEOUT_SCALE: '2'      # software WebGL on a shared runner: the fixed 90 s watchdogs were passing or failing by luck
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
       - name: ffmpeg and ffprobe
@@ -80,22 +78,23 @@ jobs:
           ffmpeg -version
           ffprobe -version
       - name: Encoding, browser harness and media server
-        run: node --test tests/encoding.test.mjs tests/browser.test.mjs tests/media-server.test.mjs
+        run: node scripts/test-annotate.mjs tests/encoding.test.mjs tests/browser.test.mjs tests/media-server.test.mjs
       - name: Render, colour tags, audio streams and encoder fallback
-        run: node --test --test-concurrency=1 tests/render.test.mjs tests/presentation.test.mjs
+        run: node scripts/test-annotate.mjs --test-concurrency=1 tests/render.test.mjs tests/presentation.test.mjs
       - name: PNG colour conversion, requested fps and native study views
-        run: node --test --test-concurrency=1 tests/study-quality.test.mjs
+        run: node scripts/test-annotate.mjs --test-concurrency=1 tests/study-quality.test.mjs
       - name: Studio camera (exploded view hold, flight to the first stop, picture and sound in sync)
-        run: node --test --test-concurrency=1 tests/camera.test.mjs
+        run: node scripts/test-annotate.mjs --test-concurrency=1 tests/camera.test.mjs
 
   paper:
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     env:
       BROWSER_SOFTWARE: '1'
+      BROWSER_TIMEOUT_SCALE: '2'      # software WebGL on a shared runner: the fixed 90 s watchdogs were passing or failing by luck
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
       - name: ffmpeg and ffprobe (the Draft film tests spawn both)
@@ -105,9 +104,9 @@ jobs:
           command -v ffmpeg
           command -v ffprobe
       - name: Engine manifest and Paper (vector scene, declared 2D geometry, SVG export, mesh adapter, visual contract)
-        run: node --test --test-concurrency=1 tests/manifest.test.mjs tests/paper.test.mjs tests/paper-contract.test.mjs tests/paper-geometry.test.mjs tests/svg2d.test.mjs tests/rpi4-board.test.mjs
+        run: node scripts/test-annotate.mjs --test-concurrency=1 tests/manifest.test.mjs tests/paper.test.mjs tests/paper-contract.test.mjs tests/paper-geometry.test.mjs tests/svg2d.test.mjs tests/rpi4-board.test.mjs
       - name: Mechanism Draft as a standalone install (built outside the repository)
-        run: node --test --test-concurrency=1 tests/draft-skill.test.mjs
+        run: node scripts/test-annotate.mjs --test-concurrency=1 tests/draft-skill.test.mjs
       - name: The committed Draft plugin matches its files.json, with nothing extra
         working-directory: plugins/mechanism-draft
         run: node scripts/skill-doctor.mjs --strict
@@ -123,10 +122,11 @@ jobs:
     timeout-minutes: 120     # each test has its own 900 s limit and each preflight run 420 s
     env:
       BROWSER_SOFTWARE: '1'
+      BROWSER_TIMEOUT_SCALE: '2'      # software WebGL on a shared runner: the fixed 90 s watchdogs were passing or failing by luck
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
       - name: Visual preflight (camera, labels, frame, geometry area, NOT RUN reporting)
-        run: node --test --test-concurrency=1 tests/preflight.test.mjs
+        run: node scripts/test-annotate.mjs --test-concurrency=1 tests/preflight.test.mjs

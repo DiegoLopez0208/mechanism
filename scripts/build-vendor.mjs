@@ -1,5 +1,5 @@
-// build-vendor.mjs - reconstruye kit/vendor/three.bundle.js (three 0.186 + postprocesado) desde tools/vendor-build,
-// y kit/vendor/pathtracer.bundle.js (three-gpu-pathtracer + three-mesh-bvh sobre el window.THREE de la pagina: three no se duplica).
+// build-vendor.mjs - rebuilds kit/vendor/three.bundle.js (three 0.186 + post-processing) from tools/vendor-build,
+// and kit/vendor/pathtracer.bundle.js (three-gpu-pathtracer + three-mesh-bvh on the page's window.THREE: three is not duplicated).
 //   cd tools/vendor-build && npm install && cd ../.. && node scripts/build-vendor.mjs
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';

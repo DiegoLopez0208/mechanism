@@ -15,7 +15,7 @@ const load = () => {
   const core = fs.readFileSync(path.join(root, 'kit/core.js'), 'utf8').split('\n').find((l) => l.includes('MX.rng ='));
   assert.ok(core, 'MX.rng not found in kit/core.js');
   vm.runInContext('window.MX = window.MX || {};\nconst MX = window.MX;\n' + core, ctx);
-  for (const f of ['kit/audio.js', 'kit/sound.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
+  for (const f of ['kit/audio.js', 'kit/sound.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: path.join(root, f) });
   return ctx.MX;
 };
 const MX = load();
@@ -78,4 +78,49 @@ test('sound.render: bigger parts ring lower (the pitch comes from the size of th
 
 test('sound.render: with no samples loaded REAL() is false and every voice is synthesised', () => {
   assert.equal(MX.sound.REAL(), false);
+});
+
+const VOICE_NAMES = ['impact', 'click', 'whoosh', 'servo', 'charge', 'blip', 'tone', 'boom', 'clack', 'detent', 'thock', 'tick'];
+const energyOf = (x) => { let e = 0; for (const v of x) e += v * v; return e; };
+
+test('sound.render: every synthesised voice is audible, finite, bounded and repeatable', () => {
+  for (const v of VOICE_NAMES) {
+    const cfg = { duration: 1.6, sr: 8000, seed: 5, events: [{ t: 0.05, v, mat: 'aluminum', size: 12, timbre: 'marimba' }] };
+    const a = MX.sound.render(cfg), b = MX.sound.render(cfg);
+    assert.ok(finite(a.L) && finite(a.R), v + ': NaN or Infinity');
+    assert.ok(peak(a.L) <= 0.92 && peak(a.R) <= 0.92, v + ': over the limiter ceiling');
+    assert.ok(energyOf(a.L) > 1e-4, v + ': silent');
+    assert.ok(same(a.L, b.L) && same(a.R, b.R), v + ': not repeatable for one seed');
+  }
+});
+
+test('sound.render: the three tone timbres differ, and a bed with an arpeggio follows its level curve', () => {
+  const t = (timbre) => MX.sound.render({ duration: 1, sr: 8000, seed: 2, events: [{ t: 0, v: 'tone', f: 440, timbre, send: 0 }] }).L;
+  const bell = t('bell'), marimba = t('marimba'), pluck = t('pluck');
+  assert.ok(!same(bell, marimba) && !same(marimba, pluck) && !same(bell, pluck), 'timbres must change the sound');
+  const bed = (level) => MX.sound.render({ duration: 4, sr: 8000, seed: 3, bed: { bpm: 120, root: 48, mode: 'dorian', level, curve: [[0, 0.4], [4, 0.4]] } });
+  const loud = bed(0.6), none = bed(0);
+  assert.ok(finite(loud.L) && energyOf(loud.L) > energyOf(none.L), 'a bed with level 0.6 must be louder than level 0');
+});
+
+test('sound.render: with the recorded samples loaded, REAL() is true and the voices use them', () => {
+  const ctx = vm.createContext({ console, Math, Float32Array, atob: (s) => Buffer.from(s, 'base64').toString('binary') }); ctx.window = ctx;
+  const core = fs.readFileSync(path.join(root, 'kit/core.js'), 'utf8').split('\n').find((l) => l.includes('MX.rng ='));
+  vm.runInContext('window.MX = window.MX || {};\nconst MX = window.MX;\n' + core, ctx);
+  for (const f of ['kit/samples.js', 'kit/audio.js', 'kit/sound.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: path.join(root, f) });
+  const R = ctx.MX;
+  assert.equal(R.sound.REAL(), true);
+  const cfg = { duration: 1.2, sr: 44100, seed: 4, events: ['impact', 'clack', 'thock', 'detent', 'tick', 'click'].map((v, i) => ({ t: 0.05 + i * 0.15, v, mat: 'steel', size: 20 })) };
+  const real = R.sound.render(cfg), again = R.sound.render(cfg), synth = MX.sound.render(cfg);
+  assert.ok(finite(real.L) && finite(real.R) && peak(real.L) <= 0.92);
+  assert.ok(same(real.L, again.L), 'sample playback must be repeatable for one seed');
+  assert.ok(!same(real.L, synth.L), 'recorded samples must replace the synthesised voices');
+});
+
+test('sound.render: a whoosh that sweeps high stays finite (the filter used to diverge and turn the whole mix into NaN)', () => {
+  for (const [sr, f1, q] of [[44100, 14000, 1.4], [48000, 20000, 0.7], [8000, 3000, 1.4]]) {
+    const r = MX.sound.render({ duration: 1.2, sr, seed: 1, events: [{ t: 0.05, v: 'whoosh', f1, q }, { t: 0.6, v: 'click' }] });
+    assert.ok(finite(r.L) && finite(r.R), `sr ${sr}, f1 ${f1}, q ${q}`);
+    assert.ok(energyOf(r.L) > 1e-3, 'the rest of the mix must survive');
+  }
 });

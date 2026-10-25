@@ -11,7 +11,7 @@ import { withBrowser, findBrowser } from '../scripts/lib/browser.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ctx = vm.createContext({ URLSearchParams });
-for (const f of ['kit/manifest.js', 'kit/presentation.js', 'kit/paper-engine.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx);
+for (const f of ['kit/manifest.js', 'kit/presentation.js', 'kit/paper-engine.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: path.join(root, f) });
 const M = ctx.MX_MANIFEST, P = ctx.MX.presentation, plain = (x) => JSON.parse(JSON.stringify(x));
 const pageList = (file) => (/data-scripts="([^"]*)"/.exec(fs.readFileSync(file, 'utf8')) || [])[1]?.split(',').map((s) => s.trim()).filter(Boolean) || [];
 const examples = fs.readdirSync(path.join(root, 'examples')).filter((n) => fs.existsSync(path.join(root, 'examples', n, 'index.html')));

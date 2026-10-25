@@ -1,6 +1,6 @@
 /*
- * scene3d.js - Fig 2: Raspberry Pi 4 Model B en 3D real (three.js). Medidas SOLO de model.js (datasheet RP-008341-DS, Fig. 1); el pinout sale de la Fig. 3.
- * Video guionado (armado, explosionado, recorrido, planta acotada, elevaciones, pinout) y modo ?explore (orbitar, explosionar, medir).
+ * scene3d.js - Fig 2: Raspberry Pi 4 Model B in real 3D (three.js). Sizes ONLY from model.js (datasheet RP-008341-DS, Fig. 1); pinout from Fig. 3.
+ * Scripted film (assembly, explosion, tour, dimensioned plan, elevations, pinout) and ?explore mode (orbit, explode, measure).
  */
 (function () {
   'use strict';
@@ -9,7 +9,7 @@
   const st = G.stage({ w: W, h: H, shadow: 0.16, floorY: -7, bloom: 0.03, envIntensity: 0.45 });
   MX.P = (x, y, z) => st.project(x, y, z);
 
-  /* ------------------------------------------------------------ datos de presentacion */
+  /* ------------------------------------------------------------ presentation data */
   const NAME = { pcb: 'PCB', gpio: 'GPIO header 2x20', soc: 'SoC BCM2711', ram: 'LPDDR4 RAM', wifi: 'Wi-Fi / BT module', dsi: 'DSI display port', csi: 'CSI camera port', usbc: 'USB-C power', hdmi0: 'micro-HDMI 0', hdmi1: 'micro-HDMI 1', audio: '3.5 mm jack', eth: 'Gigabit Ethernet', usb3: 'USB 3.0 x2', usb2: 'USB 2.0 x2', ic1: 'IC', ic2: 'IC', ic3: 'IC', ic4: 'IC' };
   const NOTE = { pcb: '4 mounting holes, 58 x 49 mm', gpio: '40 pins, 2.54 mm pitch', soc: '4x Cortex-A72 at 1.5 GHz', ram: '1, 2, 4 or 8 GB', wifi: '802.11ac, Bluetooth 5.0', dsi: '2-lane MIPI', csi: '2-lane MIPI', usbc: 'power input, 5 V', hdmi0: 'up to 4Kp60', hdmi1: 'up to 4Kp60', audio: 'audio + composite video', eth: 'overhangs the edge 2.95 mm', usb3: 'next to the Ethernet', usb2: 'the pair nearest the corner', ic1: 'not named in the datasheet', ic2: 'not named in the datasheet', ic3: 'not named in the datasheet', ic4: 'not named in the datasheet' };
   const HSRC = { 'z-plano': 'height: drawing label', estimado: 'height: estimated' };
@@ -20,12 +20,12 @@
   const OFF = { gpio: [0, 0, 26], soc: [0, 0, 17], ram: [0, 0, 17], wifi: [0, 0, 17], ic1: [0, 0, 10], ic2: [0, 0, 10], ic3: [0, 0, 10], ic4: [0, 0, 10], dsi: [-15, 0, 7], csi: [0, 0, 11], usbc: [0, -15, 7], hdmi0: [0, -15, 7], hdmi1: [0, -15, 7], audio: [0, -15, 7], eth: [14, 0, 7], usb3: [14, 0, 7], usb2: [14, 0, 7], pcb: [0, 0, 0] };
   const SPAWN = {}; parts.forEach((p, i) => { SPAWN[p.id] = i === 0 ? 0.2 : 0.7 + (i - 1) * 0.16; });
   const center = (id, e) => { const p = byId[id], o = OFF[id]; return [p.x + p.w / 2 + o[0] * e, p.y + p.d / 2 + o[1] * e, (id === 'pcb' ? 0 : p.h / 2) + o[2] * e]; };
-  // pinout del conector J8 (Fig. 3 del datasheet): pin -> nombre
+  // pinout of connector J8 (datasheet Fig. 3): pin -> name
   const PIN = { 1: '3V3', 2: '5V', 3: 'GPIO2', 4: '5V', 5: 'GPIO3', 6: 'GND', 7: 'GPIO4', 8: 'GPIO14', 9: 'GND', 10: 'GPIO15', 11: 'GPIO17', 12: 'GPIO18', 13: 'GPIO27', 14: 'GND', 15: 'GPIO22', 16: 'GPIO23', 17: '3V3', 18: 'GPIO24', 19: 'GPIO10', 20: 'GND', 21: 'GPIO9', 22: 'GPIO25', 23: 'GPIO11', 24: 'GPIO8', 25: 'GND', 26: 'GPIO7', 27: 'ID_SD', 28: 'ID_SC', 29: 'GPIO5', 30: 'GND', 31: 'GPIO6', 32: 'GPIO12', 33: 'GPIO13', 34: 'GND', 35: 'GPIO19', 36: 'GPIO16', 37: 'GPIO26', 38: 'GPIO20', 39: 'GND', 40: 'GPIO21' };
   const pinKind = (n) => { const s = PIN[n]; return s === '3V3' ? '3v3' : s === '5V' ? '5v' : s === 'GND' ? 'gnd' : s[0] === 'I' ? 'id' : 'gpio'; };
   const PINCOL = { '3v3': '#e8590c', '5v': '#d62f2f', gnd: '#2a2925', gpio: '#0a7c8c', id: '#8a877c' };
 
-  /* ------------------------------------------------------------ textura de la placa (mascara verde, pistas, huellas, serigrafia) */
+  /* ------------------------------------------------------------ board texture (green mask, traces, footprints, silkscreen) */
   function pcbTexture() {
     const S = 32;
     return G.canvasTex(BW * S, BD * S, (c, w, h) => {
@@ -33,7 +33,7 @@
       c.fillStyle = '#2f8049'; c.fillRect(0, 0, w, h);
       for (let i = 0; i < 120; i++) { const x = R() * w, y = R() * h, r = 80 + R() * 260, gr = c.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, 'rgba(255,255,255,0.03)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = gr; c.fillRect(x - r, y - r, 2 * r, 2 * r); }
       const ctr = (id) => { const p = byId[id]; return [p.x + p.w / 2, p.y + p.d / 2]; };
-      // buses de pistas entre piezas (ruteo en L)
+      // trace buses between parts (L-shaped routing)
       const bus = (a, b, n, gap) => {
         const A = ctr(a), B = ctr(b);
         for (let k = 0; k < n; k++) {
@@ -42,7 +42,7 @@
         }
       };
       bus('soc', 'ram', 16, 0.42); bus('soc', 'gpio', 14, 0.4); bus('soc', 'wifi', 8, 0.4); bus('soc', 'usb3', 10, 0.4); bus('soc', 'eth', 8, 0.4); bus('soc', 'ic1', 10, 0.4); bus('soc', 'csi', 8, 0.4); bus('soc', 'dsi', 8, 0.4); bus('ic1', 'usb2', 8, 0.4); bus('ic2', 'eth', 6, 0.4); bus('soc', 'hdmi0', 6, 0.4); bus('soc', 'hdmi1', 6, 0.4); bus('soc', 'usbc', 6, 0.4); bus('ic3', 'gpio', 6, 0.4);
-      // huellas: contorno de serigrafia y pads dorados por pieza
+      // footprints: silkscreen outline and gold pads per part
       parts.slice(1).forEach((p) => {
         c.strokeStyle = 'rgba(255,255,255,0.7)'; c.lineWidth = 0.14 * S; c.strokeRect(px(p.x) - 0.3 * S, py(p.y + p.d) - 0.3 * S, p.w * S + 0.6 * S, p.d * S + 0.6 * S);
         c.fillStyle = '#d9b54d';
@@ -53,7 +53,7 @@
       });
       // vias
       for (let i = 0; i < 260; i++) { const x = 2 + R() * 81, y = 2 + R() * 52; c.fillStyle = '#d9b54d'; c.beginPath(); c.arc(px(x), py(y), 0.22 * S, 0, 6.2832); c.fill(); c.fillStyle = '#1e5d33'; c.beginPath(); c.arc(px(x), py(y), 0.08 * S, 0, 6.2832); c.fill(); }
-      // anillos de cobre de los agujeros de montaje (diametro medido en el plano: 6,2 mm)
+      // copper rings of the mounting holes (diameter measured on the drawing: 6.2 mm)
       const hs = M.holes; c.fillStyle = '#e1c05a';
       [[hs.inset, hs.inset], [hs.inset + hs.pitchX, hs.inset], [hs.inset, hs.inset + hs.pitchY], [hs.inset + hs.pitchX, hs.inset + hs.pitchY]].forEach(([x, y]) => { c.beginPath(); c.arc(px(x), py(y), hs.padDia / 2 * S, 0, 6.2832); c.fill(); });
       // serigrafia
@@ -63,7 +63,7 @@
     });
   }
 
-  /* ------------------------------------------------------------ materiales y piezas */
+  /* ------------------------------------------------------------ materials and parts */
   const metal = (c = '#d6d6d2') => G.mat(c, { metalness: 0.95, roughness: 0.32 });
   const plastic = (c, r = 0.55) => G.mat(c, { roughness: r });
   function stadium(c, w, h, r) { c.beginPath(); c.moveTo(r, 0); c.lineTo(w - r, 0); c.arc(w - r, r, r, -Math.PI / 2, Math.PI / 2); c.lineTo(r, h); c.arc(r, r, r, Math.PI / 2, 1.5 * Math.PI); c.closePath(); }
@@ -109,10 +109,10 @@
 
   const groups = {}, hitMeshes = [];
   parts.forEach((p) => { const g = buildPart(p); G.shadows(g, true, true); g.userData.p = p; groups[p.id] = g; st.scene.add(g); g.traverse((m) => { if (m.isMesh) { m.userData.pid = p.id; hitMeshes.push(m); } }); });
-  // contorno de resalte (ember) por pieza
+  // highlight outline (ember) per part
   const outlines = {};
   parts.forEach((p) => { if (p.id === 'pcb') return; const l = new TH.LineSegments(new TH.EdgesGeometry(new TH.BoxGeometry(p.w + 0.5, p.h + 0.5, p.d + 0.5)), new TH.LineBasicMaterial({ color: '#e8590c' })); l.position.y = p.h / 2; l.visible = false; groups[p.id].add(l); outlines[p.id] = l; });
-  // opacidad por pieza: se activa la transparencia solo cuando hace falta
+  // opacity per part: transparency is switched on only when needed
   const fadeState = {};
   function setFade(id, f) {
     const key = f < 0.995; if (fadeState[id] === key && !key) return;
@@ -170,7 +170,7 @@
     ORDER.forEach((id, i) => { const q = byId[id], col = i < 7 ? 0 : 1, row = i % 7, x0 = 78 + col * 480, y0 = 1062 + row * 29; c.font = '700 21px ' + MX.MONO; c.fillStyle = T.ink; c.fillText(String(i + 1).padStart(2, '0'), x0, y0); c.font = '400 21px ' + MX.MONO; c.fillText(SHORT[id], x0 + 40, y0); c.fillStyle = q.hConf === 'estimado' ? T.ember : T.mute; c.fillText(id === 'ic1' ? '~1.0 high' : fmt(q.w) + 'x' + fmt(q.d) + 'x' + fmt(q.h), x0 + 252, y0); });
     c.restore();
   }
-  // escalera de alturas (elevacion frontal): marcas en la regla y etiquetas separadas con lineas guia
+  // height ladder (front elevation): ticks on the ruler and labels spread out with leader lines
   function heightLadder(a) {
     if (a <= 0.01) return; const c = MX.ctx, X = 92, rows = [[16.0, 'USB'], [13.5, 'Ethernet'], [8.5, 'GPIO'], [6.0, 'audio jack'], [5.5, 'DSI / CSI'], [3.2, 'USB-C'], [3.0, 'HDMI'], [2.4, 'SoC']];
     const p0 = MX.P(X, 0, 0), p1 = MX.P(X, 0, 16);
@@ -184,7 +184,7 @@
   function pinoutPanel(a) {
     if (a <= 0.01) return; const c = MX.ctx; c.save(); c.globalAlpha = a; c.fillStyle = T.paper; c.fillRect(34, 216, W - 68, H - 250);
     MX.A = a; MX.text('Fig 2 - J8 header, datasheet Fig. 3', 86, 290, { size: 24, color: T.mute, spacing: 1 }); MX.text('40 pins, 28 usable GPIO.', 86, 360, { size: 46, font: MX.SANS, w: 600 });
-    // cabezal dibujado: fila exterior = pares (como en la placa), fila interior = impares
+    // drawn header: outer row = even pins (as on the board), inner row = odd
     const x0 = 106, dx = 43.5, y0 = 430; c.textAlign = 'center'; c.textBaseline = 'middle';
     for (let i = 0; i < 20; i++) for (let j = 0; j < 2; j++) { const n = j ? 2 * i + 2 : 2 * i + 1, x = x0 + i * dx, y = y0 + (j ? 0 : 50); c.fillStyle = PINCOL[pinKind(n)]; c.fillRect(x - 15, y - 15, 30, 30); c.fillStyle = '#fff'; c.font = '700 14px ' + MX.MONO; c.fillText(String(n), x, y + 1); }
     c.textAlign = 'left'; c.textBaseline = 'alphabetic';
@@ -205,7 +205,7 @@
     MX.text('Raspberry Pi 4 Model B Datasheet, RP-008341-DS, Release 1.1', 86, 1130, { size: 22, color: T.mute }); MX.text('Built with mechanism', 86, 1210, { size: 34, w: 600, font: MX.SANS }); MX.A = 1; c.restore();
   }
 
-  /* ------------------------------------------------------------ cuadro */
+  /* ------------------------------------------------------------ frame */
   function frame(ctx, s) {
     applyState(s);
     MX.card(W, H, { fig: 'Fig 2', kicker: 'DATASHEET RP-008341-DS', title: 'Raspberry Pi 4 Model B', sub: s.sub || 'Every size traced to the official datasheet drawing.', hint: s.hint || '', readout: s.readout || '85 x 56 mm  -  17 parts' });
@@ -217,7 +217,7 @@
     if (s.ui) s.ui(ctx);
   }
 
-  /* ------------------------------------------------------------ guion del video: camara por claves */
+  /* ------------------------------------------------------------ film script: keyed camera */
   const BASE = { yaw: 40, pitch: 33, zoom: 8.4, tx: 42.5, ty: 28, tz: 2, cx: 540, cy: 700 };
   const shot = (id, yaw, pitch, zoom, e = 1) => { const c = center(id, e); return { yaw, pitch, zoom, tx: c[0], ty: c[1], tz: c[2], cx: 540, cy: 620 }; };
   const TOUR = [['soc', 9.6, 40, 44, 24], ['usb3', 11.7, 62, 22, 16], ['eth', 13.8, 68, 20, 15], ['gpio', 15.9, 28, 40, 11]], TL = 2.1;

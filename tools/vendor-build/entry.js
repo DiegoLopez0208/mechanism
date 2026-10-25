@@ -1,5 +1,5 @@
-// entry.js - lo que el bundle expone como window.THREE: todo three.js 0.186 mas los complementos que usa el motor.
-// Se compila con: node scripts/build-vendor.mjs  ->  kit/vendor/three.bundle.js (un solo archivo, funciona abriendo el HTML con file://)
+// entry.js - what the bundle exposes as window.THREE: all of three.js 0.186 plus the add-ons the engine uses.
+// Built with: node scripts/build-vendor.mjs  ->  kit/vendor/three.bundle.js (a single file, works when the HTML is opened with file://)
 export * from 'three';
 export { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 export { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';

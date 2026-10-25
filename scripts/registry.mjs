@@ -10,9 +10,21 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), docs = path.join(root, 'docs');
+// Specs are JavaScript and node:vm is not a sandbox: re-run under Node's permission model, reading the repository and writing only the
+// three outputs above. --trusted or MECHANISM_TRUSTED=1 skips it.
+if (!process.permission && !process.argv.includes('--trusted') && process.env.MECHANISM_TRUSTED !== '1') {
+  const flag = ['--permission', '--experimental-permission'].find((f) => process.allowedNodeEnvironmentFlags.has(f));
+  if (!flag) { console.error('registry: this Node has no permission model to contain the specs; use Node 22.13+ or pass --trusted'); process.exit(1); }
+  fs.mkdirSync(path.join(docs, 'badges'), { recursive: true });      // a grant needs a folder that exists
+  const writes = [path.join(docs, 'registry.json'), path.join(docs, 'registry.html'), path.join(docs, 'badges')];
+  const grants = ['--allow-fs-read=' + root, ...writes.map((w) => '--allow-fs-write=' + w)];
+  const r = spawnSync(process.execPath, [flag, ...grants, fileURLToPath(import.meta.url), ...process.argv.slice(2)], { stdio: 'inherit' });
+  process.exit(r.status ?? 1);
+}
 const KIT = ['kit/kin.js', 'kit/enigma.js', 'kit/cube.js', 'kit/rar5.js', 'kit/deflate.js', 'kit/react-reconcile.js', 'kit/geom2d.js', 'kit/spec-core.js'];
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const sha = (f) => crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');
@@ -22,9 +34,9 @@ const COLOR = { VERIFIED: '#2ea043', CONSISTENT: '#bf8700', INCOMPLETE: '#d29922
 
 const records = names.map((n) => {
   const dir = path.join(root, 'examples', n), ctx = vm.createContext({ console, TextEncoder, TextDecoder }); ctx.window = ctx;
-  KIT.forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f }));
+  KIT.forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: path.join(root, f) }));
   const data = path.join(dir, 'data.js'); if (fs.existsSync(data)) vm.runInContext(fs.readFileSync(data, 'utf8'), ctx, { filename: data });
-  vm.runInContext(fs.readFileSync(path.join(dir, 'spec.js'), 'utf8'), ctx, { filename: 'spec.js' });
+  vm.runInContext(fs.readFileSync(path.join(dir, 'spec.js'), 'utf8'), ctx, { filename: path.join(dir, 'spec.js') });
   const spec = ctx.SPEC, r = ctx.MX.spec.validate(spec), v = r.verdict, rc = v.recognition || {};
   return { id: n, title: spec.title, kind: spec.kicker || '', state: v.state, reproduced: v.checked, failed: v.failed, pending: v.pending, estimated: v.estimated, sizeEvidence: v.sizeEvidence, uncheckedCalculations: v.uncheckedCalculations, uncheckedInputs: v.uncheckedInputs, uncheckedTeeth: v.uncheckedTeeth, dimensions: v.dimensions || 0, mixed: v.mixed || 0, parts: v.parts, claims: v.claims, sources: v.sources, errors: r.errors.length, warnings: r.warnings.length, recognition: rc.declared ? { features: rc.features, blind: rc.blind } : null, specSha256: sha(path.join(dir, 'spec.js')) };
 });

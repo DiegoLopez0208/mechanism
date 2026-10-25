@@ -8,9 +8,10 @@
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "test:fast": "node --test tests/gate.test.mjs tests/kit.test.mjs tests/geom2d.test.mjs tests/versions.test.mjs tests/media-server.test.mjs tests/sound.test.mjs",
-    "test:coverage": "node --test --experimental-test-coverage tests/gate.test.mjs tests/kit.test.mjs tests/geom2d.test.mjs tests/sound.test.mjs",
+    "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=kit/** --test-coverage-include=scripts/** --test-coverage-exclude=kit/vendor/** --test-coverage-exclude=kit/samples.js --test-coverage-exclude=kit/fonts.js --test-coverage-branches=82 --test-coverage-functions=90 tests/gate.test.mjs tests/kit.test.mjs tests/geom2d.test.mjs tests/versions.test.mjs tests/media-server.test.mjs tests/sound.test.mjs",
     "lint": "node scripts/lint.mjs",
-    "check": "node scripts/check-spec.mjs"
+    "check": "node scripts/check-spec.mjs",
+    "check:all": "node scripts/check-all.mjs"
   },
   "engines": {
     "node": ">=22"

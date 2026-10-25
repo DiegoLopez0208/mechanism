@@ -1,4 +1,4 @@
-// probe.mjs - prueba un modo interactivo en Edge/Chrome sin ventana: abre la pagina, ejecuta acciones de raton por CDP y guarda capturas.
+// probe.mjs - tries an interactive mode in Edge/Chrome with no window: opens the page, runs mouse actions over CDP and saves screenshots.
 //   node scripts/probe.mjs examples/rpi4/index.html?explore out/probe
 import { withBrowser } from './lib/browser.mjs'; import { mkdirSync, writeFileSync } from 'node:fs'; import { pathToFileURL } from 'node:url'; import path from 'node:path';
 const [page, outDir = 'out/probe'] = process.argv.slice(2); const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -16,7 +16,7 @@ await drag(560, 620, 400, 560); await shot('1-orbita');
 await drag(230, 1152, 520, 1152); await sleep(1200); await shot('2-explosion');
 await click(670, 1152); await sleep(1500); await shot('3-top');
 await click(660, 1218); await click(540, 640); await click(700, 760); await sleep(400); await shot('4-medir');
-console.log('errores:', errs.length ? errs.slice(0, 5) : 'ninguno');
+console.log('errors:', errs.length ? errs.slice(0, 5) : 'none');
 }, { onEvent(d) {
   if (d.method === 'Runtime.exceptionThrown') errs.push(d.params.exceptionDetails.exception?.description || d.params.exceptionDetails.text);
   if (d.method === 'Runtime.consoleAPICalled' && d.params.type === 'error') errs.push('console.error: ' + d.params.args.map((a) => a.value || a.description).join(' '));

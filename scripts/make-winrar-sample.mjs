@@ -17,15 +17,15 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), dir = process.env.RAR_DIR || 'C:/Program Files/WinRAR';
 const WINRAR = path.join(dir, 'WinRAR.exe'), RAR = path.join(dir, 'Rar.exe');
-if (!fs.existsSync(WINRAR) || !fs.existsSync(RAR)) { console.error('no encuentro WinRAR.exe / Rar.exe en ' + dir + ' (RAR_DIR=...)'); process.exit(1); }
-const ctx = vm.createContext({ console, TextEncoder, TextDecoder }); ctx.window = ctx; vm.runInContext(fs.readFileSync(path.join(root, 'kit/deflate.js'), 'utf8'), ctx, { filename: 'kit/deflate.js' }); const D = ctx.MX.deflate;
+if (!fs.existsSync(WINRAR) || !fs.existsSync(RAR)) { console.error('cannot find WinRAR.exe / Rar.exe in ' + dir + ' (RAR_DIR=...)'); process.exit(1); }
+const ctx = vm.createContext({ console, TextEncoder, TextDecoder }); ctx.window = ctx; vm.runInContext(fs.readFileSync(path.join(root, 'kit/deflate.js'), 'utf8'), ctx, { filename: path.join(root, 'kit/deflate.js') }); const D = ctx.MX.deflate;
 
 const text = 'WinRAR packs, WinRAR packs, WinRAR packs, and WinRAR unpacks: packs, packs, unpacks, unpacks, whole again, whole again.';
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mx-zip-')), run = (exe, args, cwd, timeout) => spawnSync(exe, args, { cwd, encoding: 'utf8', timeout: timeout || 60000, windowsHide: true });
 fs.writeFileSync(path.join(tmp, 'note.txt'), text, 'ascii');
 const banner = (run(RAR, [], tmp).stdout || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean)[0] || '';
 const made = run(WINRAR, ['a', '-afzip', '-m5', '-ep', '-ibck', '-inul', 'note.zip', 'note.txt'], tmp, 30000);
-if (!fs.existsSync(path.join(tmp, 'note.zip'))) { console.error('WinRAR.exe no creo note.zip', made.error || made.stderr); process.exit(1); }
+if (!fs.existsSync(path.join(tmp, 'note.zip'))) { console.error('WinRAR.exe did not create note.zip', made.error || made.stderr); process.exit(1); }
 const zip = Uint8Array.from(fs.readFileSync(path.join(tmp, 'note.zip'))), entry = D.parseZip(zip)[0], stream = zip.slice(entry.dataStart, entry.dataEnd);
 const model = D.inflate(zip, entry.dataStart), modelText = Buffer.from(model.out).toString('latin1');
 const zl = zlib.inflateRawSync(Buffer.from(stream)).toString('latin1'), zl9 = zlib.deflateRawSync(Buffer.from(text, 'latin1'), { level: 9 }).length;

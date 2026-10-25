@@ -1,13 +1,13 @@
 /*
- * kit/enigma.js - la logica de la Enigma I (Wehrmacht), pura (sin three.js): corre en el navegador y en Node, asi scripts/check-spec.mjs la verifica
- * contra casos publicados antes de que se renderice nada.
+ * kit/enigma.js - the logic of the Enigma I (Wehrmacht), pure (no three.js): it runs in the browser and in Node, so scripts/check-spec.mjs checks it
+ * against published cases before anything is rendered.
  *
  *   const M = MX.enigma.create({ rotors: ['I', 'II', 'III'], reflector: 'B', rings: 'AAA', start: 'AAA', plugs: ['AB'] });
  *   M.press('A')  -> { out: 'B', path: [i0..i8], stepped: [bool, bool, bool], pos: [l, m, r], window: 'AAB' }
  *
- * Reglas (Wikipedia "Enigma rotor details", Crypto Museum): el rotor derecho avanza en cada tecla; el medio avanza si el derecho esta en su muesca o
- * si el mismo esta en la suya (el "doble paso"); el izquierdo avanza si el medio esta en su muesca. Avanzan ANTES de cifrar. La muesca va en el anillo
- * del alfabeto: el salto depende de la letra de la ventana, el cableado depende de la posicion del nucleo = ventana - anillo.
+ * Rules (Wikipedia "Enigma rotor details", Crypto Museum): the right rotor steps on every key; the middle one steps if the right one is at its notch
+ * or if it is at its own (the "double step"); the left one steps if the middle one is at its notch. They step BEFORE enciphering. The notch is on the
+ * alphabet ring: the step depends on the letter in the window, the wiring on the core position = window - ring.
  */
 (function (g) {
   'use strict';
@@ -24,7 +24,7 @@
     const plug = Array.from({ length: 26 }, (_, i) => i); (cfg.plugs || []).forEach((p) => { const a = idx(p[0]), b = idx(p[1]); plug[a] = b; plug[b] = a; });
     const M = { names, pos, rings, notch };
     M.window = () => pos.map(letter).join('');
-    // avance mecanico: devuelve que rotores se movieron
+    // mechanical stepping: returns which rotors moved
     M.step = () => {
       const st = [false, false, false], mid = pos[1] === notch[1], rgt = pos[2] === notch[2];
       if (mid) { pos[0] = mod(pos[0] + 1); st[0] = true; }

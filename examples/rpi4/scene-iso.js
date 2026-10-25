@@ -1,15 +1,15 @@
 /*
- * scene.js - Fig 2: Raspberry Pi 4 Model B. Modelo isometrico construido SOLO con las medidas de model.js (datasheet RP-008341-DS, Fig. 1).
- * Se arma, se explosiona, recorre las piezas con su fuente y pasa a plano acotado. Mismo dibujo para el video y para el modo ?explore.
+ * scene.js - Fig 2: Raspberry Pi 4 Model B. Isometric model built ONLY from the sizes in model.js (datasheet RP-008341-DS, Fig. 1).
+ * It assembles, explodes, tours the parts with their sources and turns into a dimensioned drawing. The same drawing serves the film and ?explore.
  */
 (function () {
   'use strict';
   const M = MODEL, T = MX.THEME, E = MX.E, clamp = MX.clamp, lerp = MX.lerp, ramp = MX.ramp;
   const W = 1080, H = 1350, FPS = 30, DUR = 30, BD = M.board.d, BW = M.board.w, C30 = Math.cos(Math.PI / 6);
-  const wyOf = (y, d) => BD - (y + (d || 0));                // el eje y del datasheet (hacia arriba) pasa a y del mundo (hacia el espectador)
+  const wyOf = (y, d) => BD - (y + (d || 0));                // the datasheet's y axis (up) becomes the world's y (towards the viewer)
   const S_ISO = 7.3, S_PLAN = 9, VC_ISO = 705, VC_PLAN = 640, CX = BW / 2, CY = BD / 2;
 
-  /* ------------------------------------------------------------ nombres para mostrar (el JSON guarda los del datasheet) */
+  /* ------------------------------------------------------------ display names (the JSON keeps the datasheet's) */
   const NAME = { pcb: 'PCB', gpio: 'GPIO header 2x20', soc: 'SoC BCM2711', ram: 'LPDDR4 RAM', wifi: 'Wi-Fi / BT module', dsi: 'DSI display port', csi: 'CSI camera port', usbc: 'USB-C power', hdmi0: 'micro-HDMI 0', hdmi1: 'micro-HDMI 1', audio: '3.5 mm jack', eth: 'Gigabit Ethernet', usb3: 'USB 3.0 x2', usb2: 'USB 2.0 x2', ic1: 'IC', ic2: 'IC', ic3: 'IC', ic4: 'IC' };
   const NOTE = { pcb: '4 mounting holes, 58 x 49 mm', gpio: '40 pins, 2.54 mm pitch', soc: '4x Cortex-A72 at 1.5 GHz', ram: '1, 2, 4 or 8 GB', wifi: '802.11ac, Bluetooth 5.0', dsi: '2-lane MIPI', csi: '2-lane MIPI', usbc: 'power input, 5 V', hdmi0: 'up to 4Kp60', hdmi1: 'up to 4Kp60', audio: 'audio + composite video', eth: 'overhangs the edge 2.95 mm', usb3: 'next to the Ethernet', usb2: 'the pair nearest the corner', ic1: 'not named in the datasheet', ic2: 'not named in the datasheet', ic3: 'not named in the datasheet', ic4: 'not named in the datasheet' };
   const HSRC = { 'z-plano': 'height: drawing label', estimado: 'height: estimated' };
@@ -18,7 +18,7 @@
   const fmt = (v) => (Math.round(v * 100) / 100).toFixed(v % 1 === 0 ? 1 : v * 10 % 1 === 0 ? 1 : 2);
   const dimText = (p) => fmt(p.w) + ' x ' + fmt(p.d) + ' x ' + fmt(p.h) + ' mm';
 
-  /* ------------------------------------------------------------ desplazamientos al explosionar (mm en el mundo del dibujo) */
+  /* ------------------------------------------------------------ explosion offsets (mm in the drawing's world) */
   const OFF = { gpio: [0, 0, 26], soc: [0, 0, 17], ram: [0, 0, 17], wifi: [0, 0, 17], ic1: [0, 0, 10], ic2: [0, 0, 10], ic3: [0, 0, 10], ic4: [0, 0, 10], dsi: [-15, 0, 7], csi: [0, 0, 11], usbc: [0, 15, 7], hdmi0: [0, 15, 7], hdmi1: [0, 15, 7], audio: [0, 15, 7], eth: [11, 0, 7], usb3: [11, 0, 7], usb2: [11, 0, 7], pcb: [0, 0, 0] };
   const SPAWN = {}; parts.forEach((p, i) => { SPAWN[p.id] = i === 0 ? 0.2 : 0.7 + (i - 1) * 0.16; });
 
@@ -30,7 +30,7 @@
     return [lerp(ix, 540 + dx * S_PLAN, VU), lerp(iy, VC_PLAN + dy * S_PLAN, VU)];
   };
 
-  /* ------------------------------------------------------------ geometria de la placa (esquinas redondeadas) */
+  /* ------------------------------------------------------------ board geometry (rounded corners) */
   function outline(x0, y0, w, d, r, n = 7) {
     const pts = [], cs = [[x0 + w - r, y0 + r, -90], [x0 + w - r, y0 + d - r, 0], [x0 + r, y0 + d - r, 90], [x0 + r, y0 + r, 180]];
     cs.forEach(([cx, cy, a0]) => { for (let i = 0; i <= n; i++) { const a = (a0 + 90 * i / n) * Math.PI / 180; pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); } });
@@ -65,7 +65,7 @@
     MX.A = 1;
   }
 
-  /* ------------------------------------------------------------ piezas */
+  /* ------------------------------------------------------------ parts */
   function drawPart(p, o) {
     const c = MX.ctx, x = p.x + o.dx, w = p.w, d = p.d, wy = wyOf(p.y, p.d) + o.dy, z = o.dz, h = p.h;
     MX.A = o.alpha; if (o.alpha < 0.02) { MX.A = 1; return; }
@@ -81,19 +81,19 @@
     else if (p.id === 'ram') { MX.planeText('LPDDR4', x + 1.8, wy + 8.0, zt + 0.02, 1.7, { color: 'rgba(255,255,255,0.45)', w: 700 }); }
     else if (p.id === 'dsi' || p.id === 'csi') { MX.flat([[x + 0.8, wy + 1.2, zt + 0.01], [x + w - 0.8, wy + 1.2, zt + 0.01], [x + w - 0.8, wy + d - 1.2, zt + 0.01], [x + 0.8, wy + d - 1.2, zt + 0.01]], '#3b3a36', { strokeAlpha: 0.25 }); }
     else if (p.id === 'wifi') { for (let k = 1; k < 5; k++) MX.line3([x + 0.7, wy + k * d / 5, zt + 0.01], [x + w - 0.7, wy + k * d / 5, zt + 0.01], 'rgba(42,41,37,0.22)', 1); }
-    if (isHeader) {                                        // pines: 20 x 2, paso 2,54 mm, hasta la altura Z=8,5 del plano
+    if (isHeader) {                                        // pins: 20 x 2, 2.54 mm pitch, up to the drawing's height Z=8.5
       for (let i = 0; i < 20; i++) for (let j = 0; j < 2; j++) { const px = x + 1.27 + i * 2.54 - 0.32, py = wy + d / 2 + (j ? 1.27 : -1.27) - 0.32; MX.box(px, py, zt, 0.64, 0.64, h - hh, '#d7b45b', { hi: false, edge: 'rgba(42,41,37,0.4)' }); }
     }
-    // piezas con altura estimada: contorno punteado
+    // parts with an estimated height: dashed outline
     if (p.hConf === 'estimado' && o.alpha > 0.3) { c.save(); c.setLineDash([5, 4]); c.strokeStyle = T.ember; c.globalAlpha = 0.9 * o.alpha; c.lineWidth = 1.6; c.beginPath(); r.top.forEach((q, i) => (i ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1]))); c.closePath(); c.stroke(); c.restore(); }
     if (o.hi) { c.save(); c.strokeStyle = T.ember; c.lineWidth = 3.2; c.globalAlpha = 1; [r.top, r.lf, r.rt].forEach((q) => { c.beginPath(); q.forEach((pt, i) => (i ? c.lineTo(pt[0], pt[1]) : c.moveTo(pt[0], pt[1]))); c.closePath(); c.stroke(); }); c.restore(); }
     HITS.push({ id: p.id, poly: r.top }, { id: p.id, poly: r.lf }, { id: p.id, poly: r.rt });
     MX.A = 1;
   }
 
-  /* ------------------------------------------------------------ cotas del plano */
+  /* ------------------------------------------------------------ drawing dimensions */
   function arrow(a, b, s) { const c = MX.ctx, dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L; c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(a[0] + ux * s - uy * s * 0.35, a[1] + uy * s + ux * s * 0.35); c.lineTo(a[0] + ux * s + uy * s * 0.35, a[1] + uy * s - ux * s * 0.35); c.closePath(); c.fill(); }
-  function dimension(A, B, off, label, a) {                    // A, B: [wx, wy] en el plano de la placa; off: desplazamiento de la linea de cota
+  function dimension(A, B, off, label, a) {                    // A, B: [wx, wy] on the board plane; off: offset of the dimension line
     if (a <= 0.01) return;
     const c = MX.ctx, P = (q, k) => MX.P(q[0] + (k ? off[0] : 0), q[1] + (k ? off[1] : 0), 0), a0 = P(A, 0), b0 = P(B, 0), a1 = P(A, 1), b1 = P(B, 1);
     c.save(); c.globalAlpha = a; c.strokeStyle = T.teal; c.fillStyle = T.teal; c.lineWidth = 1.6;
@@ -103,7 +103,7 @@
     c.fillStyle = T.paper; c.fillRect(mx - tw / 2 - 7, my - 18, tw + 14, 33); c.fillStyle = T.teal; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(label, mx, my + 1); c.restore();
   }
 
-  /* ------------------------------------------------------------ cuadro por cuadro */
+  /* ------------------------------------------------------------ frame by frame */
   function render(st) {
     const c = MX.ctx; HITS = []; VU = st.u; SHX = -34 * st.e * (1 - st.u);
     MX.cam.S = lerp(S_ISO, S_PLAN, st.u);
@@ -118,14 +118,14 @@
       const depth = (p.x + p.w / 2 + o.dx) + (wyOf(p.y, p.d) + p.d / 2 + o.dy) + (o.dz + p.h) * 0.015 + (p.id === 'pcb' ? -1000 : 0);
       return { p, o, depth };
     }).sort((a, b) => a.depth - b.depth);
-    // guias punteadas de la posicion original (solo al explosionar)
+    // dashed guides to the original position (only while exploding)
     if (st.e > 0.02 && st.u < 0.5) {
       c.save(); c.setLineDash([3, 5]); c.strokeStyle = 'rgba(42,41,37,0.4)'; c.lineWidth = 1.2; c.globalAlpha = Math.min(1, st.e * 1.5) * (1 - st.u);
       list.forEach(({ p, o }) => { if (p.id === 'pcb' || o.alpha < 0.5) return; const cx = p.x + p.w / 2, cy = wyOf(p.y, p.d) + p.d / 2, a = MX.P(cx, cy, p.h), b = MX.P(cx + o.dx, cy + o.dy, o.dz + p.h); c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.stroke(); });
       c.restore();
     }
     list.forEach(({ p, o }) => { if (p.id === 'pcb') drawPcb(o.alpha, o.hi); else drawPart(p, o); });
-    // plano: cotas, globos numerados y lista de piezas
+    // drawing: dimensions, numbered balloons and the parts list
     if (st.u > 0.02) drawPlan(st);
     if (st.focus && st.focusA > 0.02) drawInfo(st, list);
     if (st.outro > 0.01) drawOutro(st.outro);
@@ -140,7 +140,7 @@
     dimension([hs.inset, 0], [hs.inset + hs.pitchX, 0], [0, -6], '58', a * p(2));
     dimension([0, wyy(hs.inset)], [0, wyy(hs.inset + hs.pitchY)], [-8, 0], '49', a * p(3));
     dimension([0, 0], [hs.inset, 0], [0, -14], '3.5', a * p(4));
-    // globos numerados (una pieza por numero; los CI comparten el 14)
+    // numbered balloons (one part per number; the ICs share 14)
     const order = ['gpio', 'soc', 'ram', 'wifi', 'dsi', 'csi', 'usbc', 'hdmi0', 'hdmi1', 'audio', 'eth', 'usb3', 'usb2', 'ic1'];
     const c = MX.ctx; c.save(); c.globalAlpha = a * (st.balloon == null ? 1 : st.balloon);
     const bal = (cx, cy, n) => { const q = MX.P(cx, cy, 0); c.beginPath(); c.arc(q[0], q[1], 13, 0, 6.2832); c.fillStyle = T.ink; c.fill(); c.fillStyle = T.paper; c.font = '700 15px ' + MX.MONO; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(String(n), q[0], q[1] + 1); };
@@ -172,7 +172,7 @@
     MX.A = 1; c.restore();
   }
 
-  /* ------------------------------------------------------------ guion del video */
+  /* ------------------------------------------------------------ film script */
   const TOUR = [['soc', 9.9], ['usb3', 12.2], ['eth', 14.5], ['gpio', 16.8]], TOUR_LEN = 2.2;
   const fadeIO = (t, a, b, f = 0.25) => ramp(t, a, a + f) * (1 - ramp(t, b - f, b));
   const dimTimes = [23.9, 24.5, 25.1, 25.7, 26.3];
@@ -197,7 +197,7 @@
     return q;
   }
 
-  /* ------------------------------------------------------------ modo ?explore: se maneja con el mouse o el dedo */
+  /* ------------------------------------------------------------ ?explore mode: driven by mouse or finger */
   function explore() {
     const cv = document.getElementById('c'); cv.width = W; cv.height = H; const ctx = cv.getContext('2d'); MX.ctx = ctx;
     const S = { e: 0, eT: 0, u: 0, uT: 0, sel: null, hov: null, t0: performance.now(), drag: false };

@@ -1,9 +1,9 @@
 /*
- * spec.js - Fig 5: interruptor mecanico Cherry MX2A Red como SPEC declarativo, con un mecanismo de PRESION en vez de engranajes.
+ * spec.js - Fig 5: Cherry MX2A Red mechanical switch as a declarative SPEC, with a PRESS mechanism instead of gears.
  *
- * SPEC       recorrido 4 mm, pre-recorrido (actuacion) 2 mm, fuerzas 30 / 45 / 100 cN, caja 15,63 x 15,63 x 18,5 mm, materiales, corte de placa 14 mm.
- * DERIVED    lo que daria un resorte lineal por los dos primeros puntos: 60 cN al final, no los 100 cN publicados. El spec lo declara en vez de taparlo.
- * ESTIMATED  espesores, carcasas internas, resorte, contactos y pines: el datasheet no trae dibujo mecanico.
+ * SPEC       travel 4 mm, pre-travel (actuation) 2 mm, forces 30 / 45 / 100 cN, housing 15.63 x 15.63 x 18.5 mm, materials, plate cut-out 14 mm.
+ * DERIVED    what a linear spring through the first two points would give: 60 cN at the end, not the published 100 cN. The spec says so.
+ * ESTIMATED  thicknesses, inner housings, spring, contacts and pins: the datasheet has no mechanical drawing.
  */
 window.SPEC = (() => {
   return {

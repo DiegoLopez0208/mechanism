@@ -57,7 +57,7 @@
             else if (sym === 256) { tokens.push({ kind: 'end', sym, bitStart: t0, bitEnd: pos, bits: str(t0, pos), code, outStart: out.length, outEnd: out.length }); blk.tokens++; break; }
             else {
               const li = sym - 257, le = bitsLE(D.LEN_EXTRA[li]), len = D.LEN_BASE[li] + le, dd = decode(dist), di = dd.sym, de = bitsLE(D.DIST_EXTRA[di]), dst = D.DIST_BASE[di] + de, o0 = out.length;
-              if (dst > out.length) { problems.push('distancia mayor que lo ya escrito'); break; }
+              if (dst > out.length) { problems.push('distance larger than what has been written so far'); break; }
               for (let i = 0; i < len; i++) out.push(out[out.length - dst]);
               tokens.push({ kind: 'match', sym, len, dist: dst, bitStart: t0, bitEnd: pos, bits: str(t0, pos), code, lenCode: sym, distCode: di, extra: { len: le, dist: de }, outStart: o0, outEnd: out.length }); blk.tokens++;
             }

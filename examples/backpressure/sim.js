@@ -1,8 +1,8 @@
 /*
- * sim.js - simulacion de eventos discretos del control de flujo del PTY de NovaTerm (docs/PTY-FLOW-CONTROL.md).
- * Escala honesta: 1 caja = 64 KiB (el maximo de un paquete IPC). Entonces:
- *   marca alta 256 KiB = 4 cajas en vuelo, reanudar a 64 KiB = 1 caja, cola 256 chunks x 8 KiB = 32 cajas.
- * Cada caja recibe los tiempos de cada etapa; el dibujo y el audio salen de esos tiempos, asi quedan sincronizados.
+ * sim.js - discrete-event simulation of NovaTerm's PTY flow control (docs/PTY-FLOW-CONTROL.md).
+ * Honest scale: 1 box = 64 KiB (the maximum of an IPC packet). So:
+ *   high-water mark 256 KiB = 4 boxes in flight, resume at 64 KiB = 1 box, queue 256 chunks x 8 KiB = 32 boxes.
+ * Each box gets the time of every stage; the drawing and the audio come from those times, so they stay in sync.
  */
 (function (g) {
   'use strict';
@@ -31,7 +31,7 @@
       if (t >= parserFree && waiting.length) { const p = pk[waiting.shift()]; p.tParseStart = t; p.tParseEnd = t + P.parse; p.tCredit = p.tParseEnd + P.rail; parserFree = p.tParseEnd; pend.credit.push({ t: p.tCredit, id: p.id }); log.parseStart.push(t); }
       while (pend.credit.length && pend.credit[0].t <= t) { const e = pend.credit.shift(); outstanding--; log.credit.push({ t: e.t, out: outstanding }); if (!gateOpen && outstanding <= P.low) { gateOpen = true; log.open.push(t); } }
     }
-    // intervalos de estado para consultar por tiempo
+    // state intervals to query by time
     const iv = (a, b) => a.map((s, i) => [s, b[i] == null ? 1e9 : b[i]]);
     const merge = (a, gap) => { const o = []; for (const r of a) { const l = o[o.length - 1]; if (l && r[0] - l[1] < gap) l[1] = Math.max(l[1], r[1]); else o.push([r[0], r[1]]); } return o; };
     const closed = iv(log.close, log.open), blockedIv = merge(iv(log.block, log.unblock), 1.2);
@@ -43,9 +43,9 @@
       queue: (t) => pk.reduce((n, p) => n + (p.tTank != null && p.tTank <= t && (p.tDispatch == null || p.tDispatch > t) ? 1 : 0), 0),
       outstanding: (t) => pk.reduce((n, p) => n + (p.tDispatch != null && p.tDispatch <= t && (p.tCredit == null || p.tCredit > t) ? 1 : 0), 0),
       parsed: (t) => pk.reduce((n, p) => n + (p.tParseEnd != null && p.tParseEnd <= t ? 1 : 0), 0),
-      // cuantas cajas hay delante de p en la fila de la tolva del parser (esperando) en el tiempo t
+      // how many boxes are ahead of p in the parser hopper's queue (waiting) at time t
       waitSlot: (p, t) => pk.reduce((n, q) => n + (q.tArrive != null && q.tArrive < p.tArrive && (q.tParseStart == null || q.tParseStart > t) ? 1 : 0), 0),
-      // lugar de p dentro del tanque (0 = la mas vieja), suavizado con una media movil para que las cajas bajen sin saltar
+      // p's place in the tank (0 = the oldest), smoothed with a moving average so the boxes drop without jumping
       tankSlot: (p, t) => { let s = 0; for (let k = 0; k < 6; k++) { const tt = t - k * 0.05; s += pk.reduce((n, q) => n + (q.id < p.id && q.tTank != null && q.tTank <= tt && (q.tDispatch == null || q.tDispatch > tt) ? 1 : 0), 0); } return s / 6; },
     };
     return S;

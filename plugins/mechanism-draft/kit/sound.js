@@ -1,11 +1,11 @@
 /*
- * kit/sound.js - diseno de sonido estereo por eventos, sin muestras. Reemplaza los "thock/ping" genericos de kit/audio.js.
- *  - impact: sintesis MODAL por material (vidrio, aluminio, acero, plastico, placa, ceramica, bolsa de bateria): la altura sale del tamano de la pieza
- *    (pieza chica = aguda, pieza grande = grave) y cada material tiene sus parciales y su caida.
- *  - click, whoosh (ruido filtrado con barrido y paneo), servo (motor de enfoque), charge (carga electrica), blip (digital), tone (nota de una escala),
- *    boom. Cada evento lleva pan (-1..1) y se manda a una reverberacion estereo.
- *  - bed: base musical generativa (acordes, arpegio, bajo) con tonalidad y tempo propios de cada figura.
- * Todo es determinista (semilla). Salida: { L, R } Float32Array; kit/core.js la escribe como WAV estereo.
+ * kit/sound.js - event-driven stereo sound design, without samples. Replaces the generic "thock/ping" of kit/audio.js.
+ *  - impact: MODAL synthesis per material (glass, aluminium, steel, plastic, board, ceramic, battery pouch): the pitch comes from the size of the part
+ *    (small part = high, large part = low) and each material has its own partials and decay.
+ *  - click, whoosh (filtered noise with sweep and pan), servo (focus motor), charge (electrical charge), blip (digital), tone (a note of a scale),
+ *    boom. Every event carries pan (-1..1) and is sent to a stereo reverb.
+ *  - bed: a generative musical bed (chords, arpeggio, bass) with each figure's own key and tempo.
+ * Everything is deterministic (seed). Output: { L, R } Float32Array; kit/core.js writes it as a stereo WAV.
  */
 (function (g) {
   'use strict';
@@ -23,7 +23,7 @@
   S.MAT = MAT;
   const midi = (m) => 440 * Math.pow(2, (m - 69) / 12);
   S.SCALES = { major: [0, 2, 4, 5, 7, 9, 11], mixolydian: [0, 2, 4, 5, 7, 9, 10], lydian: [0, 2, 4, 6, 7, 9, 11], minor: [0, 2, 3, 5, 7, 8, 10], dorian: [0, 2, 3, 5, 7, 9, 10], pent: [0, 2, 4, 7, 9] };
-  // nota de una escala por indice (puede ser negativo o mayor que el largo): cuantiza cualquier valor a la tonalidad de la figura
+  // a note of a scale by index (may be negative or beyond the length): quantises any value to the figure's key
   S.note = (root, scale, idx) => { const sc = S.SCALES[scale] || scale, n = sc.length, o = Math.floor(idx / n), i = ((idx % n) + n) % n; return midi(root + sc[i] + 12 * o); };
 
   /* ------------------------------------------------------------ voces (devuelven un Float32Array mono) */
@@ -35,7 +35,7 @@
       const f = f0 * m.r[k] * detune[k]; if (f > sr * 0.45) continue; const tau = m.tau * (o.ring || 1) / (1 + k * 0.55), a = m.a[k] * vel * 0.5, ph = R() * TAU;
       for (let i = 0; i < n; i++) { const t = i / sr; out[i] += Math.sin(TAU * f * t + ph) * a * Math.exp(-t / tau) * Math.min(1, t / 0.0006); }
     }
-    // transitorio de contacto: ruido con filtro pasa-banda segun dureza
+    // contact transient: noise through a band-pass filter set by hardness
     const cn = Math.floor(0.012 * sr), hard = o.hard == null ? 0.5 : o.hard; let lp = 0, lp2 = 0;
     for (let i = 0; i < cn && i < n; i++) { const x = (R() * 2 - 1) * Math.exp(-i / (cn * 0.25)); lp += (x - lp) * (0.15 + hard * 0.6); lp2 += (lp - lp2) * 0.5; out[i] += (lp - lp2) * m.click * vel * 1.4 + x * m.noise * 0.2 * vel; }
     if (o.thump) { const f = o.thump, tn = Math.min(n, Math.floor(0.2 * sr)); for (let i = 0; i < tn; i++) { const t = i / sr; out[i] += Math.sin(TAU * f * (1 - 0.3 * t * 5) * t) * Math.exp(-t / 0.06) * 0.5 * vel; } }
@@ -46,40 +46,43 @@
     [0, 0.018].forEach((d, j) => { const i0 = Math.floor(d * sr); for (let i = 0; i + i0 < n; i++) { const t = i / sr, x = (R() * 2 - 1) * Math.exp(-t / 0.0014); lp += (x - lp) * 0.4; out[i + i0] += (x - lp) * (j ? 0.5 : 1) * q + Math.sin(TAU * f * (j ? 0.82 : 1) * t) * Math.exp(-t / 0.006) * 0.4 * (j ? 0.6 : 1); } });
     return out;
   }
-  function noiseSweep(sr, o, R) {                       // whoosh: ruido por un filtro resonante cuya frecuencia barre de f0 a f1
+  function noiseSweep(sr, o, R) {                       // whoosh: noise through a resonant filter whose frequency sweeps from f0 to f1
     const dur = o.d || 0.8, n = Math.floor(dur * sr), out = new Float32Array(n), f0 = o.f0 || 300, f1 = o.f1 || 2400, Q = o.q || 1.4; let low = 0, band = 0;
-    for (let i = 0; i < n; i++) { const u = i / n, e = Math.sin(Math.PI * Math.pow(u, o.skew || 1)), f = f0 * Math.pow(f1 / f0, u), c = 2 * Math.sin(Math.PI * Math.min(0.45, f / sr)), x = R() * 2 - 1; low += c * band; const high = x - low - band / Q; band += c * high; out[i] = band * e * (o.gain || 0.9) * 0.5; }
+    // a Chamberlin state-variable filter is stable only while c^2 + 2c/Q < 4: past it (a sweep above about sr/4) it diverges to NaN
+    // and takes the whole mix with it, so c stops just short of that limit
+    const cMax = 0.95 * (Math.sqrt(1 / (Q * Q) + 4) - 1 / Q);
+    for (let i = 0; i < n; i++) { const u = i / n, e = Math.sin(Math.PI * Math.pow(u, o.skew || 1)), f = f0 * Math.pow(f1 / f0, u), c = Math.min(cMax, 2 * Math.sin(Math.PI * Math.min(0.45, f / sr))), x = R() * 2 - 1; low += c * band; const high = x - low - band / Q; band += c * high; out[i] = band * e * (o.gain || 0.9) * 0.5; }
     return out;
   }
-  function servo(sr, o, R) {                            // motor de enfoque/OIS: tren de pasos con frecuencia que sube y baja
+  function servo(sr, o, R) {                            // focus / OIS motor: a train of steps whose frequency rises and falls
     const dur = o.d || 0.9, n = Math.floor(dur * sr), out = new Float32Array(n); let ph = 0, lp = 0;
     for (let i = 0; i < n; i++) { const u = i / n, f = (o.f0 || 90) * (1 + (o.span || 1.4) * Math.sin(Math.PI * u)), e = Math.pow(Math.sin(Math.PI * u), 0.7); ph += TAU * f / sr; const sq = Math.sign(Math.sin(ph)) * 0.5 + Math.sin(ph * 2.01) * 0.3; lp += (sq - lp) * 0.12; out[i] = (lp * 0.5 + (R() * 2 - 1) * 0.05) * e * 0.55 * (o.gain || 1); }
     for (let k = 0; k < (o.ticks || 6); k++) { const i0 = Math.floor((k + 0.5) / (o.ticks || 6) * n); for (let i = 0; i < 400 && i0 + i < n; i++) out[i0 + i] += (R() * 2 - 1) * Math.exp(-i / 60) * 0.25; }
     return out;
   }
-  function charge(sr, o) {                              // carga electrica: silbido que sube con armonicos
+  function charge(sr, o) {                              // electrical charge: a whine that rises with harmonics
     const dur = o.d || 1.2, n = Math.floor(dur * sr), out = new Float32Array(n), f0 = o.f0 || 220, f1 = o.f1 || 1760; let ph = 0;
     for (let i = 0; i < n; i++) { const u = i / n, f = f0 * Math.pow(f1 / f0, u * u), e = Math.pow(Math.sin(Math.PI * Math.min(1, u * 1.05) * 0.5 + 0.0001), 1.4) * Math.min(1, (1 - u) * 14 + 0.25); ph += TAU * f / sr; out[i] = (Math.sin(ph) + 0.35 * Math.sin(ph * 2) + 0.15 * Math.sin(ph * 3.01)) * e * 0.24 * (o.gain || 1); }
     return out;
   }
-  function blip(sr, o) {                                // microtono digital con FM y envolvente cortisima
+  function blip(sr, o) {                                // digital micro-tone with FM and a very short envelope
     const dur = o.d || 0.09, n = Math.floor(dur * sr), out = new Float32Array(n), f = o.f || 1200, ratio = o.ratio || 2;
     for (let i = 0; i < n; i++) { const t = i / sr, e = Math.exp(-t / (dur * 0.35)) * Math.min(1, t / 0.0008); out[i] = Math.sin(TAU * f * t + Math.sin(TAU * f * ratio * t) * (o.fm == null ? 0.9 : o.fm) * e) * e * 0.3 * (o.gain || 1); }
     return out;
   }
-  function tone(sr, o) {                                // nota suave de campana / marimba / pluck segun timbre
+  function tone(sr, o) {                                // soft bell / marimba / pluck note, by timbre
     const f = o.f || 440, dur = o.d || 1.2, n = Math.floor(dur * sr), out = new Float32Array(n), kind = o.timbre || 'bell';
     const parts = kind === 'bell' ? [[1, 1, 0.9], [2.76, 0.5, 0.5], [5.4, 0.3, 0.3], [8.93, 0.15, 0.2]] : kind === 'marimba' ? [[1, 1, 0.45], [4, 0.35, 0.12], [10, 0.12, 0.05]] : [[1, 1, 0.6], [2, 0.5, 0.35], [3, 0.25, 0.2], [4, 0.12, 0.15]];
     parts.forEach(([r, a, tau]) => { const ff = f * r; if (ff > sr * 0.45) return; for (let i = 0; i < n; i++) { const t = i / sr; out[i] += Math.sin(TAU * ff * t) * a * Math.exp(-t / (tau * (o.ring || 1))) * Math.min(1, t / 0.002) * 0.22; } });
     return out;
   }
-  function boom(sr, o, R) {                             // golpe grave con cola: para cortes de camara y remates
+  function boom(sr, o, R) {                             // low hit with a tail: for camera cuts and endings
     const dur = o.d || 1.1, n = Math.floor(dur * sr), out = new Float32Array(n); let lp = 0;
     for (let i = 0; i < n; i++) { const t = i / sr, f = 52 * (1 + 1.6 * Math.exp(-t / 0.05)); out[i] = Math.sin(TAU * f * t) * Math.exp(-t / 0.32) * 0.8 * (o.gain || 1); lp += ((R() * 2 - 1) - lp) * 0.06; out[i] += lp * Math.exp(-t / 0.15) * 0.4; }
     return out;
   }
-  // ---- voces mecanicas (cada una mezcla un cuerpo grave, un golpe metalico y un poco de ruido de contacto, con variacion por semilla)
-  function clack(sr, o, R) {                      // tecla de maquina de escribir: golpe de la tecla + golpe de la barra + tintineo del resorte
+  // ---- mechanical voices (each mixes a low body, a metallic hit and a little contact noise, varied by the seed)
+  function clack(sr, o, R) {                      // typewriter key: the key's hit + the type bar's hit + the spring's ring
     const n = Math.floor(0.4 * sr), out = new Float32Array(n), v = o.vel == null ? 1 : o.vel, d = Math.floor(0.011 * sr); let lp = 0;
     for (let i = 0; i < n; i++) { const t = i / sr; out[i] += Math.sin(TAU * 150 * (1 - 0.45 * Math.min(1, t / 0.05)) * t) * Math.exp(-t / 0.03) * 0.75 * v; }
     [2600, 4100, 6300].forEach((f, k) => { const ff = f * (1 + (R() - 0.5) * 0.06); for (let i = d; i < n; i++) { const t = (i - d) / sr; out[i] += Math.sin(TAU * ff * t) * Math.exp(-t / (0.016 / (1 + k * 0.6))) * 0.34 * v / (1 + k * 0.7); } });
@@ -87,27 +90,27 @@
     for (let i = Math.floor(0.05 * sr); i < n; i++) { const t = (i - 0.05 * sr) / sr; out[i] += Math.sin(TAU * 1900 * t) * Math.exp(-t / 0.05) * 0.05 * v; }
     return out;
   }
-  function detent(sr, o, R) {                     // trinquete: un clic seco y dos rebotes del resorte
+  function detent(sr, o, R) {                     // ratchet: a dry click and two spring bounces
     const n = Math.floor(0.09 * sr), out = new Float32Array(n), f = (o.f || 1100) * (1 + (R() - 0.5) * 0.08), v = o.vel == null ? 1 : o.vel; let lp = 0;
     [[0, 1], [0.008, 0.45], [0.015, 0.22]].forEach(([dl, a]) => { const d = Math.floor(dl * sr); for (let i = 0; i + d < n; i++) { const t = i / sr, x = (R() * 2 - 1) * Math.exp(-t / 0.0016); lp += (x - lp) * 0.35; out[i + d] += ((x - lp) * 0.9 + Math.sin(TAU * f * t) * Math.exp(-t / 0.007) * 0.6) * a * v * 0.6; } });
     return out;
   }
-  function thock(sr, o, R) {                      // fondo de un interruptor de teclado: golpe grave y sordo + un tintineo corto del resorte
+  function thock(sr, o, R) {                      // keyboard switch bottoming out: a low, dull hit + a short spring ring
     const n = Math.floor(0.3 * sr), out = new Float32Array(n), v = o.vel == null ? 1 : o.vel; let lp = 0;
     for (let i = 0; i < n; i++) { const t = i / sr; out[i] += Math.sin(TAU * (230 - 70 * Math.min(1, t / 0.06)) * t) * Math.exp(-t / 0.05) * 0.9 * v + Math.sin(TAU * 3100 * t) * Math.exp(-t / 0.03) * 0.07 * v; }
     for (let i = 0; i < Math.floor(0.015 * sr); i++) { const x = (R() * 2 - 1) * Math.exp(-i / (0.003 * sr)); lp += (x - lp) * 0.18; out[i] += lp * 0.8 * v; }
     return out;
   }
-  function tick(sr, o, R) {                       // relé / contacto electrico: un chasquido finito
+  function tick(sr, o, R) {                       // relay / electrical contact: a thin snap
     const n = Math.floor(0.05 * sr), out = new Float32Array(n), f = (o.f || 2400) * (1 + (R() - 0.5) * 0.06), v = o.vel == null ? 1 : o.vel; let lp = 0;
     for (let i = 0; i < n; i++) { const t = i / sr, x = (R() * 2 - 1) * Math.exp(-t / 0.0012); lp += (x - lp) * 0.5; out[i] = ((x - lp) * 0.8 + Math.sin(TAU * f * t) * Math.exp(-t / 0.006) * 0.5) * v * 0.5; }
     return out;
   }
   const VOICES = { impact: modal, click, whoosh: noiseSweep, servo, charge, blip, tone, boom, clack, detent, thock, tick };
 
-  /* ------------------------------------------------------------ grabaciones reales (kit/samples.js)
-   * Si estan cargadas, las voces mecanicas salen de grabaciones reales (teclas, impactos de metal / vidrio / plancha / goma, clics) en vez de sintesis,
-   * se apagan la musica generativa, las campanas y los pitidos, y el reverb baja: las grabaciones ya traen su sala. */
+  /* ------------------------------------------------------------ real recordings (kit/samples.js)
+   * When they are loaded, the mechanical voices come from real recordings (keys, metal / glass / sheet / rubber impacts, clicks) instead of synthesis,
+   * the generative music, bells and beeps are switched off, and the reverb goes down: the recordings bring their own room. */
   const CACHE = {};
   const getSample = (name) => {
     const m = MX.SAMPLES; if (!m || !m.d[name]) return null; if (CACHE[name]) return CACHE[name];
@@ -177,7 +180,7 @@
     applyReal();
     const sr = cfg.sr || 44100, N = Math.floor(cfg.duration * sr), L = new Float32Array(N), Rr = new Float32Array(N), sL = new Float32Array(N), sR = new Float32Array(N), R = MX.rng(cfg.seed || 17);
     const b = bed(sr, N, cfg.bed, MX.rng((cfg.seed || 17) + 5)); for (let i = 0; i < N; i++) { L[i] += b[0][i]; Rr[i] += b[1][i]; sL[i] += b[0][i] * 0.5; sR[i] += b[1][i] * 0.5; }
-    if (cfg.tone) { const lvl = cfg.tone; let a = 0, b = 0; for (let i = 0; i < N; i++) { const x = R() * 2 - 1; a += (x - a) * 0.02; b += (a - b) * 0.05; L[i] += b * lvl * 8; Rr[i] += b * lvl * 8; } }       // ruido de sala: casi inaudible, pero evita el silencio digital
+    if (cfg.tone) { const lvl = cfg.tone; let a = 0, b = 0; for (let i = 0; i < N; i++) { const x = R() * 2 - 1; a += (x - a) * 0.02; b += (a - b) * 0.05; L[i] += b * lvl * 8; Rr[i] += b * lvl * 8; } }       // room noise: nearly inaudible, but it avoids digital silence
     (cfg.events || []).forEach((e) => {
       const f = VOICES[e.v]; if (!f) return; const seg = f(sr, e, R), pan = Math.max(-1, Math.min(1, e.pan || 0)), gl = Math.cos((pan + 1) * Math.PI / 4), gr = Math.sin((pan + 1) * Math.PI / 4), gain = e.gain == null ? 1 : e.gain, send = e.send == null ? (S.REAL && S.REAL() ? 0.16 : 0.5) : e.send, i0 = Math.floor(e.t * sr);
       for (let i = 0; i < seg.length && i0 + i < N; i++) { if (i0 + i < 0) continue; const v = seg[i] * gain; L[i0 + i] += v * gl; Rr[i0 + i] += v * gr; sL[i0 + i] += v * gl * send; sR[i0 + i] += v * gr * send; }

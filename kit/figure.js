@@ -1,15 +1,15 @@
 /*
- * kit/figure.js - motor de figuras sobre kit/gl.js (three.js). Una figura = piezas con fuente y confianza + guion de camara + paneles 2D.
- * El motor se ocupa de lo repetido: escenario, registro de piezas (armado, explosionado, atenuado por foco, contorno de resalte y punteado de
- * lo estimado), camara por claves, cotas y etiquetas SPEC/DERIVED/ESTIMATED, ficha de pieza, video guionado y modo ?explore
- * (orbitar, zoom, explosionar, vistas, capas, medir entre dos puntos, tocar piezas).
+ * kit/figure.js - figure engine on top of kit/gl.js (three.js). A figure = parts with source and confidence + a camera script + 2D panels.
+ * The engine handles what repeats: stage, part registry (assembled, exploded, dimmed by focus, highlight outline and dashed outline for
+ * what is estimated), keyed camera, dimensions and SPEC/DERIVED/ESTIMATED tags, part card, scripted film and the ?explore mode
+ * (orbit, zoom, explode, views, layers, measure between two points, touch parts).
  *
  *   const F = MX.figure({ w, h, axes: 'three' | 'plan', stage: {...}, card: (s) => ({...}) });
- *   F.add({ id, group, base, explode, from, conf, est, info: { title, lines, conf } });   // base/explode/from: THREE.Vector3 en ejes de three
- *   F.overlay((ctx, s) => {...});                       // dibujo 2D encima (paneles, cotas)
+ *   F.add({ id, group, base, explode, from, conf, est, info: { title, lines, conf } });   // base/explode/from: THREE.Vector3 in three's axes
+ *   F.overlay((ctx, s) => {...});                       // 2D drawing on top (panels, dimensions)
  *   F.run({ duration, script: (t) => state, cues: () => [...], keys: [[t, view], ...] });
  *   F.explore({ views: [[name, view]], toggles: [{ label, get, set }], ... });
- * Ejes: 'plan' = x, y (arriba en planta), z (altura) como un plano tecnico; 'three' = x, y arriba, z hacia el espectador.
+ * Axes: 'plan' = x, y (up in plan view), z (height) like a technical drawing; 'three' = x, y up, z towards the viewer.
  */
 (function (g) {
   'use strict';
@@ -26,18 +26,18 @@
     const toView = (v) => (axes === 'three' ? Object.assign({}, v, { ty: -v.tz, tz: v.ty }) : v);
     F.setView = (v) => st.setView(toView(v));
 
-    /* ---------------------------------------------------------- piezas */
-    // p: { id, group, base, explode, from, est, conf, info, noShadow }  (vectores en ejes de three; base es la posicion local del grupo)
+    /* ---------------------------------------------------------- parts */
+    // p: { id, group, base, explode, from, est, conf, info, noShadow }  (vectors in three's axes; base is the group's local position)
     F.add = (p) => {
       p.base = p.base || new TH.Vector3(); p.explode = p.explode || new TH.Vector3(); p.from = p.from || new TH.Vector3(0, 0, 0); p.group.position.copy(p.base);
       p.group.userData.pid = p.id; F.parts.push(p); F.byId[p.id] = p; return p;
     };
-    F.finish = () => {                                       // despues de armar la escena: sombras, picking y contornos
+    F.finish = () => {                                       // after the scene is built: shadows, picking and outlines
       F.hit = [];
       F.parts.forEach((p) => { G.shadows(p.group, !p.noShadow, true); p.group.traverse((m) => { if (m.isMesh) { m.userData.pid = p.id; F.hit.push(m); } }); });
       st.scene.updateMatrixWorld(true);
       F.parts.forEach((p) => {
-        const b = new TH.Box3(), inv = p.group.matrixWorld.clone().invert(), s = new TH.Vector3(), c = new TH.Vector3();   // caja en ejes de la pieza (si el padre esta girado, la del mundo no sirve)
+        const b = new TH.Box3(), inv = p.group.matrixWorld.clone().invert(), s = new TH.Vector3(), c = new TH.Vector3();   // box in the part's axes (if the parent is rotated, the world one is no use)
         p.group.traverse((m) => { if (m.isMesh && m.geometry) { if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); b.union(m.geometry.boundingBox.clone().applyMatrix4(inv.clone().multiply(m.matrixWorld))); } });
         b.getSize(s); b.getCenter(c);
         p.local = c.clone(); p.size = s.clone();
@@ -46,7 +46,7 @@
         if (p.est) { p.dash = new TH.LineSegments(geo.clone(), new TH.LineDashedMaterial({ color: '#e8590c', dashSize: 2.2, gapSize: 1.6 })); p.dash.computeLineDistances(); p.dash.position.copy(p.local); p.dash.visible = false; p.group.add(p.dash); }
       });
     };
-    // centro de una pieza en ejes de la figura, con el explosionado e (para apuntar la camara)
+    // centre of a part in figure axes, with explosion e (to aim the camera)
     F.center = (id, e) => {
       const p = F.byId[id]; if (!p) throw new Error('pieza desconocida: ' + id);
       const v = p.local.clone().add(p.base).add(p.explode.clone().multiplyScalar(e == null ? 1 : e));
@@ -57,7 +57,7 @@
     const fadeKey = {};
     function setFade(p, f) {
       const key = f < 0.995; if (fadeKey[p.id] === key && !key) return; const ms = [];
-      p.group.traverse((m) => { if ((m.isMesh || m.isLine) && m.material) { if (m.userData.cs == null) m.userData.cs = m.castShadow; m.castShadow = f > 0.5 ? m.userData.cs : false; (Array.isArray(m.material) ? m.material : [m.material]).forEach((q) => ms.push(q)); } });   // una pieza atenuada tampoco proyecta sombra
+      p.group.traverse((m) => { if ((m.isMesh || m.isLine) && m.material) { if (m.userData.cs == null) m.userData.cs = m.castShadow; m.castShadow = f > 0.5 ? m.userData.cs : false; (Array.isArray(m.material) ? m.material : [m.material]).forEach((q) => ms.push(q)); } });   // a dimmed part casts no shadow either
       ms.forEach((q) => { if (q.userData.bt == null) { q.userData.bt = q.transparent; q.userData.bo = q.opacity; q.userData.bw = q.depthWrite; } const on = key || q.userData.bt; if (q.transparent !== on) { q.transparent = on; q.needsUpdate = true; } q.opacity = q.userData.bo * f; q.depthWrite = key ? false : q.userData.bw; });
       fadeKey[p.id] = key;
     }
@@ -93,7 +93,7 @@
         const ek = s.explodeK ? s.explodeK(p.id) : e, bulge = 4 * Math.max(0, a.k) * (1 - Math.min(1, a.k));
         p.group.position.copy(p.base).addScaledVector(p.explode, ek).addScaledVector(p.from, 1 - a.k); if (p.arc) p.group.position.addScaledVector(p.arc, bulge);
         const sp = p.spin ? 1 - Math.min(1, a.k) : 0; p.group.rotation.set((p.spin ? p.spin.x * sp : 0) + (p.tilt ? p.tilt.x * ek : 0), (p.spin ? p.spin.y * sp : 0) + (p.tilt ? p.tilt.y * ek : 0), (p.spin ? p.spin.z * sp : 0) + (p.tilt ? p.tilt.z * ek : 0));
-        if (p.pose) p.pose(s, p);                                  // pieza en movimiento (cinematica): ajusta posicion y giro despues del explosionado
+        if (p.pose) p.pose(s, p);                                  // a moving part (kinematics): sets position and rotation after the explosion
         const inSet = !!(s.focusSet && s.focusSet.includes(p.id)), isF = s.focus === p.id || inSet, anyF = !!(s.focus || (s.focusSet && s.focusSet.length));
         let f = a.alpha; if (anyF && !isF && s.focusA != null) f *= lerp(1, s.dimTo == null ? 0.14 : s.dimTo, s.dimA == null ? s.focusA : s.dimA);      // dimA: the rest may fade on its own clock (before the card)
         setFade(p, f); if (f < 0.95) st.aoSkip.push(p.group); const on = !!(isF && (s.focusA || 0) > 0.2); p.hi.visible = on && !p.est; if (p.dash) p.dash.visible = on;
@@ -103,17 +103,17 @@
       F.setView(s.view); if (render) st.render();
     };
 
-    /* ---------------------------------------------------------- camara por claves */
-    // claves: [t, vista, ease?]; ease = funcion o [x1,y1,x2,y2] (bezier); la curva de la clave que TERMINA el tramo manda. dof/focus tambien se interpolan.
+    /* ---------------------------------------------------------- keyed camera */
+    // keys: [t, view, ease?]; ease = function or [x1,y1,x2,y2] (bezier); the curve of the key that ENDS the segment rules. dof/focus are interpolated too.
     const EASE = (e) => (typeof e === 'function' ? e : Array.isArray(e) ? E.bezier(e[0], e[1], e[2], e[3]) : E.smooth);
     F.camera = (keys) => (t) => {
       let i = 0; while (i < keys.length - 2 && t >= keys[i + 1][0]) i++;
       const [t0, a] = keys[i], [t1, b, eb] = keys[i + 1], u = EASE(eb)(clamp((t - t0) / (t1 - t0), 0, 1)), L = (k, d) => lerp(a[k] == null ? d : a[k], b[k] == null ? d : b[k], u);
       return { yaw: L('yaw', 0), pitch: L('pitch', 0), zoom: Math.exp(lerp(Math.log(a.zoom), Math.log(b.zoom), u)), tx: L('tx', 0), ty: L('ty', 0), tz: L('tz', 0), cx: L('cx', W / 2), cy: L('cy', H / 2), dof: L('dof', 0), focus: b.focus == null && a.focus == null ? undefined : L('focus', 0) };
     };
-    // deriva de camara de mano: movimientos de menos de un grado que le dan vida a las tomas fijas
+    // handheld camera drift: sub-degree moves that bring still shots to life
     F.drift = (v, t, k = 1) => Object.assign({}, v, { yaw: v.yaw + k * (0.45 * Math.sin(t * 0.83) + 0.2 * Math.sin(t * 2.1 + 1)), pitch: v.pitch + k * 0.3 * Math.sin(t * 0.61 + 2), tx: v.tx + k * 0.25 * Math.sin(t * 0.47), ty: v.ty + k * 0.2 * Math.sin(t * 0.71 + 1) });
-    // vista centrada en una pieza (o en varias: se promedia)
+    // view centred on a part (or several: they are averaged)
     F.shot = (ids, o) => {
       ids = [].concat(ids); const cs = ids.map((id) => F.center(id, o.e == null ? 1 : o.e)), c = [0, 1, 2].map((k) => cs.reduce((s, q) => s + q[k], 0) / cs.length);
       return { yaw: o.yaw, pitch: o.pitch, zoom: o.zoom, tx: c[0] + (o.dx || 0), ty: c[1] + (o.dy || 0), tz: c[2] + (o.dz || 0), cx: o.cx == null ? W / 2 : o.cx, cy: o.cy == null ? 600 : o.cy };
@@ -122,7 +122,7 @@
     /* ---------------------------------------------------------- dibujo 2D */
     const H2 = (F.hud = {});
     H2.arrow = (a, b, s) => { const c = MX.ctx, dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L; c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(a[0] + ux * s - uy * s * 0.35, a[1] + uy * s + ux * s * 0.35); c.lineTo(a[0] + ux * s + uy * s * 0.35, a[1] + uy * s - ux * s * 0.35); c.closePath(); c.fill(); };
-    // cota entre dos puntos de la figura, con la linea desplazada off (en pixeles)
+    // dimension between two points of the figure, with the line offset by off (pixels)
     H2.dim = (A, B, off, label, a, col) => {
       if (a <= 0.01) return; col = col || T.teal; const c = MX.ctx, pa = F.P(A[0], A[1], A[2]), pb = F.P(B[0], B[1], B[2]), a1 = [pa[0] + off[0], pa[1] + off[1]], b1 = [pb[0] + off[0], pb[1] + off[1]], L = Math.hypot(off[0], off[1]) || 1;
       c.save(); c.globalAlpha = a; c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 1.1;
@@ -130,26 +130,26 @@
       c.beginPath(); c.moveTo(a1[0], a1[1]); c.lineTo(b1[0], b1[1]); c.stroke(); H2.arrow(a1, b1, 11); H2.arrow(b1, a1, 11);
       const mx = (a1[0] + b1[0]) / 2, my = (a1[1] + b1[1]) / 2; c.font = '500 22px ' + MX.MONO; const tw = c.measureText(label).width; c.fillStyle = T.paper; c.fillRect(mx - tw / 2 - 7, my - 17, tw + 14, 31); c.fillStyle = col; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(label, mx, my + 1); c.restore();
     };
-    H2.tag = (c, x, y, conf, sizeLabel) => {                                       // pastilla discreta: fondo tenido, borde fino y texto del color de la categoria
+    H2.tag = (c, x, y, conf, sizeLabel) => {                                       // discreet pill: tinted fill, thin border and text in the category colour
       c.save(); c.font = '600 12px ' + MX.SANS; if ('letterSpacing' in c) c.letterSpacing = '1.6px'; const s = (CONF[conf] || String(conf).toUpperCase()) + (sizeLabel ? ' / ' + sizeLabel : ''), col = CCOL[conf] || T.ink, w = c.measureText(s).width + 20, r = 11;
       c.beginPath(); c.moveTo(x + r, y - 16); c.lineTo(x + w - r, y - 16); c.arc(x + w - r, y - 16 + r, r, -Math.PI / 2, Math.PI / 2); c.lineTo(x + r, y + 6); c.arc(x + r, y - 16 + r, r, Math.PI / 2, 1.5 * Math.PI); c.closePath(); c.fillStyle = MX.rgba(col, 0.13); c.fill(); c.strokeStyle = MX.rgba(col, 0.55); c.lineWidth = 1; c.stroke();
       c.fillStyle = col; c.textAlign = 'left'; c.textBaseline = 'alphabetic'; c.fillText(s, x + 10, y - 0.5); c.restore(); return w;
     };
-    // panel de papel a pantalla casi completa que entra y sale con alpha a; devuelve false si no se ve (llamar H2.endPanel() al terminar)
+    // near-full-screen paper panel that fades in and out with alpha a; returns false when invisible (call H2.endPanel() when done)
     H2.panel = (a, fig, title, sub) => {
       if (a <= 0.01) return false; const c = MX.ctx; c.save(); c.globalAlpha = a; c.fillStyle = T.paper; c.fillRect(34, 216, W - 68, H - 250); MX.A = a;
       MX.text(String(fig).toUpperCase(), 86, 292, { size: 14, color: T.teal, spacing: 3, w: 600 }); MX.text(title, 86, 366, { size: title.length > 30 ? 46 : 54, font: MX.SERIF, w: 500 }); if (sub) { c.font = '20px ' + MX.SANS; const sw = c.measureText(String(sub)).width; MX.text(sub, 86, 408, { size: sw > W - 172 ? Math.max(15, 20 * (W - 172) / sw) : 20, color: T.mute, font: MX.SANS }); } return true;      // a long subtitle shrinks to the panel instead of running off the frame
     };
     H2.endPanel = () => { MX.A = 1; MX.ctx.restore(); };
-    // ficha de pieza: titulo + lineas + etiquetas de confianza; la linea guia sale del centro de la pieza
+    // part card: title + lines + confidence tags; the leader line starts at the part's centre
     H2.info = (s) => {
       const p = F.byId[s.focus]; if (!p || !p.info || (s.focusA || 0) < 0.02) return; const c = MX.ctx, i = p.info, at0 = s.infoAt || [64, H - 340], lines = [i.title].concat(i.lines || []), at = [at0[0], Math.min(at0[1], H - 165 - lines.length * 30)];      // a card with many lines moves up so its source line ends above the footer
       MX.callout(F.anchor(p.id), at, lines, { alpha: s.focusA, size: 26, color: T.ink });
       c.save(); c.globalAlpha = s.focusA; let x = at[0] + 10; const y = at[1] + lines.length * 30 + 14; [].concat(i.conf || []).forEach((k, j) => { x += H2.tag(c, x, y, k, j === 0 && i.sizeEvidence ? i.sizeEvidence.label : null) + 8; }); c.restore();
-      if (i.src) MX.text(i.src, at[0] + 10, y + 46, { size: 14, font: MX.MONO, color: T.mute, alpha: s.focusA, spacing: 0.6 });      // de donde sale lo que dice la ficha
+      if (i.src) MX.text(i.src, at[0] + 10, y + 46, { size: 14, font: MX.MONO, color: T.mute, alpha: s.focusA, spacing: 0.6 });      // where what the card says comes from
     };
 
-    /* ---------------------------------------------------------- cuadro */
+    /* ---------------------------------------------------------- frame */
     const BARE = typeof location !== 'undefined' && new URLSearchParams(location.search).has('bare');
     F.overlay = (fn) => { F.overlays.push(fn); };
     F.frame = (ctx, s) => {
@@ -166,7 +166,7 @@
     };
 
     /* ---------------------------------------------------------- modo explorar */
-    // o: { views: [[nombre, vista]], home, start, assemble(t), extra(S, t) -> campos del estado, toggles: [{label, get, set}], measure, infoAt, reset }
+    // o: { views: [[name, view]], home, start, assemble(t), extra(S, t) -> state fields, toggles: [{label, get, set}], measure, infoAt, reset }
     F.explore = (o) => {
       const cv = document.getElementById('c'); cv.width = W; cv.height = H; const ctx = cv.getContext('2d'); MX.ctx = ctx;
       const S = { e: 0, eT: 0, view: Object.assign({}, o.home || o.views[0][1]), goal: o.start ? Object.assign({}, o.start) : null, sel: null, hov: null, drag: null, measure: false, pts: [], t0: performance.now() };

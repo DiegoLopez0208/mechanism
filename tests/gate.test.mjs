@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 function load(extra) {
   const ctx = vm.createContext({ console, TextEncoder, TextDecoder }); ctx.window = ctx;
-  for (const f of ['kit/kin.js', 'kit/enigma.js', 'kit/cube.js', 'kit/rar5.js', 'kit/deflate.js', 'kit/react-reconcile.js', 'kit/spec-core.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
+  for (const f of ['kit/kin.js', 'kit/enigma.js', 'kit/cube.js', 'kit/rar5.js', 'kit/deflate.js', 'kit/react-reconcile.js', 'kit/spec-core.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: path.join(root, f) });
   (extra || []).forEach((f) => vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f }));
   return ctx;
 }
@@ -416,4 +416,21 @@ test('a dimension read off a picture is MEASURED with its method and uncertainty
   const r = GX.spec.validate(s); assert.equal(r.errors.length, 0, r.errors.join('; ')); assert.equal(r.verdict.state, 'CONSISTENT'); assert.equal(r.verdict.dimensionsBy.measured, 1);
   const dc = GX.geom2d.viewSet(s, GX.spec).parts.plate.dimCount; assert.equal(dc.measured, 1); assert.equal(dc.published, 1); assert.equal(dc.compared, 1, 'a reading off a picture is not "compared with a source"');
   s.research.claims[1].uncertainty = -1; assert.ok(GX.spec.validate(s).errors.some((e) => /uncertainty must be a number/.test(e)));
+});
+
+// A spec is JavaScript: under check-spec.mjs it must not write, spawn or read outside its folder, even through a host object.
+test('check-spec contains a spec that tries to leave node:vm', { skip: !process.allowedNodeEnvironmentFlags.has('--permission') && 'no permission model in this Node' }, async () => {
+  const { spawnSync } = await import('node:child_process'), os = await import('node:os');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mx-evil-')), marker = path.join(dir, 'escaped.txt');
+  try {
+    fs.writeFileSync(path.join(dir, 'spec.js'), `const P = console.log.constructor.constructor('return process')(), seen = [];
+      try { P.getBuiltinModule('fs').writeFileSync(${JSON.stringify(marker)}, 'x'); seen.push('WROTE'); } catch (e) { seen.push(e.code); }
+      try { P.getBuiltinModule('child_process').execFileSync(P.execPath, ['-v']); seen.push('SPAWNED'); } catch (e) { seen.push(e.code); }
+      try { P.getBuiltinModule('fs').readFileSync(${JSON.stringify(path.join(os.homedir(), '.mx-never-here'))}); seen.push('READ'); } catch (e) { seen.push(e.code); }
+      console.log('ESCAPE ' + seen.join(' ')); window.SPEC = { id: 'evil', title: 'evil' };`);
+    const r = spawnSync(process.execPath, [path.join(root, 'scripts/check-spec.mjs'), path.join(dir, 'spec.js')], { encoding: 'utf8' });
+    const line = (/^ESCAPE .*$/m.exec(r.stdout) || [''])[0];
+    assert.equal(line, 'ESCAPE ERR_ACCESS_DENIED ERR_ACCESS_DENIED ERR_ACCESS_DENIED', r.stdout + r.stderr);
+    assert.ok(!fs.existsSync(marker));
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
