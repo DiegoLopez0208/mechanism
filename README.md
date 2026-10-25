@@ -2,10 +2,9 @@
 
 <h3 align="center">Every number cites its source, or it does not render.</h3>
 
-<p align="center"><b>Models and drawings that say where every number comes from.</b><br>
-A skill for coding agents: it researches a real object, writes a spec where every number names its source,<br>
-runs a gate that refuses what does not add up and says plainly what was checked and what was not,<br>
-and outputs a film, an interactive viewer, a 3D model or a dimensioned SVG drawing.</p>
+<p align="center">A skill for coding agents. Ask for an exploded view or a drawing of something real<br>
+and it researches the object, writes a spec where every number names its source,<br>
+runs a gate that refuses what does not add up, and outputs a film, a viewer, a 3D model or a dimensioned SVG.</p>
 
 <p align="center">
   <a href="https://diegolopez0208.github.io/mechanism/"><b>Live page</b></a> &middot;
@@ -30,6 +29,13 @@ and outputs a film, an interactive viewer, a 3D model or a dimensioned SVG drawi
   <img src="docs/media/k20a.gif" width="260" alt="Honda K20A, firing order 1-3-4-2">
   <img src="docs/media/hub.gif" width="260" alt="Three-speed planetary hub">
 </p>
+
+```
+/plugin marketplace add DiegoLopez0208/mechanism
+/plugin install mechanism@mechanism
+```
+
+<p align="center"><sub>Then ask: <i>"Use mechanism to model a mechanical keyboard switch from its published sources."</i> &middot; <a href="#install">Other ways to install</a></sub></p>
 
 ## Technical film collection
 
