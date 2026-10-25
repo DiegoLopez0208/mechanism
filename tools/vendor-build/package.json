@@ -1,1 +1,1 @@
-{"name":"mechanism-vendor-build","private":true,"type":"module","dependencies":{"esbuild":"^0.25.0","three":"0.186.1","three-gpu-pathtracer":"^0.0.27","three-mesh-bvh":"^0.9.16"}}
+{"name":"mechanism-vendor-build","private":true,"type":"module","dependencies":{"esbuild":"^0.28.2","three":"0.186.1","three-gpu-pathtracer":"^0.0.27","three-mesh-bvh":"^0.9.16"}}
